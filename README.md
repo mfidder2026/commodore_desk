@@ -27,9 +27,9 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
   with 5 apps (macOS-style — always on screen).
 - **Auto-hiding menu bar**: the top menu bar appears when the cursor reaches the
   top edge; the dock stays put. No status bar, so the whole middle is the app.
-- **Windows-95-style boot screen**: a separate loader (`BOOT`) shows a multicolor
-  bitmap splash, then chain-loads the desktop — so the splash costs **no memory**
-  in the running OS (it's overwritten when `CD64` loads).
+- **Windows-95-style boot screen**: a separate loader (`BOOT`) shows a sharp
+  **hi-res bitmap** splash, then chain-loads the desktop — so the splash costs
+  **no memory** in the running OS (it's overwritten when `CD64` loads).
 - **One pointer, three input sources**: 1351 **mouse** (port 1), **joystick**
   (port 2) and the **keyboard** (cursor keys) all move the same sprite cursor.
 - **Apps**:
@@ -156,7 +156,7 @@ so only the text glyphs change.
 | `disk_main.asm` | entry point for the D71 build (PRG at `$0801`) |
 | `boot_main.asm` | Windows-95-style boot loader: shows the splash, chain-loads `CD64` |
 | `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
-| `tools/png2mc.py` | converts `design/bootscreen.png` → the boot bitmap (`data/boot_*.bin`) |
+| `tools/png2hires.py` | converts `design/bootscreen.png` → the hi-res boot bitmap (`data/boot_*.bin`) |
 | `build_disk.bat` / `build_cart.bat` | build scripts |
 | `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
 | `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |

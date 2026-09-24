@@ -3,7 +3,7 @@
 // Commodore Desk 64
 //
 // Dit is een APART laadprogramma dat als eerste opstart. Het toont een
-// multicolor-bitmap bootscherm (VIC-bank 1, bitmap $6000 / matrix $4000),
+// hi-res bitmap bootscherm (scherp, VIC-bank 1, bitmap $6000 / matrix $4000),
 // wacht op een toets en laadt daarna "CD64" - het echte bureaublad -
 // dat over dit programma heen laadt. Zo kost het bootscherm GEEN geheugen
 // in de draaiende Commodore Desk: de plaatjesdata zit alleen in dit
@@ -83,28 +83,7 @@ bootStart:
         inc $fe
         dex
         bne !b-
-        // ---- kleuren-RAM -> $D800 (4 pagina's) ----
-        lda #<srcCol
-        sta $fb
-        lda #>srcCol
-        sta $fc
-        lda #$00
-        sta $fd
-        lda #$d8
-        sta $fe
-        ldx #4
-        ldy #0
-!b:     lda ($fb),y
-        sta ($fd),y
-        iny
-        bne !b-
-        inc $fc
-        inc $fe
-        dex
-        bne !b-
-        // ---- VIC: multicolor bitmap, bank 1 ----
-        lda #6
-        sta $d021                // achtergrond = blauw (bitpaar 00)
+        // ---- VIC: hi-res bitmap (scherp, 320x200), bank 1 ----
         lda #0
         sta $d020                // rand zwart
         lda $dd00
@@ -115,7 +94,7 @@ bootStart:
         sta $d018
         lda #$3b                 // bitmapmodus aan, DEN, 25 rijen
         sta $d011
-        lda #$d8                 // multicolor aan, 40 kolommen
+        lda #$c8                 // multicolor UIT, 40 kolommen (hi-res)
         sta $d016
         cli
         // ---- wacht op een willekeurige toets ----
@@ -145,4 +124,3 @@ waitKey:
 //--------------------------------------------------------
 srcBmp: .import binary "data/boot_bmp.bin"
 srcScr: .import binary "data/boot_scr.bin"
-srcCol: .import binary "data/boot_col.bin"
