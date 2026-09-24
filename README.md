@@ -35,8 +35,9 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
 - **Apps**:
   - **Files** — File Manager: reads the disk directory into a scrollable list.
   - **Editor** — text editor: type, RETURN (new line), DEL (backspace).
-  - **Paint** — real **multicolor bitmap** paint (160×200): full-screen canvas
-    with a 4-color palette (erase / white / red / cyan); hold fire to drag-draw.
+  - **Paint** — real **multicolor bitmap** paint (160×200): full-screen canvas,
+    blue background, all **16 colors** (per-cell colour slots), starts on white;
+    hold fire to drag-draw, **ESC** to exit.
   - **Calc** — 16-bit calculator (+ − × ÷).
   - **Settings** — all **theme colors are adjustable**, plus a **font** picker
     (System / Classic / Bold); everything is saved to `CD64.CFG`.

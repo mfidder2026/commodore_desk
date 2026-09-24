@@ -1,36 +1,39 @@
 #importonce
 //========================================================
-// apps/paint.asm - Paint (echte multicolor-bitmap)
+// apps/paint.asm - Paint (multicolor-bitmap, 16 kleuren)
 // Commodore Desk 64
 //
 // Paint is een VOLLEDIG-SCHERM multicolor-bitmapmodus. Zolang de app
 // open is schakelt de VIC naar VIC-bank 1 ($4000-$7FFF) - vrij RAM
 // boven de OS-image - met de bitmap op $6000 en de video-matrix op
-// $4000. Bij het verlaten (RUN/STOP) schakelt alles terug naar de
-// char-mode desktop.
+// $4000. Bij het verlaten (ESC) schakelt alles terug naar char-mode.
 //
-// 160x200 "dikke pixels", 4 vaste kleuren per cel:
-//   00 = achtergrond ($D021)      = ZWART (gum)
-//   01 = matrix hoge nibble       = WIT
-//   10 = matrix lage nibble       = LICHTROOD
-//   11 = kleuren-RAM              = CYAAN
-// Door één vast kleurenschema over het hele canvas zijn er geen
-// attribuut-conflicten.
+// 160x200 "dikke pixels". Achtergrond (bitpaar 00) is BLAUW en gedeeld
+// over het hele scherm. Per 8x8-cel zijn er daarnaast 3 vrije kleur-
+// slots (matrix hoge nibble = 01, lage nibble = 10, kleuren-RAM = 11),
+// die Paint automatisch toewijst als je tekent. Zo is het HELE 16-
+// kleurenpalet beschikbaar (max 3 niet-blauwe kleuren per cel).
+//
+// BELANGRIJK: schrijf $D011/$D016 met VASTE waarden, nooit via
+// read-modify-write - een gelezen $D011 bevat in bit 7 de rasterregel
+// en zou de raster-IRQ (en dus alle input) kunnen slopen.
 //========================================================
 
 .label BITMAP  = $6000           // 8000 bytes bitmap (VIC-bank 1 + $2000)
 .label VMATRIX = $4000           // video-matrix (kleurparen per cel)
-.label pnPtr   = $3c             // zeropage-pointer
+.label pnPtr   = $3c             // zeropage-pointer (bitmap)
+.label pnMPtr  = $fb             // zeropage-pointer (matrix)
+.label pnCPtr  = $fd             // zeropage-pointer (kleuren-RAM)
 
-.const PN_MATRIX = $1a           // hoog=WIT(1), laag=LICHTROOD(10)
-.const PN_CRAM   = CYAN           // kleur voor bitpaar 11
+.const PN_BG     = BLUE          // gedeelde achtergrond (bitpaar 00)
+.const PN_MINIT  = [BLUE<<4]|BLUE // matrix-init: beide slots = achtergrond
 .const PN_PALTOP = 184           // py >= dit = palet-strook
 
 //--------------------------------------------------------
 // paint_Enter - schakel naar multicolor-bitmap en teken canvas+palet.
 //--------------------------------------------------------
 paint_Enter:
-        // 1) bitmap wissen ($6000-$7FFF = 32 pagina's)
+        // 1) bitmap wissen ($6000-$7FFF = 32 pagina's) -> alles achtergrond
         lda #<BITMAP
         sta pnPtr
         lda #>BITMAP
@@ -44,8 +47,8 @@ paint_Enter:
         inc pnPtr+1
         dex
         bne !pg-
-        // 2) video-matrix $4000-$43FF met het kleurpaar vullen
-        lda #PN_MATRIX
+        // 2) video-matrix $4000-$43FF: beide slots = achtergrond
+        lda #PN_MINIT
         ldx #0
 !m:     sta VMATRIX + $000,x
         sta VMATRIX + $100,x
@@ -53,8 +56,8 @@ paint_Enter:
         sta VMATRIX + $300,x
         inx
         bne !m-
-        // 3) kleuren-RAM = kleur voor bitpaar 11
-        lda #PN_CRAM
+        // 3) kleuren-RAM (slot 11) = achtergrond
+        lda #PN_BG
         ldx #0
 !c:     sta COLOR_RAM + $000,x
         sta COLOR_RAM + $100,x
@@ -62,9 +65,10 @@ paint_Enter:
         sta COLOR_RAM + $300,x
         inx
         bne !c-
-        // 4) achtergrond = zwart, rand zwart
-        lda #BLACK
+        // 4) achtergrond blauw, rand zwart
+        lda #PN_BG
         sta BG_COL0
+        lda #BLACK
         sta BORDER_COL
         // 5) cursor-sprite in bank 1: data op $4400 (blok 16), pointer $43F8
         ldx #0
@@ -83,29 +87,24 @@ paint_Enter:
         // 7) $D018 = $08 -> matrix $4000, bitmap $6000
         lda #$08
         sta VIC_MEM
-        // 8) bitmapmodus aan ($D011 bit5)
-        lda VIC_CTRL1
-        ora #$20
+        // 8) bitmap + multicolor AAN, met VASTE waarden (bit7 nooit terugschrijven)
+        lda #$3b                 // bitmapmodus, DEN, 25 rijen, yscroll 3
         sta VIC_CTRL1
-        // 9) multicolor aan ($D016 bit4)
-        lda VIC_CTRL2
-        ora #$10
+        lda #$d8                 // multicolor aan, 40 kolommen
         sta VIC_CTRL2
-        // 10) palet tekenen + startkleur wit
+        // 9) palet tekenen + startkleur WIT
         jsr paint_DrawPalette
-        lda #1
+        lda #WHITE
         sta pnCurrent
         rts
 
 //--------------------------------------------------------
-// paint_Exit - terug naar char-mode desktop.
+// paint_Exit - terug naar char-mode desktop (VASTE $D011/$D016!).
 //--------------------------------------------------------
 paint_Exit:
-        lda VIC_CTRL1
-        and #$df                 // bitmap uit
+        lda #$1b                 // char-mode, DEN, 25 rijen, yscroll 3
         sta VIC_CTRL1
-        lda VIC_CTRL2
-        and #$ef                 // multicolor uit
+        lda #$c8                 // multicolor uit, 40 kolommen
         sta VIC_CTRL2
         lda CIA2_PRA             // VIC-bank 0
         ora #$03
@@ -121,38 +120,25 @@ paint_Exit:
         rts
 
 //--------------------------------------------------------
-// paint_DrawPalette - 4 stalen (8 dikke-pixels breed) onderaan +
-//                     een witte scheidingslijn erboven.
+// paint_DrawPalette - 16 stalen (elk 8 dikke-pixels) op de onderste
+//                     twee rijen (py 184-199).
 //--------------------------------------------------------
 paint_DrawPalette:
-        // scheidingslijn (kleur 1 = wit) op py = PN_PALTOP-1
-        lda #PN_PALTOP-1
-        sta pnPy
         lda #0
-        sta pnFx
-!ln:    lda #1
-        sta pnCurrent
-        jsr paint_Plot
-        inc pnFx
-        lda pnFx
-        cmp #160
-        bne !ln-
-        // 4 stalen: staal s beslaat fatx s*8..s*8+7, py PN_PALTOP..199
-        lda #0
-        sta pnPalSw
-swloop: lda pnPalSw
-        cmp #4
-        bcs swdone
+        sta pnPalSw              // kleurindex 0..15
+psw:    lda pnPalSw
+        cmp #16
+        bcs pdone
         lda #PN_PALTOP
         sta pnPy
-pyloop: lda pnPalSw          // fatx-basis = sw*8
+ppy:    lda pnPalSw              // fatx-basis = index*8
         asl
         asl
         asl
         sta pnPalFx0
         lda #0
         sta pnPalDx
-fxloop: lda pnPalFx0
+pfx:    lda pnPalFx0
         clc
         adc pnPalDx
         sta pnFx
@@ -162,14 +148,14 @@ fxloop: lda pnPalFx0
         inc pnPalDx
         lda pnPalDx
         cmp #8
-        bne fxloop
+        bne pfx
         inc pnPy
         lda pnPy
         cmp #200
-        bne pyloop
+        bne ppy
         inc pnPalSw
-        jmp swloop
-swdone: rts
+        jmp psw
+pdone:  rts
 
 //--------------------------------------------------------
 // paint_Click - klik (EVT_MOUSEDOWN): kleur kiezen of pixel zetten.
@@ -184,8 +170,8 @@ pickColor:
         lda pnFx
         lsr
         lsr
-        lsr                      // fatx / 8 = staalnummer
-        cmp #4
+        lsr                      // fatx / 8 = staalnummer (0..15)
+        cmp #16
         bcs pcDone
         sta pnCurrent
 pcDone: rts
@@ -205,8 +191,8 @@ paint_Live:
 plDone: rts
 
 //--------------------------------------------------------
-// paint_CursorToFat - reken cursor (crsX/crsY, sprite-pixels) om naar
-//                     dikke-pixel (pnFx 0-159) en py (pnPy 0-199).
+// paint_CursorToFat - cursor (crsX/crsY) -> dikke-pixel (pnFx 0-159)
+//                     en py (pnPy 0-199).
 //--------------------------------------------------------
 paint_CursorToFat:
         lda crsXlo               // (crsX - 24) / 2
@@ -227,17 +213,21 @@ paint_CursorToFat:
         rts
 
 //--------------------------------------------------------
-// paint_Plot - zet de dikke-pixel (pnFx,pnPy) op kleur pnCurrent.
-//   addr = BITMAP + (py>>3)*320 + (fatx>>2)*8 + (py&7)
-//   bitpaar = 3-(fatx&3), shift = bitpaar*2
+// paint_Plot - zet dikke-pixel (pnFx,pnPy) op kleur pnCurrent (0-15).
 //--------------------------------------------------------
 paint_Plot:
-        // basis = BITMAP + rowOffset[py>>3]
+        // cellrij / cellkolom
         lda pnPy
         lsr
         lsr
         lsr
-        tax
+        sta pnCellRow
+        lda pnFx
+        lsr
+        lsr
+        sta pnCellCol
+        // bitmap-pointer = BITMAP + rowLo/Hi[cellrij] + cellcol*8 + (py&7)
+        ldx pnCellRow
         lda #<BITMAP
         clc
         adc rowLo,x
@@ -245,12 +235,14 @@ paint_Plot:
         lda #>BITMAP
         adc rowHi,x
         sta pnPtr+1
-        // + (fatx>>2)*8 = (fatx & $fc) * 2   (16-bit)
-        lda pnFx
-        and #$fc
+        lda pnCellCol            // cellcol*8 (16-bit)
         sta pnT0
         lda #0
         sta pnT1
+        asl pnT0
+        rol pnT1
+        asl pnT0
+        rol pnT1
         asl pnT0
         rol pnT1
         lda pnPtr
@@ -260,7 +252,6 @@ paint_Plot:
         lda pnPtr+1
         adc pnT1
         sta pnPtr+1
-        // + (py & 7)
         lda pnPy
         and #7
         clc
@@ -269,19 +260,42 @@ paint_Plot:
         lda pnPtr+1
         adc #0
         sta pnPtr+1
-        // bitpaar-index = fatx & 3 ; shift = shiftTab[idx]
+        // matrix-pointer = VMATRIX + mrowLo/Hi[cellrij] + cellcol
+        ldx pnCellRow
+        lda #<VMATRIX
+        clc
+        adc mrowLo,x
+        sta pnMPtr
+        lda #>VMATRIX
+        adc mrowHi,x
+        sta pnMPtr+1
+        lda pnMPtr
+        clc
+        adc pnCellCol
+        sta pnMPtr
+        lda pnMPtr+1
+        adc #0
+        sta pnMPtr+1
+        // kleuren-RAM-pointer = matrix-pointer + $9800 (D800-4000)
+        lda pnMPtr
+        sta pnCPtr
+        lda pnMPtr+1
+        clc
+        adc #$98
+        sta pnCPtr+1
+        // bepaal bitpaar-code (0..3) voor pnCurrent in deze cel
+        jsr pnColorCode
+        // waarde = code << shift ; shift uit fatx&3
         lda pnFx
         and #3
         tax
-        // waarde = pnCurrent << shift
-        lda pnCurrent
+        lda pnCode
         ldy shiftTab,x
-        beq !vdone+
+        beq !vd+
 !vs:    asl
         dey
         bne !vs-
-!vdone: sta pnVal
-        // masker
+!vd:    sta pnVal
         lda maskTab,x
         eor #$ff
         sta pnT0                 // inverse masker
@@ -293,17 +307,106 @@ paint_Plot:
         rts
 
 //--------------------------------------------------------
+// pnColorCode - kies/registreer een bitpaar-code voor pnCurrent in de
+//               huidige cel (pnMPtr = matrix, pnCPtr = kleuren-RAM).
+//               Resultaat in pnCode (0=bg,1=slot01,2=slot10,3=slot11).
+//--------------------------------------------------------
+pnColorCode:
+        lda pnCurrent
+        cmp #PN_BG
+        bne !nb+
+        lda #0                   // achtergrond
+        sta pnCode
+        rts
+!nb:    ldy #0
+        lda (pnMPtr),y
+        sta pnMByte
+        lsr
+        lsr
+        lsr
+        lsr
+        sta pnS01                // slot 01 = hoge nibble
+        lda pnMByte
+        and #$0f
+        sta pnS10                // slot 10 = lage nibble
+        ldy #0
+        lda (pnCPtr),y
+        and #$0f
+        sta pnS11                // slot 11 = kleuren-RAM
+        // al aanwezig?
+        lda pnCurrent
+        cmp pnS01
+        bne !k2+
+        lda #1
+        sta pnCode
+        rts
+!k2:    cmp pnS10
+        bne !k3+
+        lda #2
+        sta pnCode
+        rts
+!k3:    cmp pnS11
+        bne !as+
+        lda #3
+        sta pnCode
+        rts
+        // toewijzen aan een vrije (=achtergrond) slot, anders slot 11
+!as:    lda pnS01
+        cmp #PN_BG
+        bne !as2+
+        lda pnMByte
+        and #$0f
+        sta pnT0
+        lda pnCurrent
+        asl
+        asl
+        asl
+        asl
+        ora pnT0
+        ldy #0
+        sta (pnMPtr),y
+        lda #1
+        sta pnCode
+        rts
+!as2:   lda pnS10
+        cmp #PN_BG
+        bne !as3+
+        lda pnMByte
+        and #$f0
+        ora pnCurrent
+        ldy #0
+        sta (pnMPtr),y
+        lda #2
+        sta pnCode
+        rts
+!as3:   lda pnCurrent            // slot 11 (leeg of overschrijven)
+        ldy #0
+        sta (pnCPtr),y
+        lda #3
+        sta pnCode
+        rts
+
+//--------------------------------------------------------
 // Tabellen
 //--------------------------------------------------------
 rowLo:    .fill 25, <(i*320)
 rowHi:    .fill 25, >(i*320)
+mrowLo:   .fill 25, <(i*40)
+mrowHi:   .fill 25, >(i*40)
 shiftTab: .byte 6, 4, 2, 0       // fatx&3 -> aantal bits schuiven
 maskTab:  .byte $c0, $30, $0c, $03
 
-pnCurrent: .byte 1
+pnCurrent: .byte WHITE
 pnFx:      .byte 0
 pnPy:      .byte 0
 pnVal:     .byte 0
+pnCode:    .byte 0
+pnCellRow: .byte 0
+pnCellCol: .byte 0
+pnMByte:   .byte 0
+pnS01:     .byte 0
+pnS10:     .byte 0
+pnS11:     .byte 0
 pnT0:      .byte 0
 pnT1:      .byte 0
 pnPalSw:   .byte 0
