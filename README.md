@@ -156,7 +156,7 @@ so only the text glyphs change.
 | `disk_main.asm` | entry point for the D71 build (PRG at `$0801`) |
 | `boot_main.asm` | Windows-95-style boot loader: shows the splash, chain-loads `CD64` |
 | `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
-| `tools/png2hires.py` | converts `design/bootscreen.png` → the hi-res boot bitmap (`data/boot_*.bin`) |
+| `tools/make_bootscreen.py` | generates the native hi-res boot screen bitmap (`data/boot_*.bin`) |
 | `build_disk.bat` / `build_cart.bat` | build scripts |
 | `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
 | `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |
