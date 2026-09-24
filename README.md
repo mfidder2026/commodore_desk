@@ -35,6 +35,8 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
   - **Settings** — all **theme colors are adjustable** and saved to `CD64.CFG`.
 - **F1 context help** — a help panel whose text depends on the active app; press
   space to close it.
+- **Drop-down menu** — reveal the menu bar (top edge) and click it to open the
+  system menu (HELP · DESKTOP · ABOUT); click an item or click away to close.
 - **Widgets**: buttons, checkbox, scrollable list, modal dialog.
 - **Boot splash** + **SID click sound**.
 - Strictly the **16-color VIC-II palette**.
@@ -71,7 +73,8 @@ role to one of these 16.
 | Back to desktop (close app) | — | — | **RUN/STOP** |
 
 Move the cursor to the **top edge** to reveal the menu bar, or the **bottom edge**
-to reveal the dock. Click a **dock icon** to open an app; the menu bar and work
+to reveal the dock. **Click the menu bar** to open the system drop-down (HELP ·
+DESKTOP · ABOUT). Click a **dock icon** to open an app; the menu bar and work
 area switch with it. **RUN/STOP** closes the active app and returns to the desktop
 — that's how you leave the text editor (where space types a space).
 
@@ -153,9 +156,8 @@ persistence, and finishing (splash, sound, cartridge, docs). Plus F1 context hel
 auto-hiding bars, and apps that fill the full work area.
 
 **Open / upgrades:** real hi-res/multicolor bitmap Paint; dock shape and font in
-Settings (variables are ready); Classic/Bold fonts; 2×2 dock icons; drop-down
-menus; config in flash instead of on disk. Later: a **Commodore 128** port (all
-hardware-specific code lives in `hal/`).
+Settings (variables are ready); Classic/Bold fonts; config in flash instead of on
+disk. Later: a **Commodore 128** port (all hardware-specific code lives in `hal/`).
 
 > The development plan and the Kick Assembler skill document are still in Dutch;
 > the application's on-screen text and this README are English.

@@ -646,10 +646,127 @@ exitToDesktop:
         jmp shell_DrawAll
 
 //--------------------------------------------------------
+// menu_Open - uitklapmenu onder de menubalk (systeemmenu).
+//             Modale lus: klik een item, of klik ernaast om te
+//             sluiten. IRQ blijft de cursor pollen.
+//--------------------------------------------------------
+menu_Draw:
+        gfxDrawBox(1, 1, 14, 5, LIGHT_GREY)      // rijen 1-5, kol 1-14
+        lda #<oHelp
+        sta r0
+        lda #>oHelp
+        sta r0+1
+        lda #3
+        sta a0
+        lda #2
+        sta a1
+        lda #THEME_TEXT
+        sta a2
+        jsr gfx_DrawText
+        lda #<oDesk
+        sta r0
+        lda #>oDesk
+        sta r0+1
+        lda #3
+        sta a0
+        lda #3
+        sta a1
+        lda #THEME_TEXT
+        sta a2
+        jsr gfx_DrawText
+        lda #<oAbout
+        sta r0
+        lda #>oAbout
+        sta r0+1
+        lda #3
+        sta a0
+        lda #4
+        sta a1
+        lda #THEME_TEXT
+        sta a2
+        jmp gfx_DrawText
+
+menu_Open: {
+        jsr menu_Draw
+wait:   jsr evt_Poll
+        cmp #EVT_MOUSEDOWN
+        bne wait
+        lda evtA                 // buiten kolommen 1-14 -> sluiten
+        cmp #1
+        bcc close
+        cmp #15
+        bcs close
+        lda evtB
+        cmp #2
+        beq doHelp
+        cmp #3
+        beq doDesk
+        cmp #4
+        beq doAbout
+close:  jmp shell_DrawAll
+doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
+doDesk: jmp exitToDesktop
+doAbout:jmp about_Show
+}
+
+//--------------------------------------------------------
+// about_Show - "over deze OS"-venster (modaal, spatie sluit).
+//--------------------------------------------------------
+about_Show: {
+        gfxDrawBox(6, 8, 28, 8, LIGHT_GREY)      // rijen 8-15
+        lda #<aLine1
+        sta r0
+        lda #>aLine1
+        sta r0+1
+        lda #9
+        sta a0
+        lda #10
+        sta a1
+        lda #THEME_ACCENT
+        sta a2
+        jsr gfx_DrawText
+        lda #<aLine2
+        sta r0
+        lda #>aLine2
+        sta r0+1
+        lda #9
+        sta a0
+        lda #12
+        sta a1
+        lda #THEME_TEXT
+        sta a2
+        jsr gfx_DrawText
+        lda #<aClose
+        sta r0
+        lda #>aClose
+        sta r0+1
+        lda #9
+        sta a0
+        lda #14
+        sta a1
+        lda #THEME_SELECT
+        sta a2
+        jsr gfx_DrawText
+wait:   jsr evt_Poll
+        cmp #EVT_KEY
+        bne wait
+        lda evtA
+        cmp #$20
+        bne wait
+        jmp shell_DrawAll
+}
+
+//--------------------------------------------------------
 // onMouseDown - klik afhandelen (evtA=kol, evtB=rij).
 //--------------------------------------------------------
 onMouseDown:
         lda evtB
+        bne !nomenu+
+        lda menuShown            // klik op rij 0 = menubalk -> uitklapmenu
+        beq !ret+
+        jmp menu_Open
+!ret:   rts
+!nomenu:
         cmp #22
         bcc !widget+
         // dock -> app wisselen
@@ -894,6 +1011,20 @@ lPaint: .text "PAINT"
 lCalc:  .text "CALC"
         .byte $ff
 lSet:   .text "SETUP"
+        .byte $ff
+
+// uitklapmenu + about
+oHelp:  .text "HELP"
+        .byte $ff
+oDesk:  .text "DESKTOP"
+        .byte $ff
+oAbout: .text "ABOUT"
+        .byte $ff
+aLine1: .text "COMMODORE DESK 64"
+        .byte $ff
+aLine2: .text "VERSION 0.9"
+        .byte $ff
+aClose: .text "SPACE = CLOSE"
         .byte $ff
 
 it1: .text "ITEM 1"
