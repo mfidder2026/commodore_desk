@@ -178,9 +178,39 @@ drawContent:
         bne !e+
         jmp calc_Draw
 !e:     cmp #4
-        bne !f+
+        bne !e2+
         jmp set_Draw
+!e2:    cmp #5
+        bne !f+
+        jmp inet_Draw
 !f:     jmp drawStub
+
+//--------------------------------------------------------
+// inet_Draw - placeholder-pagina voor de internet-apps.
+//--------------------------------------------------------
+inet_Draw:
+        lda #<sInet1
+        sta r0
+        lda #>sInet1
+        sta r0+1
+        lda #6
+        sta a0
+        lda #8
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        lda #<sInet2
+        sta r0
+        lda #>sInet2
+        sta r0+1
+        lda #6
+        sta a0
+        lda #10
+        sta a1
+        lda TH_text
+        sta a2
+        jmp gfx_DrawText
 
 drawDesktopContent:
         lda #<sDeskHint
@@ -196,32 +226,20 @@ drawDesktopContent:
         jmp gfx_DrawText
 
 drawStub:
-        lda #<sStub
-        sta r0
-        lda #>sStub
-        sta r0+1
-        lda #10
-        sta a0
-        lda #10
-        sta a1
-        lda #GREY
-        sta a2
-        jmp gfx_DrawText
+        rts
 
 //--------------------------------------------------------
-// drawDock - 5 iconen (rij 22) + labels (rij 23).
+// drawDock - 6 iconen (rij 22-23) + labels (rij 24).
 //--------------------------------------------------------
 drawDock:
         lda #0
         sta dockI
 !lp:    lda dockI
-        cmp #5
+        cmp #6
         bcc !go+
         jmp !done+
-!go:    lda dockI                // slotBase = dockI * 8
-        asl
-        asl
-        asl
+!go:    ldx dockI                // slotBase uit tabel
+        lda dockBase,x
         sta dockTmp
         // TL (base+2, 22)
         clc
@@ -504,13 +522,25 @@ onMouseDown:
 !nomenu:
         cmp #22
         bcc !widget+
-        // dock -> app wisselen
+        // dock -> app wisselen (6 slots, grenzen 7/13/20/26/32)
         lda evtA
-        lsr
-        lsr
-        lsr
-        cmp #5
-        bcs !done+
+        ldx #0
+        cmp #7
+        bcc !hit+
+        inx
+        cmp #13
+        bcc !hit+
+        inx
+        cmp #20
+        bcc !hit+
+        inx
+        cmp #26
+        bcc !hit+
+        inx
+        cmp #32
+        bcc !hit+
+        inx
+!hit:   txa
         cmp activeApp
         beq !done+
         sta activeApp
@@ -567,19 +597,21 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-menuLo: .byte <mDesk, <mFiles, <mEdit, <mPaint, <mCalc, <mSet
-menuHi: .byte >mDesk, >mFiles, >mEdit, >mPaint, >mCalc, >mSet
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet
+menuLo: .byte <mDesk, <mFiles, <mEdit, <mPaint, <mCalc, <mSet, <mInet
+menuHi: .byte >mDesk, >mFiles, >mEdit, >mPaint, >mCalc, >mSet, >mInet
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet
 
-iconColor: .byte ORANGE, WHITE, LIGHT_RED, CYAN, LIGHT_GREEN
+// dock: startkolom per slot (6 iconen over 40 kolommen)
+dockBase:  .byte 1, 7, 13, 20, 26, 32
+iconColor: .byte ORANGE, WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, LIGHT_BLUE
 // 2x2 dock-iconen: glyphcodes per kwadrant (TL/TR/BL/BR)
-icon2TL:   .byte 107, 111, 115, 119, 123
-icon2TR:   .byte 108, 112, 116, 120, 124
-icon2BL:   .byte 109, 113, 117, 121, 125
-icon2BR:   .byte 110, 114, 118, 122, 126
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet
+icon2TL:   .byte 107, 111, 115, 119, 123, 102
+icon2TR:   .byte 108, 112, 116, 120, 124, 103
+icon2BL:   .byte 109, 113, 117, 121, 125, 104
+icon2BR:   .byte 110, 114, 118, 122, 126, 105
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet
 
 .encoding "screencode_upper"
 mDesk:  .text "CD64   FILE   EDIT   VIEW   SYSTEM"
@@ -594,6 +626,8 @@ mCalc:  .text "CALC   FILE   EDIT"
         .byte $ff
 mSet:   .text "SETTINGS   FILE   EDIT   VIEW"
         .byte $ff
+mInet:  .text "INTERNET   MAIL   CHAT   RSS   FTP"
+        .byte $ff
 
 nDesk:  .text "DESKTOP"
         .byte $ff
@@ -607,10 +641,14 @@ nCalc:  .text "CALCULATOR"
         .byte $ff
 nSet:   .text "SETTINGS"
         .byte $ff
+nInet:  .text "INTERNET"
+        .byte $ff
 
 sDeskHint: .text "CLICK A DOCK ICON  -  TOP EDGE = MENU"
            .byte $ff
-sStub:     .text "UNDER CONSTRUCTION"
+sInet1:    .text "INTERNET APPS"
+           .byte $ff
+sInet2:    .text "COMING SOON"
            .byte $ff
 lFiles: .text "FILES"
         .byte $ff
@@ -621,6 +659,8 @@ lPaint: .text "PAINT"
 lCalc:  .text "CALC"
         .byte $ff
 lSet:   .text "SETUP"
+        .byte $ff
+lInet:  .text "INET"
         .byte $ff
 
 // uitklapmenu + about

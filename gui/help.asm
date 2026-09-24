@@ -71,10 +71,10 @@ wait:   jsr evt_Poll
 }
 
 //--------------------------------------------------------
-help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1
-help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1
-help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2
-help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2
+help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1, <hi1
+help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1, >hi1
+help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2, <hi2
+help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2
 
 .encoding "screencode_upper"
 hTitle: .text "HELP"
@@ -105,4 +105,8 @@ hc2: .text "C CLEARS. ESC EXITS."
 hs1: .text "CLICK A ROLE, THEN A COLOR."
      .byte $ff
 hs2: .text "SAVE WRITES CD64.CFG."
+     .byte $ff
+hi1: .text "INTERNET APPS - COMING SOON."
+     .byte $ff
+hi2: .text "MAIL, CHAT, RSS, FTP, PING."
      .byte $ff
