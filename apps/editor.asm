@@ -9,7 +9,7 @@
 //========================================================
 
 .const EDW = 32                  // tekstbreedte (kolommen)
-.const EDH = 13                  // tekstregels  (rijen 5..17; kader rij 4..18)
+.const EDH = 16                  // tekstregels  (rijen 3..18; kader rij 2..19)
 .label edPtr = $3a               // zeropage-pointer
 
 // ed_Init - buffer met spaties vullen, cursor naar 0,0.
@@ -20,7 +20,7 @@ ed_Init:
         ldx #0
 !lp:    lda #$20
         sta edBuf,x
-        sta edBuf + 160,x        // edBuf[0..415] = 416 cellen (32x13)
+        sta edBuf + 256,x        // edBuf[0..511] = 512 cellen (32x16)
         inx
         bne !lp-
         rts
@@ -29,7 +29,7 @@ ed_Init:
 // ed_Draw - het hele tekstveld tekenen (op app-activatie).
 //--------------------------------------------------------
 ed_Draw:
-        gfxDrawBox(2, 4, 36, 15, LIGHT_GREY)
+        gfxDrawBox(1, 2, 38, 18, LIGHT_GREY)
         lda #0
         sta edRowIdx
 rowLoop:
@@ -71,7 +71,7 @@ ed_DrawCell:
         sta a0
         lda edDRow
         clc
-        adc #5
+        adc #3
         sta a1
         lda edChar
         sta a2

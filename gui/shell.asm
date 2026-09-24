@@ -212,16 +212,17 @@ drawStatus:
 
 //--------------------------------------------------------
 drawContent:
-        gfxDrawBox(1, 2, 38, 18, LIGHT_GREY)
+        // Geen buitenkader meer: apps gebruiken het hele middenvak.
+        // App-naam bovenaan (rij 1); de menubalk verschijnt evt. op rij 0.
         ldx activeApp
         inx
         lda nameLo,x
         sta r0
         lda nameHi,x
         sta r0+1
-        lda #3
+        lda #2
         sta a0
-        lda #3
+        lda #1
         sta a1
         lda TH_accent
         sta a2

@@ -7,7 +7,7 @@
 // lijst met UP/DN-knoppen. Klik een bestand om te selecteren.
 //========================================================
 
-.const FM_VISIBLE = 13
+.const FM_VISIBLE = 16
 
 // fm_Load - directory (her)lezen; selectie/scroll resetten.
 fm_Load:
@@ -21,7 +21,7 @@ fm_Load:
 // fm_Draw - lijst + knoppen tekenen (zonder Cls).
 //--------------------------------------------------------
 fm_Draw: {
-        gfxDrawBox(2, 4, 28, 15, LIGHT_GREY)
+        gfxDrawBox(2, 2, 28, 18, LIGHT_GREY)
         lda dirCount
         bne haveFiles
         lda #<sEmpty
@@ -43,7 +43,7 @@ loop:   lda lvI
         cmp #FM_VISIBLE
         bcc lp1
         jmp listDone
-lp1:    lda #5
+lp1:    lda #3
         clc
         adc lvI
         sta lvRow
@@ -114,7 +114,7 @@ buttons:
         sta r0+1
         lda #32
         sta a0
-        lda #5
+        lda #3
         sta a1
         lda #5
         sta a2
@@ -127,7 +127,7 @@ buttons:
         sta r0+1
         lda #32
         sta a0
-        lda #7
+        lda #5
         sta a1
         lda #5
         sta a2
@@ -140,14 +140,14 @@ buttons:
         sta r0+1
         lda #32
         sta a0
-        lda #9
+        lda #7
         sta a1
         lda #THEME_TEXT
         sta a2
         jsr gfx_DrawText
-        lda #<[SCREEN_RAM + 10*40 + 32]
+        lda #<[SCREEN_RAM + 8*40 + 32]
         sta r4
-        lda #>[SCREEN_RAM + 10*40 + 32]
+        lda #>[SCREEN_RAM + 8*40 + 32]
         sta r4+1
         lda dirCount
         jsr num2dec
@@ -184,10 +184,10 @@ sFiles2: .text "FILES:"
 // fm_Click - klik afhandelen (evtA=kol, evtB=rij).
 //--------------------------------------------------------
 fm_Click: {
-        // UP (32,5,5)
+        // UP (32,3,5)
         lda #32
         sta a0
-        lda #5
+        lda #3
         sta a1
         lda #5
         sta a2
@@ -197,10 +197,10 @@ fm_Click: {
         beq done
         dec fmTop
         jmp redraw
-c1:     // DN (32,7,5)
+c1:     // DN (32,5,5)
         lda #32
         sta a0
-        lda #7
+        lda #5
         sta a1
         lda #5
         sta a2
@@ -213,11 +213,11 @@ c1:     // DN (32,7,5)
         bcs done
         inc fmTop
         jmp redraw
-c2:     // lijst-item (rows5-17, cols3-28)
+c2:     // lijst-item (rows3-18, cols3-28)
         lda evtB
-        cmp #5
+        cmp #3
         bcc done
-        cmp #18
+        cmp #19
         bcs done
         lda evtA
         cmp #3
@@ -226,7 +226,7 @@ c2:     // lijst-item (rows5-17, cols3-28)
         bcs done
         lda evtB
         sec
-        sbc #5
+        sbc #3
         clc
         adc fmTop
         cmp dirCount
