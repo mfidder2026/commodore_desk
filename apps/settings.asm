@@ -149,6 +149,30 @@ pdone:  lda #<sSave
         lda #THEME_ACCENT
         sta a2
         jsr gfx_DrawText
+        // MENU-stijl (rij 14) - klik om te wisselen
+        lda #<sMenu
+        sta r0
+        lda #>sMenu
+        sta r0+1
+        lda #4
+        sta a0
+        lda #14
+        sta a1
+        lda #THEME_TEXT
+        sta a2
+        jsr gfx_DrawText
+        ldx CFG_menuFill
+        lda menuNameLo,x
+        sta r0
+        lda menuNameHi,x
+        sta r0+1
+        lda #10
+        sta a0
+        lda #14
+        sta a1
+        lda #THEME_ACCENT
+        sta a2
+        jsr gfx_DrawText
         rts
 }
 
@@ -179,10 +203,12 @@ chkPal: // kleurenkiezer (rij 12, kol 4-35)
         bne chkSave
         lda evtA
         cmp #4
-        bcc done
-        cmp #36
-        bcs done
-        sec
+        bcs !+
+        jmp done
+!:      cmp #36
+        bcc !+
+        jmp done
+!:      sec
         sbc #4
         lsr
         ldx selRole
@@ -201,8 +227,9 @@ chkSave: // SAVE-knop (4,15,6)
         lda #6
         sta a2
         jsr btn_HitTest
-        bcc done
-        jsr cfg_Save
+        bcs !+
+        jmp done
+!:      jsr cfg_Save
         lda #<sSaved
         sta r0
         lda #>sSaved
@@ -218,7 +245,7 @@ chkSave: // SAVE-knop (4,15,6)
 chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
         lda evtB
         cmp #13
-        bne done
+        bne chkMenu
         lda evtA
         cmp #4
         bcc done
@@ -233,6 +260,20 @@ chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
 !:      sta CFG_fontId
         jsr font_Apply
         jsr shell_DrawAll
+        rts
+chkMenu: // MENU-regel (rij 14, kol 4-20) -> stijl wisselen
+        lda evtB
+        cmp #14
+        bne done
+        lda evtA
+        cmp #4
+        bcc done
+        cmp #21
+        bcs done
+        lda CFG_menuFill
+        eor #1
+        sta CFG_menuFill
+        jsr set_Draw
 done:   rts
 }
 
@@ -246,6 +287,9 @@ roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
 
 fontNameLo: .byte <fSystem, <fClassic, <fBold
 fontNameHi: .byte >fSystem, >fClassic, >fBold
+
+menuNameLo: .byte <mClear, <mFilled
+menuNameHi: .byte >mClear, >mFilled
 
 .encoding "screencode_upper"
 rRand: .text "BORDER"
@@ -274,3 +318,9 @@ fClassic: .text "CLASSIC"
           .byte $ff
 fBold:    .text "BOLD   "
           .byte $ff
+sMenu:  .text "MENU:"
+        .byte $ff
+mClear:  .text "CLEAR "
+         .byte $ff
+mFilled: .text "FILLED"
+         .byte $ff

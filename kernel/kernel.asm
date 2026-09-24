@@ -61,6 +61,8 @@ osvars_Init:
         sta LAY_dockLabelRow
         lda #DEFAULT_FONT
         sta CFG_fontId
+        lda #DEFAULT_MENUFILL
+        sta CFG_menuFill
         // thema-kleuren defaults
         lda #THEME_BORDER
         sta TH_border

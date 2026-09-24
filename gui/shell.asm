@@ -351,6 +351,25 @@ exitToDesktop:
 //--------------------------------------------------------
 menu_Draw:
         gfxDrawBox(1, 1, 14, 5, LIGHT_GREY)      // rijen 1-5, kol 1-14
+        lda CFG_menuFill                         // gevuld?
+        beq !clear+
+        lda #2                                   // interieur vullen (kol 2-13, rij 2-4)
+        sta a0
+        lda #2
+        sta a1
+        lda #12
+        sta a2
+        lda #3
+        sta a3
+        lda #$a0
+        sta a4
+        lda #LIGHT_GREY
+        sta a5
+        jsr gfx_FillRect
+        lda #BLACK                               // zwarte tekst op gevuld paneel
+        jmp !setc+
+!clear: lda #THEME_TEXT                          // witte tekst (doorzichtig)
+!setc:  sta menuTxtCol
         lda #<oHelp
         sta r0
         lda #>oHelp
@@ -359,7 +378,7 @@ menu_Draw:
         sta a0
         lda #2
         sta a1
-        lda #THEME_TEXT
+        lda menuTxtCol
         sta a2
         jsr gfx_DrawText
         lda #<oDesk
@@ -370,7 +389,7 @@ menu_Draw:
         sta a0
         lda #3
         sta a1
-        lda #THEME_TEXT
+        lda menuTxtCol
         sta a2
         jsr gfx_DrawText
         lda #<oAbout
@@ -381,7 +400,7 @@ menu_Draw:
         sta a0
         lda #4
         sta a1
-        lda #THEME_TEXT
+        lda menuTxtCol
         sta a2
         jmp gfx_DrawText
 
@@ -542,6 +561,7 @@ dockI:       .byte 0
 dockTmp:     .byte 0
 menuShown:   .byte 0
 cbRow:       .byte 0
+menuTxtCol:  .byte 0
 // gedeelde scratch-vars (o.a. File Manager-lijst)
 lvI:         .byte 0
 lvItem:      .byte 0

@@ -63,6 +63,12 @@
 .label TH_accent    = $020b   // titels/accent
 .label TH_select    = $020c   // selectie/highlight
 
+// ---- Uitklapmenu-stijl (runtime, instelbaar via Settings) ----
+.label CFG_menuFill = $020d   // 0 = doorzichtig, 1 = gevuld
+.const MENU_CLEAR       = 0
+.const MENU_FILLED      = 1
+.const DEFAULT_MENUFILL = MENU_FILLED
+
 // Vast UI-glyphblok binnen elke charset (identiek in alle fonts).
 // Reserveer bijv. de bovenste tekens voor frames/iconen; tekst-glyphs
 // staan op de standaard screencode-posities.
