@@ -1,17 +1,17 @@
 # Commodore Desk 64
 
-Een grafische, Apple-achtige desktop-GUI voor de Commodore 64, geschreven in
-6502/6510-assembly (Kick Assembler). Dock onderin, contextuele menubalk bovenin,
-de app in het midden — géén sleepbare vensters. Bootbaar als **D71-disk** en als
-**EasyFlash-`.CRT`-cartridge** (instant boot).
+A graphical, Apple-style desktop GUI for the Commodore 64, written in 6502/6510
+assembly (Kick Assembler). Dock at the bottom, a contextual menu bar at the top,
+the app in the middle — no draggable windows. Boots as a **D71 disk** and as an
+**EasyFlash `.CRT` cartridge** (instant boot).
 
-![status](https://img.shields.io/badge/fase-0--10-brightgreen)
+![status](https://img.shields.io/badge/phase-0--10-brightgreen)
 
-![Commodore Desk 64 — bureaublad](docs/desktop.png)
+![Commodore Desk 64 — desktop](docs/desktop.png)
 
-<sub>Draaiend in VICE: bureaublad met contextuele menubalk, statusbalk en de dock.</sub>
+<sub>Running in VICE: the desktop with contextual menu bar, status bar and the dock.</sub>
 
-### Schermen
+### Screens
 
 | File Manager | Settings |
 |---|---|
@@ -19,73 +19,75 @@ de app in het midden — géén sleepbare vensters. Bootbaar als **D71-disk** en
 
 ---
 
-## Wat kan het
+## Features
 
-- **Bureaublad-shell**: bureaublad, contextuele menubalk (per app), statusbalk en
-  een dock met 5 apps.
-- **Één aanwijzer, drie invoerbronnen**: 1351-**muis** (poort 1), **joystick**
-  (poort 2) én **toetsenbord** (cursortoetsen) bewegen dezelfde sprite-cursor.
+- **Desktop shell**: desktop, contextual menu bar (per app), status bar and a
+  dock with 5 apps.
+- **Auto-hiding bars**: the menu bar (top edge) and dock (bottom edge) appear when
+  the cursor reaches the edge, leaving the whole middle for the app.
+- **One pointer, three input sources**: 1351 **mouse** (port 1), **joystick**
+  (port 2) and the **keyboard** (cursor keys) all move the same sprite cursor.
 - **Apps**:
-  - **Files** — File Manager: leest de disk-directory en toont hem in een
-    scrollbare lijst.
-  - **Editor** — teksteditor: typen, RETURN (nieuwe regel), DEL (backspace).
-  - **Paint** — blok-paint: canvas + 16-kleuren-palet.
-  - **Calc** — 16-bits rekenmachine (+ − × ÷).
-  - **Settings** — alle **thema-kleuren aanpasbaar** en opslaan naar `CD64.CFG`.
-- **Widgets**: knoppen, checkbox, scrollbare lijst, modale dialoog.
-- **Boot-splash** + **SID-klikgeluid**.
-- Strikt het **16-kleuren VIC-II-palet**.
+  - **Files** — File Manager: reads the disk directory into a scrollable list.
+  - **Editor** — text editor: type, RETURN (new line), DEL (backspace).
+  - **Paint** — block paint: canvas + 16-color palette.
+  - **Calc** — 16-bit calculator (+ − × ÷).
+  - **Settings** — all **theme colors are adjustable** and saved to `CD64.CFG`.
+- **F1 context help** — a help panel whose text depends on the active app; press
+  space to close it.
+- **Widgets**: buttons, checkbox, scrollable list, modal dialog.
+- **Boot splash** + **SID click sound**.
+- Strictly the **16-color VIC-II palette**.
 
-## Kleurenpalet
+## Color palette
 
-Uitsluitend de 16 VIC-II-kleuren — geen benaderingen.
+Only the 16 VIC-II colors — no approximations.
 
-![Kleurenpalet](docs/palette.png)
+![Color palette](docs/palette.png)
 
-| # | Naam (NL) | Hex | | # | Naam (NL) | Hex |
+| # | Name | Hex | | # | Name | Hex |
 |---|---|---|---|---|---|---|
-| 0 | Zwart | `#000000` | | 8 | Oranje | `#DD8855` |
-| 1 | Wit | `#FFFFFF` | | 9 | Bruin | `#664400` |
-| 2 | Rood | `#880000` | | 10 | Lichtrood | `#FF7777` |
-| 3 | Cyaan | `#AAFFEE` | | 11 | Donkergrijs | `#333333` |
-| 4 | Paars | `#CC44CC` | | 12 | Grijs | `#777777` |
-| 5 | Groen | `#00CC55` | | 13 | Lichtgroen | `#AAFF66` |
-| 6 | Blauw | `#0000AA` | | 14 | Lichtblauw | `#0088FF` |
-| 7 | Geel | `#EEEE77` | | 15 | Lichtgrijs | `#BBBBBB` |
+| 0 | Black | `#000000` | | 8 | Orange | `#DD8855` |
+| 1 | White | `#FFFFFF` | | 9 | Brown | `#664400` |
+| 2 | Red | `#880000` | | 10 | Light red | `#FF7777` |
+| 3 | Cyan | `#AAFFEE` | | 11 | Dark grey | `#333333` |
+| 4 | Purple | `#CC44CC` | | 12 | Grey | `#777777` |
+| 5 | Green | `#00CC55` | | 13 | Light green | `#AAFF66` |
+| 6 | Blue | `#0000AA` | | 14 | Light blue | `#0088FF` |
+| 7 | Yellow | `#EEEE77` | | 15 | Light grey | `#BBBBBB` |
 
-De kleuren en thema-rollen staan als constanten in
-[`include/palette.inc`](include/palette.inc); via **Settings** koppel je elke
-thema-rol aan een van deze 16.
+The colors and theme roles are constants in
+[`include/palette.inc`](include/palette.inc); in **Settings** you map each theme
+role to one of these 16.
 
-## Besturing
+## Controls
 
-| Actie | Muis | Joystick (poort 2) | Toetsenbord |
+| Action | Mouse | Joystick (port 2) | Keyboard |
 |---|---|---|---|
-| Cursor bewegen | beweeg de muis | duw de stick | cursortoetsen (+ shift voor links/omhoog) |
-| Klik | linkerknop | fire | **spatie** of **return** |
-| Typen (Editor) | — | — | letters/cijfers, RETURN, DEL |
-| Terug naar bureaublad (app sluiten) | — | — | **RUN/STOP** |
+| Move cursor | move the mouse | push the stick | cursor keys (+ shift for left/up) |
+| Click | left button | fire | **space** or **return** |
+| Type (Editor) | — | — | letters/digits, RETURN, DEL |
+| Context help | — | — | **F1** (space closes it) |
+| Back to desktop (close app) | — | — | **RUN/STOP** |
 
-Klik een **dock-icoon** om een app te openen; de menubalk en het werkgebied
-wisselen mee. **RUN/STOP** sluit de actieve app en gaat terug naar het bureaublad
-— zo verlaat je bijvoorbeeld de teksteditor (spatie typt daar immers een spatie).
+Move the cursor to the **top edge** to reveal the menu bar, or the **bottom edge**
+to reveal the dock. Click a **dock icon** to open an app; the menu bar and work
+area switch with it. **RUN/STOP** closes the active app and returns to the desktop
+— that's how you leave the text editor (where space types a space).
 
-> De schermteksten van de applicatie zijn **Engels**; deze README is
-> (voorlopig) Nederlands.
+## Building
 
-## Bouwen
+Requires (paths are set in the `.bat` scripts — adjust as needed): **Java**,
+**Kick Assembler** (`KickAss.jar`), **VICE** (`x64sc`, `c1541`, `cartconv`).
 
-Vereist (paden in de `.bat`-scripts, pas aan waar nodig): **Java**, **Kick
-Assembler** (`KickAss.jar`), **VICE** (`x64sc`, `c1541`, `cartconv`).
-
-**Eenmalig — charset extraheren.** De System-charset (`data/chargen.bin`) is de
-C64 char-ROM en zit **niet** in deze repo (auteursrecht). Haal 'm lokaal uit je
-VICE-installatie:
+**One-time — extract the charset.** The System charset (`data/chargen.bin`) is the
+C64 character ROM and is **not** in this repo (copyright). Extract it locally from
+your VICE installation:
 ```bash
 mkdir -p data
 head -c 2048 "<VICE>/C64/chargen-901225-01.bin" > data/chargen.bin
 ```
-(De eerste 2 KB = de hoofdletter/grafiek-set.)
+(The first 2 KB = the uppercase/graphics set.)
 
 **Disk (D71):**
 ```bat
@@ -102,54 +104,58 @@ build_cart.bat        :: -> build\CommodoreDesk64.crt
 ```bash
 x64sc -cartcrt build/CommodoreDesk64.crt -8 build/CD64.d71
 ```
-Flashen naar echte hardware: kopieer de `.CRT` naar een SD-kaart en flash 'm met
-**EasyProg** op de C64.
+Flashing to real hardware: copy the `.CRT` to an SD card and flash it with
+**EasyProg** on the C64.
 
-> De D71-versie laadt via de trage IEC-bus (~½ minuut op echte hardware). De
-> cartridge-versie boot **instant**: de reset-stub kopieert de OS-image uit ROM
-> naar RAM (`$0801`), zet de cartridge uit en draait als een gewone C64.
+> The D71 version loads over the slow IEC bus (~½ minute on real hardware). The
+> cartridge version boots **instantly**: the reset stub copies the OS image from
+> ROM into RAM (`$0801`), switches the cartridge off and runs as a plain C64.
 
-## Architectuur
+## Architecture
 
 ```
 apps/     Files · Editor · Paint · Calc · Settings
-gui/      shell (desktop/dock/menubalk) · widgets
-gfx/      gfx-primitieven · font · sprite (cursor)
+gui/      shell (desktop/dock/menu bar) · widgets · help
+gfx/      gfx primitives · font · sprite (cursor)
 kernel/   kernel · events · irq (raster 50 Hz) · memory · banking
-hal/      vic · input (muis/joy/kbd) · disk (IEC) · sound (SID)
+hal/      vic · input (mouse/joy/kbd) · disk (IEC) · sound (SID)
 include/  palette · layout · memmap · abi · hardware
 ```
 
-- **Beeld**: hi-res char-mode (40×25). De cursor is hardware-sprite 0.
-- **Systeemklok**: raster-IRQ (50 Hz) pollt input en genereert events.
-- **Geheugen**: draait uit RAM met BASIC/KERNAL uitgebankt; KERNAL wordt tijdelijk
-  ingebankt voor disk-I/O.
-- **Font**: de System-charset zit ingesloten (`data/chargen.bin`) op `$3800`.
+- **Display**: hi-res character mode (40×25). The cursor is hardware sprite 0.
+- **System clock**: a raster IRQ (50 Hz) polls input and generates events.
+- **Memory**: runs from RAM with BASIC/KERNAL banked out; KERNAL is banked back in
+  temporarily for disk I/O.
+- **Font**: the System charset is embedded (`data/chargen.bin`) at `$3800`.
 
-## Instellingen (persistentie)
+## Settings (persistence)
 
-In **Settings** kies je per thema-rol (rand, bureaublad, menubalk, accent,
-selectie) een kleur; **SAVE** schrijft `CD64.CFG` naar de D71. Bij het opstarten
-laadt de OS dat bestand automatisch terug.
+In **Settings** you pick a color per theme role (border, desktop, menu bar,
+accent, selection); **SAVE** writes `CD64.CFG` to the D71. At boot the OS loads
+that file back automatically.
 
-## Bestanden
+## Files
 
-| Bestand | Rol |
+| File | Role |
 |---|---|
-| `disk_main.asm` | entry voor de D71-build (PRG op `$0801`) |
-| `main_cart.asm` | entry voor de EasyFlash-CRT (OS-image + reset-stub) |
-| `build_disk.bat` / `build_cart.bat` | build-scripts |
-| `Commodore-Desk-64-Ontwikkelplan.md` | volledig ontwikkelplan (fases 0–10) |
-| `C64_KICKASS_SKILL.md` | Kick Assembler-werkinstructie |
-| `c64_ka_syntax_checker.py` | statische syntax-check |
+| `disk_main.asm` | entry point for the D71 build (PRG at `$0801`) |
+| `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
+| `build_disk.bat` / `build_cart.bat` | build scripts |
+| `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
+| `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |
+| `c64_ka_syntax_checker.py` | static syntax check |
 
 ## Status
 
-Fases **0–10** afgerond: boot (disk + cart), kernel/IRQ, gfx-primitieven,
-input-HAL, events, desktop-shell, widgets, 5 apps, kleur-personalisatie met
-opslag, en afwerking (splash, geluid, cartridge, docs).
+Phases **0–10** complete: boot (disk + cart), kernel/IRQ, gfx primitives,
+input HAL, events, desktop shell, widgets, 5 apps, color personalization with
+persistence, and finishing (splash, sound, cartridge, docs). Plus F1 context help,
+auto-hiding bars, and apps that fill the full work area.
 
-**Nog open / upgrades:** echte hi-res/multicolor bitmap-Paint; dock-vorm en
-lettertype ook in Settings (variabelen staan klaar); Classic/Bold-fonts; 2×2
-dock-iconen; uitklap-menu's; config in flash i.p.v. disk. Later: **Commodore
-128**-port (alles hardware-specifieks zit in `hal/`).
+**Open / upgrades:** real hi-res/multicolor bitmap Paint; dock shape and font in
+Settings (variables are ready); Classic/Bold fonts; 2×2 dock icons; drop-down
+menus; config in flash instead of on disk. Later: a **Commodore 128** port (all
+hardware-specific code lives in `hal/`).
+
+> The development plan and the Kick Assembler skill document are still in Dutch;
+> the application's on-screen text and this README are English.
