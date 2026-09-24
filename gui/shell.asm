@@ -521,28 +521,70 @@ drawDock:
         sta dockI
 !lp:    lda dockI
         cmp #5
-        bcs !done+
-        lda dockI
+        bcc !go+
+        jmp !done+
+!go:    lda dockI                // slotBase = dockI * 8
         asl
         asl
         asl
         sta dockTmp
+        // TL (base+2, 22)
+        clc
+        adc #2
+        sta a0
+        lda #22
+        sta a1
+        ldx dockI
+        lda icon2TL,x
+        sta a2
+        lda iconColor,x
+        sta a3
+        jsr gfx_PutChar
+        // TR (base+3, 22)
+        lda dockTmp
         clc
         adc #3
         sta a0
         lda #22
         sta a1
         ldx dockI
-        lda iconGlyph,x
+        lda icon2TR,x
         sta a2
         lda iconColor,x
         sta a3
         jsr gfx_PutChar
+        // BL (base+2, 23)
+        lda dockTmp
+        clc
+        adc #2
+        sta a0
+        lda #23
+        sta a1
+        ldx dockI
+        lda icon2BL,x
+        sta a2
+        lda iconColor,x
+        sta a3
+        jsr gfx_PutChar
+        // BR (base+3, 23)
+        lda dockTmp
+        clc
+        adc #3
+        sta a0
+        lda #23
+        sta a1
+        ldx dockI
+        lda icon2BR,x
+        sta a2
+        lda iconColor,x
+        sta a3
+        jsr gfx_PutChar
+        // label (base+1, 24)
         lda dockTmp
         clc
         adc #1
         sta a0
-        lda #23
+        lda #24
         sta a1
         lda dockI
         cmp activeApp
@@ -772,8 +814,12 @@ menuHi: .byte >mDesk, >mFiles, >mEdit, >mPaint, >mCalc, >mSet
 nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet
 nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet
 
-iconGlyph: .byte ICON_FILES, ICON_EDIT, ICON_PAINT, ICON_CALC, ICON_SETUP
 iconColor: .byte ORANGE, WHITE, LIGHT_RED, CYAN, LIGHT_GREEN
+// 2x2 dock-iconen: glyphcodes per kwadrant (TL/TR/BL/BR)
+icon2TL:   .byte 107, 111, 115, 119, 123
+icon2TR:   .byte 108, 112, 116, 120, 124
+icon2BL:   .byte 109, 113, 117, 121, 125
+icon2BR:   .byte 110, 114, 118, 122, 126
 labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet
 labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet
 

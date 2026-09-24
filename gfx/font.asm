@@ -25,7 +25,7 @@
 .const ICON_CALC  = 105
 .const ICON_SETUP = 106
 
-.const UI_GLYPH_COUNT = 11    // FR_* (6) + iconen (5)
+.const UI_GLYPH_COUNT = 31    // FR_* (6) + 1-cel iconen (5) + 2x2-iconen (20)
 
 // font_Init - kopieer de ingesloten System-charset naar $3000,
 //             overlay de UI-glyphs, en richt de VIC op $3000
@@ -95,6 +95,33 @@ frameGlyphs:
         .byte %00000000,%01111100,%01010100,%01111100,%01010100,%01111100,%01010100,%00000000
         // ICON_SETUP (tandwiel)
         .byte %00010000,%01010100,%00111000,%11101110,%00111000,%01010100,%00010000,%00000000
+
+        // ---- 2x2 dock-iconen (codes 107-126), volgorde TL,TR,BL,BR per icoon ----
+        // FILES (map)  107-110
+        .byte $00,$00,$78,$fc,$ff,$c0,$c0,$c0   // TL
+        .byte $00,$00,$00,$00,$fc,$04,$04,$04   // TR
+        .byte $c0,$c0,$c0,$c0,$ff,$00,$00,$00   // BL
+        .byte $04,$04,$04,$04,$fc,$00,$00,$00   // BR
+        // EDIT (document) 111-114
+        .byte $00,$7f,$40,$40,$5e,$40,$5e,$40
+        .byte $00,$f0,$10,$10,$10,$10,$10,$10
+        .byte $5e,$40,$5f,$40,$7f,$00,$00,$00
+        .byte $10,$10,$10,$10,$f0,$00,$00,$00
+        // PAINT (kwast) 115-118
+        .byte $00,$00,$00,$00,$00,$00,$01,$03
+        .byte $06,$0f,$1e,$3c,$78,$f0,$e0,$c0
+        .byte $07,$0f,$1e,$3e,$7e,$7c,$38,$00
+        .byte $80,$00,$00,$00,$00,$00,$00,$00
+        // CALC (rekenmachine) 119-122
+        .byte $00,$7f,$40,$5f,$40,$49,$40,$49
+        .byte $00,$fc,$04,$f4,$04,$24,$04,$24
+        .byte $40,$49,$40,$49,$40,$7f,$00,$00
+        .byte $04,$24,$04,$24,$04,$fc,$00,$00
+        // SETUP (tandwiel) 123-126
+        .byte $01,$11,$19,$0f,$7f,$70,$30,$f0
+        .byte $80,$88,$98,$f0,$fe,$0e,$0c,$0f
+        .byte $f0,$30,$70,$7f,$0f,$19,$11,$01
+        .byte $0f,$0c,$0e,$fe,$f0,$98,$88,$80
 
 //--------------------------------------------------------
 // System-charset (2 KB, hoofdletter/grafiek-set uit de C64 char-ROM),
