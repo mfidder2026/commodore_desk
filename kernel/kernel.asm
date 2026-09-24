@@ -61,7 +61,7 @@ splash_Show:
 .encoding "screencode_upper"
 splTitle: .text "COMMODORE DESK 64"
           .byte $ff
-splVer:   .text "VERSIE 0.9"
+splVer:   .text "VERSION 0.9"
           .byte $ff
 splCopy:  .text "(C) 2026 FREMEN.APP"
           .byte $ff

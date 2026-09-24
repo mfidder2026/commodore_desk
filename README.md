@@ -64,9 +64,14 @@ thema-rol aan een van deze 16.
 | Cursor bewegen | beweeg de muis | duw de stick | cursortoetsen (+ shift voor links/omhoog) |
 | Klik | linkerknop | fire | **spatie** of **return** |
 | Typen (Editor) | — | — | letters/cijfers, RETURN, DEL |
+| Terug naar bureaublad (app sluiten) | — | — | **RUN/STOP** |
 
 Klik een **dock-icoon** om een app te openen; de menubalk en het werkgebied
-wisselen mee.
+wisselen mee. **RUN/STOP** sluit de actieve app en gaat terug naar het bureaublad
+— zo verlaat je bijvoorbeeld de teksteditor (spatie typt daar immers een spatie).
+
+> De schermteksten van de applicatie zijn **Engels**; deze README is
+> (voorlopig) Nederlands.
 
 ## Bouwen
 

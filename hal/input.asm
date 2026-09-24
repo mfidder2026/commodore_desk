@@ -444,4 +444,4 @@ keyTab:
         .byte $39,$09,$0a,$30,$0d,$0b,$0f,$0e   // kol4: 9 I J 0 M K O N
         .byte $2b,$10,$0c,$2d,$2e,$3a,$00,$2c   // kol5: + P L - . : @ ,
         .byte $00,$2a,$3b,$00,$00,$3d,$00,$2f   // kol6: PND * ; HOME RSHIFT = UP /
-        .byte $31,$00,$00,$32,$20,$00,$11,$00   // kol7: 1 <- CTRL 2 SPACE C= Q STOP
+        .byte $31,$00,$00,$32,$20,$00,$11,$82   // kol7: 1 <- CTRL 2 SPACE C= Q STOP($82=EXIT)

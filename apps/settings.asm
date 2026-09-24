@@ -202,21 +202,21 @@ roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel
 roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
 
 .encoding "screencode_upper"
-rRand: .text "RAND"
+rRand: .text "BORDER"
        .byte $ff
-rDesk: .text "BUREAUBLAD"
+rDesk: .text "DESKTOP"
        .byte $ff
-rMenu: .text "MENUBALK"
+rMenu: .text "MENU BAR"
        .byte $ff
 rAcc:  .text "ACCENT"
        .byte $ff
-rSel:  .text "SELECTIE"
+rSel:  .text "SELECT"
        .byte $ff
-sKies: .text "KIES EEN KLEUR:"
+sKies: .text "PICK A COLOR:"
        .byte $ff
 sSave: .text "SAVE"
        .byte $ff
 sSaveHint: .text "-> CD64.CFG"
            .byte $ff
-sSaved: .text "OPGESLAGEN "
+sSaved: .text "SAVED      "
         .byte $ff

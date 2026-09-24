@@ -30,6 +30,7 @@ ed_Init:
 //--------------------------------------------------------
 ed_Draw:
         gfxDrawBox(2, 5, 36, 12, LIGHT_GREY)
+        gfxDrawText(edHint, 3, 18, GREY)
         lda #0
         sta edRowIdx
 rowLoop:
@@ -220,4 +221,9 @@ edChar:   .byte 0
 edTmp:    .byte 0
 edRowIdx: .byte 0
 edColIdx: .byte 0
+
+.encoding "screencode_upper"
+edHint:   .text "RUN/STOP = BACK TO DESKTOP"
+          .byte $ff
+
 edBuf:    .fill EDW * EDH, $20

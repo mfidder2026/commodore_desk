@@ -170,7 +170,7 @@ fillBlank:
         jmp gfx_FillRect         // rts van FillRect keert terug naar aanroeper
 
 sEmpty:  .encoding "screencode_upper"
-         .text "GEEN BESTANDEN"
+         .text "NO FILES"
          .byte $ff
 sUp2:    .text "UP"
          .byte $ff

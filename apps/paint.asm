@@ -226,7 +226,7 @@ pnColIdx:  .byte 0
 pnTmp:     .byte 0
 
 .encoding "screencode_upper"
-sKleur:    .text "KLEUR:"
+sKleur:    .text "COLOR:"
            .byte $ff
 
 paintBuf:  .fill PNW * PNH, $ff

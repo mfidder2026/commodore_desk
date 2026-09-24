@@ -35,12 +35,18 @@ shell_Run:
         jmp !loop-
 !k:     cmp #EVT_KEY
         bne !loop-
+        lda evtA
+        cmp #$82                 // RUN/STOP = back to desktop (works in any app)
+        bne !notExit+
+        jsr exitToDesktop
+        jmp !loop-
+!notExit:
         lda activeApp
-        cmp #1                   // editor krijgt de toets (spatie typt daar)
+        cmp #1                   // editor gets the key (space types there)
         bne !notEd+
         jsr ed_Key
         jmp !loop-
-!notEd: lda evtA                 // SPATIE of RETURN elders = klik op cursorpositie
+!notEd: lda evtA                 // SPACE or RETURN elsewhere = click at cursor
         cmp #$20
         beq !click+
         cmp #$80
@@ -500,6 +506,14 @@ num2dec:
         rts
 
 //--------------------------------------------------------
+// exitToDesktop - active app sluiten, terug naar bureaublad.
+//--------------------------------------------------------
+exitToDesktop:
+        lda #$ff
+        sta activeApp
+        jmp shell_DrawAll
+
+//--------------------------------------------------------
 // onMouseDown - klik afhandelen (evtA=kol, evtB=rij).
 //--------------------------------------------------------
 onMouseDown:
@@ -687,7 +701,7 @@ mCalc:  .text "CALC   FILE   EDIT"
 mSet:   .text "SETTINGS   FILE   EDIT   VIEW"
         .byte $ff
 
-nDesk:  .text "BUREAUBLAD"
+nDesk:  .text "DESKTOP"
         .byte $ff
 nFiles: .text "FILE MANAGER"
         .byte $ff
@@ -704,9 +718,9 @@ sReady: .text "READY"
         .byte $ff
 sFree:  .text "38K FREE"
         .byte $ff
-sDeskHint: .text "KLIK EEN ICOON IN DE DOCK"
+sDeskHint: .text "CLICK AN ICON IN THE DOCK"
            .byte $ff
-sStub:     .text "ONDER CONSTRUCTIE"
+sStub:     .text "UNDER CONSTRUCTION"
            .byte $ff
 
 sTelOp:  .text "TEL OP"
