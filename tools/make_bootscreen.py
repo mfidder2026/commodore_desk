@@ -73,8 +73,9 @@ ctext("VERSION 1.0   -   VIC-II 320X200",144,LGREY,1)
 ctext("(C) 2026 FREMEN IT WORKERS",160,WHITE,1)
 
 # ---- footer strip (rows 23-24) ----
+# text on row 23; row 24 (py 192-199) is left blank for the Knight Rider LED
 fill(0,184,320,200,BLUE)
-ctext("PRESS ANY KEY TO START",188,YELLOW,1)
+ctext("LOADING - PLEASE WAIT",184,YELLOW,1)
 
 # ---- emit hi-res bitmap + screen (max 2 colours/cell) ----
 bitmap=bytearray(8000); screen=bytearray(1000)

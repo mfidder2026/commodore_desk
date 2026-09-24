@@ -97,8 +97,8 @@ bootStart:
         lda #$c8                 // multicolor UIT, 40 kolommen (hi-res)
         sta $d016
         cli
-        // ---- wacht op een willekeurige toets ----
-        jsr waitKey
+        // ---- scannend laadlampje (auto, geen toets nodig) ----
+        jsr scanLed
         // ---- keten-stub naar $0334 kopiëren en starten ----
         ldx #0
 !c:     lda chainSrc,x
@@ -109,29 +109,104 @@ bootStart:
         jmp $0334
 
 //--------------------------------------------------------
-// waitKey - wacht tot een toets ingedrukt is (CIA1-matrix).
+// scanLed - een licht dat op de onderste regel heen en weer scant
+//           terwijl "geladen" wordt (~2,5 sec, daarna keten-load).
+//           Rij 24 (py 192-199) van de bitmap; kleur lichtrood op blauw.
 //--------------------------------------------------------
-// Wacht op een toets OF ~4 seconden time-out (nooit blijven hangen).
-waitKey:
-        sei                      // KERNAL-IRQ mag $DC00 niet overschrijven
-        lda #$00
-        sta $dc00                // alle kolommen laag
-        lda #8
-        sta wkOuter
-!o:     ldx #0
-!x:     ldy #0
-!y:     lda $dc01
-        cmp #$ff
-        bne !done+               // toets ingedrukt -> door
-        iny
-        bne !y-
+.label krPtr = $fb               // zeropage-pointer
+scanLed:
+        ldx #0                   // video-matrix rij 24 -> lichtrood/blauw
+        lda #$a6
+!m:     sta $43c0,x
         inx
-        bne !x-
-        dec wkOuter
-        bne !o-
-!done:  cli
+        cpx #40
+        bne !m-
+        lda #0
+        sta krPos
+        lda #1
+        sta krDir
+        lda #60
+        sta krFrames
+krlp:   jsr krDraw
+        jsr krDelay
+        lda krDir
+        bmi !left+
+        inc krPos                // naar rechts
+        lda krPos
+        cmp #37
+        bcc !nx+
+        lda #$ff
+        sta krDir
+        jmp !nx+
+!left:  dec krPos                // naar links
+        lda krPos
+        bne !nx+
+        lda #1
+        sta krDir
+!nx:    dec krFrames
+        bne krlp
         rts
-wkOuter: .byte 0
+
+// krDraw - wis rij-24 bitmap en teken het lampje (3 cellen) op krPos.
+krDraw:
+        lda krPos                // krPtr = $7E00 + krPos*8
+        sta krTmp
+        lda #0
+        sta krTmp+1
+        asl krTmp
+        rol krTmp+1
+        asl krTmp
+        rol krTmp+1
+        asl krTmp
+        rol krTmp+1
+        lda krTmp
+        clc
+        adc #<$7e00
+        sta krPtr
+        lda krTmp+1
+        adc #>$7e00
+        sta krPtr+1
+        ldx #0                   // rij-24 bitmap wissen (320 bytes)
+        lda #0
+!a:     sta $7e00,x
+        inx
+        bne !a-
+        ldx #0
+!b:     sta $7f00,x
+        inx
+        cpx #$40
+        bne !b-
+        ldy #0                   // lampje: 3 cellen, rijen 2-5
+!d:     tya
+        and #7
+        cmp #2
+        bcc !off+
+        cmp #6
+        bcs !off+
+        lda #$ff
+        sta (krPtr),y
+        jmp !ny+
+!off:   lda #0
+        sta (krPtr),y
+!ny:    iny
+        cpy #24
+        bne !d-
+        rts
+
+krDelay:
+        ldx #0
+!o:     ldy #0
+!i:     iny
+        bne !i-
+        inx
+        cpx #$1a
+        bne !o-
+        rts
+
+krPos:    .byte 0
+krDir:    .byte 0
+krFrames: .byte 0
+krTmp:    .byte 0, 0
 
 //--------------------------------------------------------
 // Ingesloten bootscherm (multicolor-bitmap, uit design/bootscreen.png).

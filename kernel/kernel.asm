@@ -23,7 +23,6 @@ kernel_Init:
         jsr osvars_Init          // runtime-defaults
         jsr cfg_Load             // CD64.CFG (indien aanwezig) overschrijft ze
         jsr font_Apply           // gekozen font toepassen (na cfg_Load)
-        jsr theme_Apply          // rand/achtergrond naar de VIC
         jsr sid_Init
         // (bootscherm wordt door het aparte BOOT-laadprogramma getoond)
         jsr evt_Init
@@ -31,6 +30,9 @@ kernel_Init:
         jsr input_Init
         jsr irq_Install          // bankt ROMs uit, zet IRQ aan, cli
         jsr shell_Init           // teken het bureaublad (IRQ draait al)
+        jsr theme_Apply          // rand/achtergrond -> VIC
+        lda #$1b                 // bureaublad klaar -> scherm aan (DEN)
+        sta VIC_CTRL1
         jmp shell_Run            // hoofdlus (keert niet terug)
 
 // theme_Apply - rand- en achtergrondkleur naar de VIC schrijven.

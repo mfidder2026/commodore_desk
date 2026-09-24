@@ -19,8 +19,10 @@ vic_Init:
         // Scherm-RAM $0400, charset $1000 (Fase 2 vervangt dit door eigen font).
         lda #$15
         sta VIC_MEM
-        // Tekstmodus: DEN aan, 25 rijen, y-scroll 3.
-        lda #$1b
+        // Tekstmodus, 25 rijen, y-scroll 3 - maar DEN UIT (scherm blank).
+        // De kernel zet DEN pas aan als het bureaublad getekend is, zodat
+        // je geen BASIC-/rommelscherm ziet flitsen tijdens het opstarten.
+        lda #$0b
         sta VIC_CTRL1
         // 40 kolommen, multicolor uit.
         lda #$c8
@@ -28,9 +30,9 @@ vic_Init:
         // Sprites uit.
         lda #0
         sta SPR_ENABLE
-        // Thema-kleuren.
-        lda #THEME_BORDER
+        // Zwart tijdens de blanke opstartfase (rustige overgang vanaf het
+        // zwarte bootscherm); de kernel zet het thema erop bij DEN-aan.
+        lda #BLACK
         sta BORDER_COL
-        lda #THEME_DESKTOP_BG
         sta BG_COL0
         rts
