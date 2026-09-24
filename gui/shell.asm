@@ -22,12 +22,16 @@ shell_Init:
         sta wListSel
         lda #$ff
         sta wDlgResult
+        lda #0                   // balken standaard verborgen
+        sta menuShown
+        sta dockShown
         jsr shell_DrawAll
         rts
 
 // shell_Run - hoofdlus.
 shell_Run:
-!loop:  jsr evt_Poll
+!loop:  jsr checkBars
+        jsr evt_Poll
         cmp #EVT_MOUSEDOWN
         bne !k+
         jsr sid_Click
@@ -66,13 +70,92 @@ shell_DrawAll:
         lda TH_deskbg
         sta a2
         jsr gfx_Cls
-        jsr drawMenubar
         jsr drawContent
-        jsr drawStatus
+        jsr drawStatus           // statusbalk blijft altijd zichtbaar
+        lda menuShown
+        beq !nm+
+        jsr drawMenubar
+!nm:    lda dockShown
+        beq !nd+
         jsr drawDock
-        lda #13
+!nd:    lda #13
         sta $07f8                // sprite 0 pointer herstellen
         rts
+
+//--------------------------------------------------------
+// checkBars - toon/verberg de menubalk (bovenrand) en de dock
+//             (onderrand) op basis van de cursorpositie.
+//--------------------------------------------------------
+checkBars:
+        lda crsY
+        sec
+        sbc #50
+        lsr
+        lsr
+        lsr
+        sta cbRow                // cursorrij 0-24
+        // menubalk: rij 0
+        lda cbRow
+        bne !topHide+
+        lda menuShown
+        bne !bottom+
+        lda #1
+        sta menuShown
+        jsr drawMenubar
+        jmp !bottom+
+!topHide:
+        lda menuShown
+        beq !bottom+
+        lda #0
+        sta menuShown
+        jsr clearRow0
+!bottom:
+        // dock: rij 22-24
+        lda cbRow
+        cmp #22
+        bcc !dockHide+
+        lda dockShown
+        bne !done+
+        lda #1
+        sta dockShown
+        jsr drawDock
+        jmp !done+
+!dockHide:
+        lda dockShown
+        beq !done+
+        lda #0
+        sta dockShown
+        jsr clearDock
+!done:  rts
+
+clearRow0:
+        lda #0
+        sta a0
+        sta a1
+        lda #40
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_deskbg
+        sta a5
+        jmp gfx_FillRect
+
+clearDock:
+        lda #0
+        sta a0
+        lda #22
+        sta a1
+        lda #40
+        sta a2
+        lda #3
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_deskbg
+        sta a5
+        jmp gfx_FillRect
 
 //--------------------------------------------------------
 drawMenubar:
@@ -671,6 +754,9 @@ handleWidgetClick:
 activeApp:   .byte $ff
 dockI:       .byte 0
 dockTmp:     .byte 0
+menuShown:   .byte 0
+dockShown:   .byte 0
+cbRow:       .byte 0
 wCounter:    .byte 0
 wSound:      .byte 0
 wListTop:    .byte 0
@@ -724,7 +810,7 @@ sReady: .text "READY"
         .byte $ff
 sFree:  .text "38K FREE"
         .byte $ff
-sDeskHint: .text "CLICK AN ICON IN THE DOCK"
+sDeskHint: .text "TOP EDGE=MENU  BOTTOM=DOCK"
            .byte $ff
 sStub:     .text "UNDER CONSTRUCTION"
            .byte $ff
