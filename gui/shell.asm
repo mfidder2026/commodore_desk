@@ -388,8 +388,21 @@ menu_Draw:
 menu_Open: {
         jsr menu_Draw
 wait:   jsr evt_Poll
-        cmp #EVT_MOUSEDOWN
+        cmp #EVT_MOUSEDOWN        // muis/joystick-klik
+        beq doClick
+        cmp #EVT_KEY             // toetsenbord
         bne wait
+        lda evtA
+        cmp #$20                 // spatie = klik op cursorpositie
+        beq keyClick
+        cmp #$80                 // return = klik
+        beq keyClick
+        cmp #$82                 // ESC/RUN-STOP = sluiten
+        beq close
+        jmp wait
+keyClick:
+        jsr cursorToCell         // cursor -> evtA (kol), evtB (rij)
+doClick:
         lda evtA                 // buiten kolommen 1-14 -> sluiten
         cmp #1
         bcc close
