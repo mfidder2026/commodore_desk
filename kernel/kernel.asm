@@ -25,47 +25,13 @@ kernel_Init:
         jsr font_Apply           // gekozen font toepassen (na cfg_Load)
         jsr theme_Apply          // rand/achtergrond naar de VIC
         jsr sid_Init
-        jsr splash_Show          // opstartscherm + korte pauze
+        // (bootscherm wordt door het aparte BOOT-laadprogramma getoond)
         jsr evt_Init
         jsr spr_CursorInit       // pijl-sprite (data + enable)
         jsr input_Init
         jsr irq_Install          // bankt ROMs uit, zet IRQ aan, cli
         jsr shell_Init           // teken het bureaublad (IRQ draait al)
         jmp shell_Run            // hoofdlus (keert niet terug)
-
-//--------------------------------------------------------
-// splash_Show - kort opstartscherm.
-//--------------------------------------------------------
-splash_Show:
-        lda #BLACK
-        sta BORDER_COL
-        sta BG_COL0
-        sta a2
-        jsr gfx_Cls
-        gfxDrawText(splTitle, 11, 10, CYAN)
-        gfxDrawText(splVer,   15, 12, WHITE)
-        gfxDrawText(splCopy,  10, 22, GREY)
-        // pauze via een simpele tel-lus (geen VIC-afhankelijkheid)
-        lda #6
-        sta tmp0
-!o:     ldx #0
-!m:     ldy #0
-!i:     dey
-        bne !i-
-        inx
-        bne !m-
-        dec tmp0
-        bne !o-
-        jsr theme_Apply          // rand/achtergrond terug
-        rts
-
-.encoding "screencode_upper"
-splTitle: .text "COMMODORE DESK 64"
-          .byte $ff
-splVer:   .text "VERSION 0.9"
-          .byte $ff
-splCopy:  .text "(C) 2026 FREMEN.APP"
-          .byte $ff
 
 // theme_Apply - rand- en achtergrondkleur naar de VIC schrijven.
 theme_Apply:

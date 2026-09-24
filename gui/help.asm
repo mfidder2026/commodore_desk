@@ -88,19 +88,19 @@ hd2: .text "AN APP.  PRESS F1 FOR HELP."
      .byte $ff
 hf1: .text "CLICK A FILE TO SELECT."
      .byte $ff
-hf2: .text "UP/DN SCROLL. RUN/STOP EXITS."
+hf2: .text "UP/DN SCROLL. ESC EXITS."
      .byte $ff
 he1: .text "TYPE TO EDIT TEXT."
      .byte $ff
-he2: .text "PRESS RUN/STOP TO EXIT."
+he2: .text "PRESS ESC TO EXIT."
      .byte $ff
 hp1: .text "PICK A COLOR, CLICK CANVAS."
      .byte $ff
-hp2: .text "RUN/STOP EXITS."
+hp2: .text "ESC EXITS."
      .byte $ff
 hc1: .text "CLICK KEYS TO CALCULATE."
      .byte $ff
-hc2: .text "C CLEARS. RUN/STOP EXITS."
+hc2: .text "C CLEARS. ESC EXITS."
      .byte $ff
 hs1: .text "CLICK A ROLE, THEN A COLOR."
      .byte $ff

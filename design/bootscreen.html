@@ -1,0 +1,382 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<title>Commodore Desk 64 - Splash Screen</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=VT323&amp;display=swap" rel="stylesheet">
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0088FF; /* VIC-II Light Blue border color */
+    overflow: hidden;
+  }
+
+  /* Scaled exact 320x200 pixelated viewport */
+  #c64-wrapper {
+    position: relative;
+    width: 320px;
+    height: 200px;
+    transform: scale(2.6);
+    transform-origin: center center;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.85);
+    font-family: 'VT323', monospace;
+    user-select: none;
+    overflow: hidden;
+    background-color: #0088FF;
+  }
+
+  @media (max-height: 560px), (max-width: 880px) {
+    #c64-wrapper {
+      transform: scale(2);
+    }
+  }
+
+  @media (max-height: 420px), (max-width: 660px) {
+    #c64-wrapper {
+      transform: scale(1.4);
+    }
+  }
+
+  canvas#desk-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 320px;
+    height: 200px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+    z-index: 1;
+  }
+
+  .c64-overlay {
+    position: absolute;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+<div id="c64-wrapper">
+<!-- VIC-II Native 320x200 Pixelated Retro Physical Desk Surface (Bureaublad) Canvas -->
+<canvas height="200" id="desk-canvas" width="320"></canvas>
+<!-- Top status line (VIC-II Light Grey #BBBBBB background, Dark Blue #0000AA text) -->
+<div class="c64-overlay" style="top: 0px; left: 0px; width: 320px; height: 14px; background-color: rgb(187, 187, 187); color: rgb(0, 0, 170); font-size: 11px; line-height: 14px; text-align: center; letter-spacing: 0.5px;">
+    **** COMMODORE 64 PERSONAL COMPUTER 64K RAM SYSTEM ****
+  </div>
+<!-- Central framed box: approx 1/3 of the screen height (~66px tall), centered vertically, blue #0000AA inside -->
+<div class="c64-overlay" id="central-box" style="left: 16px; top: 67px; width: 288px; height: 66px; background-color: #0000AA; border: 2px solid #0088FF; box-shadow: inset 0 0 0 1px #FFFFFF; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+<!-- Header row with 4-color VIC-II tile, COMMODORE DESK, and 64 -->
+<div style="display: flex; align-items: center; justify-content: space-between; height: 26px;">
+<div style="display: flex; align-items: center; gap: 8px;">
+<!-- 4-color VIC-II logo tile (Red, Green, Cyan, Yellow) -->
+<div style="display: grid; grid-template-columns: 8px 8px; grid-template-rows: 8px 8px; gap: 2px;">
+<div style="background-color: #880000; width: 8px; height: 8px;"></div>
+<div style="background-color: #00CC55; width: 8px; height: 8px;"></div>
+<div style="background-color: #AAFFEE; width: 8px; height: 8px;"></div>
+<div style="background-color: #EEEE77; width: 8px; height: 8px;"></div>
+</div>
+<span style="color: #FFFFFF; font-size: 19px; font-weight: bold; letter-spacing: 1px;" class="">COMMODORE DESK</span>
+</div>
+<span style="font-size: 34px; font-weight: bold; color: #EEEE77; text-shadow: 2px 2px #000000; line-height: 26px; padding-right: 2px;" class="">64</span>
+</div>
+<!-- Subtitle lines inside central box -->
+<div style="display: flex; flex-direction: column; gap: 1px;">
+<div style="color: #AAFFEE; font-size: 11px; line-height: 12px; letter-spacing: 0.5px;" class="">GRAPHICAL DESKTOP ENVIRONMENT</div>
+<div style="color: #FFFFFF; font-size: 11px; line-height: 12px; letter-spacing: 0.5px;" class="">VERSION 1.0 FOR VIC-II CHIPSET (320x200)</div>
+</div>
+</div>
+<!-- Bottom footer bar (VIC-II Light Grey #BBBBBB background, Dark Blue #0000AA text) -->
+<div class="c64-overlay" style="bottom: 0px; left: 0px; width: 320px; height: 14px; background-color: rgb(187, 187, 187); color: rgb(0, 0, 170); font-size: 11px; line-height: 14px; padding-left: 6px; letter-spacing: 0.5px;">    (C) 1982-2026 CBM CORP.  PRESS ANY KEY WHEN LOADING IS FINISHED ■
+  </div>
+</div>
+<script>
+  // Authentic Commodore 64 VIC-II 16-Color Palette Desk Surface & Physical Office Items
+  (function renderC64Desk() {
+    const canvas = document.getElementById('desk-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = 320;
+    const height = 200;
+
+    // Strict VIC-II Palette (16 colors)
+    const C64 = {
+      BLACK:      [0,   0,   0],    // 0
+      WHITE:      [255, 255, 255],  // 1
+      RED:        [136, 0,   0],    // 2
+      CYAN:       [170, 255, 238],  // 3
+      PURPLE:     [204, 68,  204],  // 4
+      GREEN:      [0,   204, 85],   // 5
+      BLUE:       [0,   0,   170],  // 6
+      YELLOW:     [238, 238, 119],  // 7
+      ORANGE:     [221, 136, 85],   // 8
+      BROWN:      [102, 68,  0],    // 9
+      LIGHT_RED:  [255, 119, 119],  // 10
+      DARK_GREY:  [51,  51,  51],   // 11
+      GREY:       [119, 119, 119],  // 12
+      LIGHT_GREEN:[170, 255, 102],  // 13
+      LIGHT_BLUE: [0,   136, 255],  // 14
+      LIGHT_GREY: [187, 187, 187]   // 15
+    };
+
+    const imgData = ctx.createImageData(width, height);
+    const data = imgData.data;
+
+    function setPixel(x, y, rgb) {
+      if (x < 0 || x >= width || y < 0 || y >= height) return;
+      const index = (y * width + x) * 4;
+      data[index]     = rgb[0];
+      data[index + 1] = rgb[1];
+      data[index + 2] = rgb[2];
+      data[index + 3] = 255;
+    }
+
+    function fillRect(rx, ry, rw, rh, rgb) {
+      for (let y = ry; y < ry + rh; y++) {
+        for (let x = rx; x < rx + rw; x++) {
+          setPixel(x, y, rgb);
+        }
+      }
+    }
+
+    // 1. Base Desk: Rich retro wooden office desk surface with grain & dithering
+    // Bayer 4x4 matrix for VIC-II texture dithering
+    const bayer4x4 = [
+      [ 0,  8,  2, 10],
+      [12,  4, 14,  6],
+      [ 3, 11,  1,  9],
+      [15,  7, 13,  5]
+    ].map(row => row.map(v => v / 16));
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        // Wood grain flow with diagonal planks and subtle grain bands
+        const woodWave = Math.sin(y * 0.12 + Math.sin(x * 0.04) * 1.5);
+        const plankLine = (y % 38 === 0) || ((x + y * 2) % 160 === 0);
+        
+        if (plankLine) {
+          setPixel(x, y, C64.BLACK);
+        } else {
+          const dither = bayer4x4[y % 4][x % 4];
+          if (woodWave > 0.3) {
+            setPixel(x, y, (dither > 0.45) ? C64.ORANGE : C64.BROWN);
+          } else if (woodWave > -0.2) {
+            setPixel(x, y, (dither > 0.7) ? C64.ORANGE : C64.BROWN);
+          } else {
+            setPixel(x, y, C64.BROWN);
+          }
+        }
+      }
+    }
+
+    // 2. Leather/Textured Desk Mat (Onderlegger) in the center-top and lower work area
+    // Bounds of large classic executive desk pad: x: 12 to 308, y: 18 to 184
+    const padX = 12, padY = 18, padW = 296, padH = 166;
+    for (let y = padY; y < padY + padH; y++) {
+      for (let x = padX; x < padX + padW; x++) {
+        const isBorder = (x === padX || x === padX + padW - 1 || y === padY || y === padY + padH - 1);
+        const isInnerBorder = (x === padX + 1 || x === padX + padW - 2 || y === padY + 1 || y === padY + padH - 2);
+        
+        if (isBorder) {
+          setPixel(x, y, C64.BLACK);
+        } else if (isInnerBorder) {
+          setPixel(x, y, C64.LIGHT_GREY); // Inset stitched/embossed desk pad rail
+        } else {
+          // Dark charcoal leather texture dither
+          const d = (x ^ y) & 1;
+          setPixel(x, y, d ? C64.DARK_GREY : C64.BLACK);
+        }
+      }
+    }
+
+    // Drop shadow helper for physical desk stationery
+    function drawShadow(sx, sy, sw, sh) {
+      for (let y = sy; y < sy + sh; y++) {
+        for (let x = sx; x < sx + sw; x++) {
+          if ((x + y) % 2 === 0) {
+            setPixel(x, y, C64.BLACK);
+          }
+        }
+      }
+    }
+
+    // 3. Pixel Desk Item A: Top-left Post-it note ("TODO: BOOT C64")
+    // Placed around x: 18, y: 22, size: 52x38
+    drawShadow(21, 25, 52, 38);
+    fillRect(18, 22, 52, 38, C64.YELLOW);
+    // Yellow note top adhesive darker strip
+    fillRect(18, 22, 52, 4, C64.ORANGE);
+    // Dark brown/black scribbled notes simulating "TODO: BOOT C64"
+    const postIt1Lines = [
+      { y: 29, x1: 22, x2: 64, dashed: [4, 2, 8, 2, 12] },
+      { y: 34, x1: 22, x2: 58, dashed: [6, 2, 14, 2, 4] },
+      { y: 39, x1: 22, x2: 66, dashed: [10, 2, 6, 2, 16] },
+      { y: 44, x1: 22, x2: 48, dashed: [8, 3, 7] },
+      { y: 49, x1: 22, x2: 60, dashed: [5, 2, 10, 2, 8] }
+    ];
+    postIt1Lines.forEach(line => {
+      let curX = line.x1;
+      let draw = true;
+      line.dashed.forEach(len => {
+        if (draw) {
+          for (let px = curX; px < curX + len && px <= line.x2; px++) {
+            setPixel(px, line.y, C64.DARK_GREY);
+          }
+        }
+        curX += len;
+        draw = !draw;
+      });
+    });
+
+    // Pin or fold in corner of sticky note
+    fillRect(18, 22, 3, 3, C64.WHITE);
+    fillRect(68, 58, 2, 2, C64.ORANGE);
+
+    // 4. Pixel Desk Item B: Top-right Retro Pocket Calculator
+    // Placed around x: 250, y: 22, size: 48x42
+    drawShadow(253, 24, 48, 42);
+    // Body casing
+    fillRect(250, 22, 48, 42, C64.GREY);
+    // Outer border
+    for (let bx = 250; bx < 298; bx++) {
+      setPixel(bx, 22, C64.LIGHT_GREY);
+      setPixel(bx, 63, C64.BLACK);
+    }
+    for (let by = 22; by < 64; by++) {
+      setPixel(250, by, C64.LIGHT_GREY);
+      setPixel(297, by, C64.BLACK);
+    }
+    // Solar cell / brand strip
+    fillRect(254, 25, 40, 3, C64.DARK_GREY);
+    setPixel(258, 26, C64.RED);
+    setPixel(260, 26, C64.CYAN);
+
+    // LCD display window (Cyan/Light-green retro digital glow)
+    fillRect(254, 30, 40, 8, C64.BLACK);
+    fillRect(255, 31, 38, 6, C64.CYAN);
+    // 7-segment digits simulation: "64.00"
+    const digits = [266, 272, 278, 284, 290];
+    digits.forEach((dx, i) => {
+      setPixel(dx, 33, C64.BLACK);
+      setPixel(dx + 1, 33, C64.BLACK);
+      setPixel(dx, 34, C64.BLACK);
+      setPixel(dx + 1, 35, C64.BLACK);
+      if (i === 2) setPixel(dx - 2, 36, C64.BLACK); // decimal point
+    });
+
+    // Calculator Keypad Grid: 4 rows x 5 columns
+    const kxStart = 254, kyStart = 41;
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 5; col++) {
+        const kx = kxStart + col * 8;
+        const ky = kyStart + row * 5;
+        // Key cap
+        const keyColor = (row === 3 && col === 4) ? C64.RED : (col === 4 ? C64.ORANGE : C64.LIGHT_GREY);
+        fillRect(kx, ky, 6, 4, keyColor);
+        setPixel(kx, ky, C64.WHITE);
+        setPixel(kx + 5, ky + 3, C64.DARK_GREY);
+      }
+    }
+
+    // 5. Pixel Desk Item C: Ballpoint Pen / Commodore Stylus across top-center (x: 82 to 238, y: 38)
+    drawShadow(85, 42, 150, 4);
+    // Pen Barrel (Dark Grey / Black body with C64 Cyan & Red accents)
+    // Tapered nib on the left
+    setPixel(84, 40, C64.GREY);
+    setPixel(85, 39, C64.LIGHT_GREY);
+    setPixel(85, 40, C64.LIGHT_GREY);
+    setPixel(85, 41, C64.LIGHT_GREY);
+    fillRect(86, 39, 6, 3, C64.CYAN); // Nib holder
+    fillRect(92, 38, 120, 5, C64.BLUE); // Main barrel in Commodore Blue
+    // Highlight streak on pen
+    for (let hx = 92; hx < 212; hx++) {
+      setPixel(hx, 39, C64.LIGHT_BLUE);
+    }
+    // Metallic bands & Red clicker end
+    fillRect(130, 38, 3, 5, C64.WHITE);
+    fillRect(212, 38, 4, 5, C64.LIGHT_GREY);
+    fillRect(216, 39, 6, 3, C64.RED);
+    // Pocket clip (Light Grey)
+    fillRect(195, 36, 16, 2, C64.LIGHT_GREY);
+    setPixel(195, 37, C64.WHITE);
+
+    // 6. Pixel Desk Item D: Bottom-Left Ruler (Liniaal) with millimeter/centimeter tick marks
+    // Positioned below central box at x: 20, y: 146, length 170px, width 14px
+    drawShadow(23, 149, 172, 14);
+    // Ruler base: classic boxwood / amber acrylic (#EEEE77 and #DD8855)
+    fillRect(20, 146, 170, 13, C64.YELLOW);
+    // Beveled bottom edge
+    fillRect(20, 158, 170, 2, C64.ORANGE);
+    // Top reflective highlight
+    for (let rx = 20; rx < 190; rx++) {
+      setPixel(rx, 146, C64.WHITE);
+    }
+    // Ruler millimeter and centimeter tick marks along top edge
+    for (let tx = 24; tx < 186; tx += 2) {
+      const idx = (tx - 24) / 2;
+      let tickHeight = 2;
+      if (idx % 10 === 0) {
+        tickHeight = 6; // Major cm mark
+        // Centimeter number dot
+        setPixel(tx - 1, 153, C64.BLACK);
+      } else if (idx % 5 === 0) {
+        tickHeight = 4; // Half-cm mark
+      }
+      for (let ty = 147; ty < 147 + tickHeight; ty++) {
+        setPixel(tx, ty, C64.BLACK);
+      }
+    }
+    // Small stamped text on ruler: "VIC-320 CM"
+    for (let dot = 140; dot < 175; dot += 3) {
+      setPixel(dot, 155, C64.BROWN);
+    }
+
+    // 7. Pixel Desk Item E: Bottom-Right Post-it note ("SYS 64738" / Commodore reset vector)
+    // Placed around x: 218, y: 142, size: 70x36
+    drawShadow(221, 145, 70, 36);
+    fillRect(218, 142, 70, 36, C64.YELLOW);
+    // Adhesive top strip
+    fillRect(218, 142, 70, 4, C64.ORANGE);
+    // Text scribbles simulating "SYS 64738" + "READY."
+    const postIt2Lines = [
+      { y: 149, x1: 224, x2: 278, dashed: [8, 3, 6, 2, 12, 3, 10] },
+      { y: 154, x1: 224, x2: 282, dashed: [14, 3, 10, 2, 8] },
+      { y: 159, x1: 224, x2: 268, dashed: [6, 2, 12, 3, 10] },
+      { y: 164, x1: 224, x2: 280, dashed: [10, 3, 16, 2, 8] },
+      { y: 169, x1: 224, x2: 254, dashed: [12, 3, 8] }
+    ];
+    postIt2Lines.forEach(line => {
+      let curX = line.x1;
+      let draw = true;
+      line.dashed.forEach(len => {
+        if (draw) {
+          for (let px = curX; px < curX + len && px <= line.x2; px++) {
+            setPixel(px, line.y, C64.DARK_GREY);
+          }
+        }
+        curX += len;
+        draw = !draw;
+      });
+    });
+    // Curled bottom right corner of post-it
+    fillRect(285, 175, 3, 3, C64.ORANGE);
+    setPixel(287, 177, C64.BLACK);
+
+    ctx.putImageData(imgData, 0, 0);
+  })();
+</script>
+
+
+</body></html>

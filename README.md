@@ -23,10 +23,13 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
 
 ## Features
 
-- **Desktop shell**: desktop, contextual menu bar (per app), status bar and a
-  dock with 5 apps.
-- **Auto-hiding bars**: the menu bar (top edge) and dock (bottom edge) appear when
-  the cursor reaches the edge, leaving the whole middle for the app.
+- **Desktop shell**: desktop, contextual menu bar (per app) and a **static dock**
+  with 5 apps (macOS-style — always on screen).
+- **Auto-hiding menu bar**: the top menu bar appears when the cursor reaches the
+  top edge; the dock stays put. No status bar, so the whole middle is the app.
+- **Windows-95-style boot screen**: a separate loader (`BOOT`) shows a multicolor
+  bitmap splash, then chain-loads the desktop — so the splash costs **no memory**
+  in the running OS (it's overwritten when `CD64` loads).
 - **One pointer, three input sources**: 1351 **mouse** (port 1), **joystick**
   (port 2) and the **keyboard** (cursor keys) all move the same sprite cursor.
 - **Apps**:
@@ -42,7 +45,7 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
 - **Drop-down menu** — reveal the menu bar (top edge) and click it to open the
   system menu (HELP · DESKTOP · ABOUT); click an item or click away to close.
 - **Widgets**: buttons, checkbox, scrollable list, modal dialog.
-- **Boot splash** + **SID click sound**.
+- **SID click sound**.
 - Strictly the **16-color VIC-II palette**.
 
 ## Color palette
@@ -74,13 +77,13 @@ role to one of these 16.
 | Click | left button | fire | **space** or **return** |
 | Type (Editor) | — | — | letters/digits, RETURN, DEL |
 | Context help | — | — | **F1** (space closes it) |
-| Back to desktop (close app) | — | — | **RUN/STOP** |
+| Back to desktop (close app) | — | — | **ESC** (= RUN/STOP) |
 
-Move the cursor to the **top edge** to reveal the menu bar, or the **bottom edge**
-to reveal the dock. **Click the menu bar** to open the system drop-down (HELP ·
-DESKTOP · ABOUT). Click a **dock icon** to open an app; the menu bar and work
-area switch with it. **RUN/STOP** closes the active app and returns to the desktop
-— that's how you leave the text editor (where space types a space).
+Move the cursor to the **top edge** to reveal the menu bar; **click the menu bar**
+to open the system drop-down (HELP · DESKTOP · ABOUT). The **dock** is always on
+screen — click a **dock icon** to open an app. **ESC** closes the active app and
+returns to the desktop — that's how you leave the text editor (where space types a
+space) and Paint. (In VICE on a PC the RUN/STOP key is mapped to **Esc**.)
 
 ## Building
 
@@ -151,7 +154,9 @@ so only the text glyphs change.
 | File | Role |
 |---|---|
 | `disk_main.asm` | entry point for the D71 build (PRG at `$0801`) |
+| `boot_main.asm` | Windows-95-style boot loader: shows the splash, chain-loads `CD64` |
 | `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
+| `tools/png2mc.py` | converts `design/bootscreen.png` → the boot bitmap (`data/boot_*.bin`) |
 | `build_disk.bat` / `build_cart.bat` | build scripts |
 | `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
 | `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |

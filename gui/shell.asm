@@ -15,9 +15,8 @@
 shell_Init:
         lda #$ff
         sta activeApp
-        lda #0                   // balken standaard verborgen
+        lda #0                   // menubalk begint verborgen (dock is statisch)
         sta menuShown
-        sta dockShown
         jsr shell_DrawAll
         rts
 
@@ -72,20 +71,17 @@ shell_DrawAll:
         sta a2
         jsr gfx_Cls
         jsr drawContent
-        jsr drawStatus           // statusbalk blijft altijd zichtbaar
-        lda menuShown
+        jsr drawDock             // dock is statisch (macOS-stijl): altijd zichtbaar
+        lda menuShown            // alleen de bovenste menubalk klapt in/uit
         beq !nm+
         jsr drawMenubar
-!nm:    lda dockShown
-        beq !nd+
-        jsr drawDock
-!nd:    lda #13
+!nm:    lda #13
         sta $07f8                // sprite 0 pointer herstellen
         rts
 
 //--------------------------------------------------------
-// checkBars - toon/verberg de menubalk (bovenrand) en de dock
-//             (onderrand) op basis van de cursorpositie.
+// checkBars - alleen de bovenste menubalk klapt in/uit op basis van
+//             de cursorpositie. De dock staat statisch onderaan.
 //--------------------------------------------------------
 checkBars:
         lda crsY
@@ -95,38 +91,20 @@ checkBars:
         lsr
         lsr
         sta cbRow                // cursorrij 0-24
-        // menubalk: rij 0
-        lda cbRow
+        lda cbRow                // menubalk: rij 0
         bne !topHide+
         lda menuShown
-        bne !bottom+
+        bne !done+
         lda #1
         sta menuShown
         jsr drawMenubar
-        jmp !bottom+
+        rts
 !topHide:
         lda menuShown
-        beq !bottom+
+        beq !done+
         lda #0
         sta menuShown
         jsr clearRow0
-!bottom:
-        // dock: rij 22-24
-        lda cbRow
-        cmp #22
-        bcc !dockHide+
-        lda dockShown
-        bne !done+
-        lda #1
-        sta dockShown
-        jsr drawDock
-        jmp !done+
-!dockHide:
-        lda dockShown
-        beq !done+
-        lda #0
-        sta dockShown
-        jsr clearDock
 !done:  rts
 
 clearRow0:
@@ -136,21 +114,6 @@ clearRow0:
         lda #40
         sta a2
         lda #1
-        sta a3
-        lda #$20
-        sta a4
-        lda TH_deskbg
-        sta a5
-        jmp gfx_FillRect
-
-clearDock:
-        lda #0
-        sta a0
-        lda #22
-        sta a1
-        lda #40
-        sta a2
-        lda #3
         sta a3
         lda #$20
         sta a4
@@ -174,37 +137,6 @@ drawMenubar:
         lda #1
         sta a0
         lda #0
-        sta a1
-        lda TH_menubg
-        sta a2
-        jsr gfx_DrawTextRev
-        rts
-
-//--------------------------------------------------------
-drawStatus:
-        lda #21
-        sta a0
-        lda TH_menubg
-        sta a2
-        jsr gfx_BarRow
-        lda #<sReady
-        sta r0
-        lda #>sReady
-        sta r0+1
-        lda #1
-        sta a0
-        lda #21
-        sta a1
-        lda TH_menubg
-        sta a2
-        jsr gfx_DrawTextRev
-        lda #<sFree
-        sta r0
-        lda #>sFree
-        sta r0+1
-        lda #31
-        sta a0
-        lda #21
         sta a1
         lda TH_menubg
         sta a2
@@ -255,7 +187,7 @@ drawDesktopContent:
         sta r0
         lda #>sDeskHint
         sta r0+1
-        lda #8
+        lda #2
         sta a0
         lda #10
         sta a1
@@ -596,7 +528,6 @@ activeApp:   .byte $ff
 dockI:       .byte 0
 dockTmp:     .byte 0
 menuShown:   .byte 0
-dockShown:   .byte 0
 cbRow:       .byte 0
 // gedeelde scratch-vars (o.a. File Manager-lijst)
 lvI:         .byte 0
@@ -644,11 +575,7 @@ nCalc:  .text "CALCULATOR"
 nSet:   .text "SETTINGS"
         .byte $ff
 
-sReady: .text "READY"
-        .byte $ff
-sFree:  .text "38K FREE"
-        .byte $ff
-sDeskHint: .text "TOP EDGE=MENU  BOTTOM=DOCK"
+sDeskHint: .text "CLICK A DOCK ICON  -  TOP EDGE = MENU"
            .byte $ff
 sStub:     .text "UNDER CONSTRUCTION"
            .byte $ff
