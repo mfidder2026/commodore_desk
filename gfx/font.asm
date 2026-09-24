@@ -33,6 +33,35 @@
 //             identiek bruikbaar op disk én cartridge.
 // Klobbert: A,X
 font_Init:
+        jsr font_Base
+        jsr font_OverlayUI
+        // VIC: scherm $0400 (bits 4-7=1), charset $3800 (bits 1-3=7) -> $1E.
+        lda #$1e
+        sta VIC_MEM
+        rts
+
+//--------------------------------------------------------
+// font_Apply - pas het gekozen font (CFG_fontId) toe: kopieer de
+//              basis-charset, vervorm hem (Bold/Classic) en overlay
+//              opnieuw de UI-glyphs. Aanroepen na cfg_Load en bij een
+//              fontwissel in Settings.
+//--------------------------------------------------------
+font_Apply:
+        jsr font_Base
+        lda CFG_fontId
+        cmp #FONT_BOLD
+        bne !c+
+        jsr font_Bold
+        jmp !ov+
+!c:     cmp #FONT_CLASSIC
+        bne !ov+
+        jsr font_Classic
+!ov:    jmp font_OverlayUI
+
+//--------------------------------------------------------
+// font_Base - kopieer de ingesloten System-charset (2 KB) naar RAM.
+//--------------------------------------------------------
+font_Base:
         ldx #0
 !lp:    lda sysChars + $000,x
         sta CHARSET_BASE + $000,x
@@ -52,19 +81,91 @@ font_Init:
         sta CHARSET_BASE + $700,x
         inx
         bne !lp-
+        rts
 
-        // Overlay de eigen UI-glyphs (kaders + iconen) vanaf code 96.
+//--------------------------------------------------------
+// font_OverlayUI - overlay de eigen UI-glyphs (kaders + iconen) op
+//                  code 96 e.v. (identiek in alle fonts).
+//--------------------------------------------------------
+font_OverlayUI:
         ldx #0
 !lp:    lda frameGlyphs,x
         sta CHARSET_BASE + [96*8],x
         inx
         cpx #[UI_GLYPH_COUNT*8]
         bne !lp-
-
-        // VIC: scherm $0400 (bits 4-7=1), charset $3800 (bits 1-3=7) -> $1E.
-        lda #$1e
-        sta VIC_MEM
         rts
+
+//--------------------------------------------------------
+// font_Bold - verzwaar de streken: b = b | (b>>1). Alleen de normale
+//             set (code 0-127); de reverse-set (128-255, o.a. de
+//             balk-blok $a0) blijft ongemoeid zodat balken vol blijven.
+//--------------------------------------------------------
+font_Bold:
+        ldx #0
+!lp:    lda CHARSET_BASE + $000,x
+        sta fTmp
+        lsr
+        ora fTmp
+        sta CHARSET_BASE + $000,x
+        lda CHARSET_BASE + $100,x
+        sta fTmp
+        lsr
+        ora fTmp
+        sta CHARSET_BASE + $100,x
+        lda CHARSET_BASE + $200,x
+        sta fTmp
+        lsr
+        ora fTmp
+        sta CHARSET_BASE + $200,x
+        lda CHARSET_BASE + $300,x
+        sta fTmp
+        lsr
+        ora fTmp
+        sta CHARSET_BASE + $300,x
+        inx
+        bne !lp-
+        rts
+
+//--------------------------------------------------------
+// font_Classic - schuine (italic) stijl: de bovenste 4 rijen van elke
+//                glyph 1 pixel naar rechts. Alleen de normale set
+//                (code 0-127), zodat de reverse-balken vol blijven.
+//--------------------------------------------------------
+font_Classic:
+        lda #<CHARSET_BASE
+        sta r4
+        lda #>CHARSET_BASE
+        sta r4+1
+        ldx #0
+!ch:    ldy #0
+        lda (r4),y
+        lsr
+        sta (r4),y
+        iny
+        lda (r4),y
+        lsr
+        sta (r4),y
+        iny
+        lda (r4),y
+        lsr
+        sta (r4),y
+        iny
+        lda (r4),y
+        lsr
+        sta (r4),y
+        lda r4
+        clc
+        adc #8
+        sta r4
+        bcc !+
+        inc r4+1
+!:      inx
+        cpx #128
+        bne !ch-
+        rts
+
+fTmp:   .byte 0
 
 //--------------------------------------------------------
 // Kader-glyphs: dunne enkele lijn, uitgelijnd op rij 3 / kolom 3-4

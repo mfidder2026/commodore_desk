@@ -125,6 +125,30 @@ pdone:  lda #<sSave
         lda #GREY
         sta a2
         jsr gfx_DrawText
+        // FONT-keuze (rij 13) - klik om te wisselen
+        lda #<sFont
+        sta r0
+        lda #>sFont
+        sta r0+1
+        lda #4
+        sta a0
+        lda #13
+        sta a1
+        lda #THEME_TEXT
+        sta a2
+        jsr gfx_DrawText
+        ldx CFG_fontId
+        lda fontNameLo,x
+        sta r0
+        lda fontNameHi,x
+        sta r0+1
+        lda #10
+        sta a0
+        lda #13
+        sta a1
+        lda #THEME_ACCENT
+        sta a2
+        jsr gfx_DrawText
         rts
 }
 
@@ -169,7 +193,7 @@ chkPal: // kleurenkiezer (rij 12, kol 4-35)
 chkSave: // SAVE-knop (4,15,6)
         lda evtB
         cmp #15
-        bne done
+        bne chkFont
         lda #4
         sta a0
         lda #15
@@ -190,6 +214,25 @@ chkSave: // SAVE-knop (4,15,6)
         lda #LIGHT_GREEN
         sta a2
         jsr gfx_DrawText
+        rts
+chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
+        lda evtB
+        cmp #13
+        bne done
+        lda evtA
+        cmp #4
+        bcc done
+        cmp #21
+        bcs done
+        lda CFG_fontId
+        clc
+        adc #1
+        cmp #NUM_FONTS
+        bcc !+
+        lda #0
+!:      sta CFG_fontId
+        jsr font_Apply
+        jsr shell_DrawAll
 done:   rts
 }
 
@@ -200,6 +243,9 @@ setRow:  .byte 0
 
 roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel
 roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
+
+fontNameLo: .byte <fSystem, <fClassic, <fBold
+fontNameHi: .byte >fSystem, >fClassic, >fBold
 
 .encoding "screencode_upper"
 rRand: .text "BORDER"
@@ -220,3 +266,11 @@ sSaveHint: .text "-> CD64.CFG"
            .byte $ff
 sSaved: .text "SAVED      "
         .byte $ff
+sFont:  .text "FONT:"
+        .byte $ff
+fSystem:  .text "SYSTEM "
+          .byte $ff
+fClassic: .text "CLASSIC"
+          .byte $ff
+fBold:    .text "BOLD   "
+          .byte $ff

@@ -22,6 +22,7 @@ kernel_Init:
         jsr font_Init            // System-font naar RAM + UI-glyphs
         jsr osvars_Init          // runtime-defaults
         jsr cfg_Load             // CD64.CFG (indien aanwezig) overschrijft ze
+        jsr font_Apply           // gekozen font toepassen (na cfg_Load)
         jsr theme_Apply          // rand/achtergrond naar de VIC
         jsr sid_Init
         jsr splash_Show          // opstartscherm + korte pauze

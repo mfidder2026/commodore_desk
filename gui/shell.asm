@@ -15,13 +15,6 @@
 shell_Init:
         lda #$ff
         sta activeApp
-        lda #0
-        sta wCounter
-        sta wSound
-        sta wListTop
-        sta wListSel
-        lda #$ff
-        sta wDlgResult
         lda #0                   // balken standaard verborgen
         sta menuShown
         sta dockShown
@@ -274,244 +267,6 @@ drawStub:
         lda #GREY
         sta a2
         jmp gfx_DrawText
-
-//--------------------------------------------------------
-// drawWidgets - de widget-demo (zonder Cls; ook los aanroepbaar).
-//--------------------------------------------------------
-drawWidgets:
-        // knop TEL OP
-        lda #<sTelOp
-        sta r0
-        lda #>sTelOp
-        sta r0+1
-        lda #3
-        sta a0
-        lda #5
-        sta a1
-        lda #9
-        sta a2
-        lda #LIGHT_GREY
-        sta a3
-        jsr btn_Draw
-        // teller-label + waarde
-        lda #<sAantal
-        sta r0
-        lda #>sAantal
-        sta r0+1
-        lda #14
-        sta a0
-        lda #5
-        sta a1
-        lda #THEME_TEXT
-        sta a2
-        jsr gfx_DrawText
-        lda #<[SCREEN_RAM + 5*40 + 22]
-        sta r4
-        lda #>[SCREEN_RAM + 5*40 + 22]
-        sta r4+1
-        lda wCounter
-        jsr num2dec
-        // checkbox
-        lda #<sGeluid
-        sta r0
-        lda #>sGeluid
-        sta r0+1
-        lda #3
-        sta a0
-        lda #7
-        sta a1
-        lda wSound
-        sta a2
-        jsr cb_Draw
-        // lijst
-        jsr drawList
-        // UP / DOWN
-        lda #<sUp
-        sta r0
-        lda #>sUp
-        sta r0+1
-        lda #24
-        sta a0
-        lda #9
-        sta a1
-        lda #4
-        sta a2
-        lda #LIGHT_GREY
-        sta a3
-        jsr btn_Draw
-        lda #<sDn
-        sta r0
-        lda #>sDn
-        sta r0+1
-        lda #24
-        sta a0
-        lda #11
-        sta a1
-        lda #4
-        sta a2
-        lda #LIGHT_GREY
-        sta a3
-        jsr btn_Draw
-        // KEUZE-label + waarde
-        lda #<sKeuze
-        sta r0
-        lda #>sKeuze
-        sta r0+1
-        lda #24
-        sta a0
-        lda #13
-        sta a1
-        lda #THEME_TEXT
-        sta a2
-        jsr gfx_DrawText
-        lda #31
-        sta a0
-        lda #13
-        sta a1
-        lda wListSel
-        clc
-        adc #$30
-        sta a2
-        lda #THEME_ACCENT
-        sta a3
-        jsr gfx_PutChar
-        // knop DIALOOG
-        lda #<sDialoog
-        sta r0
-        lda #>sDialoog
-        sta r0+1
-        lda #3
-        sta a0
-        lda #17
-        sta a1
-        lda #11
-        sta a2
-        lda #LIGHT_GREY
-        sta a3
-        jsr btn_Draw
-        jsr drawDlgResult
-        rts
-
-//--------------------------------------------------------
-// drawList - scrollbare lijst (box 3,9 20x7; 5 zichtbaar).
-//--------------------------------------------------------
-drawList:
-        gfxDrawBox(3, 9, 20, 7, LIGHT_GREY)
-        lda #0
-        sta lvI
-!lp:    lda lvI
-        cmp #LIST_VISIBLE
-        bcc !cont+
-        jmp !done+
-!cont:  lda wListTop
-        clc
-        adc lvI
-        sta lvItem
-        lda #10
-        clc
-        adc lvI
-        sta lvRow
-        lda lvItem
-        cmp wListSel
-        bne !normal+
-        // highlight
-        lda #4
-        sta a0
-        lda lvRow
-        sta a1
-        lda #18
-        sta a2
-        lda #1
-        sta a3
-        lda #$a0
-        sta a4
-        lda #THEME_SELECT
-        sta a5
-        jsr gfx_FillRect
-        ldx lvItem
-        lda itemLo,x
-        sta r0
-        lda itemHi,x
-        sta r0+1
-        lda #5
-        sta a0
-        lda lvRow
-        sta a1
-        lda #THEME_SELECT
-        sta a2
-        jsr gfx_DrawTextRev
-        jmp !next+
-!normal:
-        // regel eerst wissen (oude highlight-blokken weg)
-        lda #4
-        sta a0
-        lda lvRow
-        sta a1
-        lda #18
-        sta a2
-        lda #1
-        sta a3
-        lda #$20
-        sta a4
-        lda #THEME_DESKTOP_BG
-        sta a5
-        jsr gfx_FillRect
-        ldx lvItem
-        lda itemLo,x
-        sta r0
-        lda itemHi,x
-        sta r0+1
-        lda #5
-        sta a0
-        lda lvRow
-        sta a1
-        lda #THEME_TEXT
-        sta a2
-        jsr gfx_DrawText
-!next:  inc lvI
-        jmp !lp-
-!done:  rts
-
-//--------------------------------------------------------
-drawDlgResult:
-        lda #<sDlg
-        sta r0
-        lda #>sDlg
-        sta r0+1
-        lda #16
-        sta a0
-        lda #17
-        sta a1
-        lda #THEME_TEXT
-        sta a2
-        jsr gfx_DrawText
-        lda wDlgResult
-        cmp #$ff
-        bne !c1+
-        lda #<sResNone
-        sta r0
-        lda #>sResNone
-        sta r0+1
-        jmp !draw+
-!c1:    cmp #1
-        bne !c0+
-        lda #<sResOk
-        sta r0
-        lda #>sResOk
-        sta r0+1
-        jmp !draw+
-!c0:    lda #<sResCancel
-        sta r0
-        lda #>sResCancel
-        sta r0+1
-!draw:  lda #21
-        sta a0
-        lda #17
-        sta a1
-        lda #THEME_SELECT
-        sta a2
-        jsr gfx_DrawText
-        rts
 
 //--------------------------------------------------------
 // drawDock - 5 iconen (rij 22) + labels (rij 23).
@@ -819,96 +574,6 @@ onMouseDown:
 !done:  rts
 
 //--------------------------------------------------------
-// handleWidgetClick - klik-afhandeling voor de widgets.
-//--------------------------------------------------------
-handleWidgetClick:
-        // TEL OP
-        lda #3
-        sta a0
-        lda #5
-        sta a1
-        lda #9
-        sta a2
-        jsr btn_HitTest
-        bcc !n1+
-        inc wCounter
-        jmp !redraw+
-!n1:    // checkbox
-        lda #3
-        sta a0
-        lda #7
-        sta a1
-        jsr cb_HitTest
-        bcc !n2+
-        lda wSound
-        eor #1
-        sta wSound
-        jmp !redraw+
-!n2:    // UP
-        lda #24
-        sta a0
-        lda #9
-        sta a1
-        lda #4
-        sta a2
-        jsr btn_HitTest
-        bcc !n3+
-        lda wListTop
-        beq !done+
-        dec wListTop
-        jmp !redraw+
-!n3:    // DOWN
-        lda #24
-        sta a0
-        lda #11
-        sta a1
-        lda #4
-        sta a2
-        jsr btn_HitTest
-        bcc !n4+
-        lda wListTop
-        cmp #[LIST_COUNT-LIST_VISIBLE]
-        bcs !done+
-        inc wListTop
-        jmp !redraw+
-!n4:    // lijst-item (cols4-21, rows10-14)
-        lda evtB
-        cmp #10
-        bcc !n5+
-        cmp #15
-        bcs !n5+
-        lda evtA
-        cmp #4
-        bcc !n5+
-        cmp #22
-        bcs !n5+
-        lda evtB
-        sec
-        sbc #10
-        clc
-        adc wListTop
-        cmp #LIST_COUNT
-        bcs !n5+
-        sta wListSel
-        jmp !redraw+
-!n5:    // DIALOOG
-        lda #3
-        sta a0
-        lda #17
-        sta a1
-        lda #11
-        sta a2
-        jsr btn_HitTest
-        bcc !done+
-        jsr dlg_Show
-        sta wDlgResult
-        jsr shell_DrawAll        // dialoog overschreef het scherm
-        rts
-!redraw:
-        jsr drawWidgets
-!done:  rts
-
-//--------------------------------------------------------
 // Data
 //--------------------------------------------------------
 activeApp:   .byte $ff
@@ -917,11 +582,7 @@ dockTmp:     .byte 0
 menuShown:   .byte 0
 dockShown:   .byte 0
 cbRow:       .byte 0
-wCounter:    .byte 0
-wSound:      .byte 0
-wListTop:    .byte 0
-wListSel:    .byte 0
-wDlgResult:  .byte $ff
+// gedeelde scratch-vars (o.a. File Manager-lijst)
 lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
@@ -939,9 +600,6 @@ icon2BL:   .byte 109, 113, 117, 121, 125
 icon2BR:   .byte 110, 114, 118, 122, 126
 labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet
 labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet
-
-itemLo: .byte <it1,<it2,<it3,<it4,<it5,<it6,<it7,<it8
-itemHi: .byte >it1,>it2,>it3,>it4,>it5,>it6,>it7,>it8
 
 .encoding "screencode_upper"
 mDesk:  .text "CD64   FILE   EDIT   VIEW   SYSTEM"
@@ -978,30 +636,6 @@ sDeskHint: .text "TOP EDGE=MENU  BOTTOM=DOCK"
            .byte $ff
 sStub:     .text "UNDER CONSTRUCTION"
            .byte $ff
-
-sTelOp:  .text "TEL OP"
-         .byte $ff
-sAantal: .text "AANTAL: 000"
-         .byte $ff
-sGeluid: .text "GELUID"
-         .byte $ff
-sUp:     .text "UP"
-         .byte $ff
-sDn:     .text "DN"
-         .byte $ff
-sKeuze:  .text "KEUZE:"
-         .byte $ff
-sDialoog:.text "DIALOOG"
-         .byte $ff
-sDlg:    .text "DLG:"
-         .byte $ff
-sResNone:   .text "-       "
-            .byte $ff
-sResOk:     .text "OK      "
-            .byte $ff
-sResCancel: .text "ANNULEER"
-            .byte $ff
-
 lFiles: .text "FILES"
         .byte $ff
 lEdit:  .text "EDIT"
@@ -1026,20 +660,3 @@ aLine2: .text "VERSION 0.9"
         .byte $ff
 aClose: .text "SPACE = CLOSE"
         .byte $ff
-
-it1: .text "ITEM 1"
-     .byte $ff
-it2: .text "ITEM 2"
-     .byte $ff
-it3: .text "ITEM 3"
-     .byte $ff
-it4: .text "ITEM 4"
-     .byte $ff
-it5: .text "ITEM 5"
-     .byte $ff
-it6: .text "ITEM 6"
-     .byte $ff
-it7: .text "ITEM 7"
-     .byte $ff
-it8: .text "ITEM 8"
-     .byte $ff

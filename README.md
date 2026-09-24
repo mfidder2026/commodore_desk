@@ -32,7 +32,8 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
   - **Editor** — text editor: type, RETURN (new line), DEL (backspace).
   - **Paint** — block paint: canvas + 16-color palette.
   - **Calc** — 16-bit calculator (+ − × ÷).
-  - **Settings** — all **theme colors are adjustable** and saved to `CD64.CFG`.
+  - **Settings** — all **theme colors are adjustable**, plus a **font** picker
+    (System / Classic / Bold); everything is saved to `CD64.CFG`.
 - **F1 context help** — a help panel whose text depends on the active app; press
   space to close it.
 - **Drop-down menu** — reveal the menu bar (top edge) and click it to open the
@@ -134,8 +135,11 @@ include/  palette · layout · memmap · abi · hardware
 ## Settings (persistence)
 
 In **Settings** you pick a color per theme role (border, desktop, menu bar,
-accent, selection); **SAVE** writes `CD64.CFG` to the D71. At boot the OS loads
-that file back automatically.
+accent, selection) and a **font** — **System** (crisp), **Classic** (italic) or
+**Bold** (heavy). Click the `FONT:` line to cycle; the whole UI switches
+instantly. **SAVE** writes `CD64.CFG` to the D71. At boot the OS loads that file
+back automatically. All three fonts share one UI-glyph block (frames, dock icons),
+so only the text glyphs change.
 
 ## Files
 
@@ -155,9 +159,9 @@ input HAL, events, desktop shell, widgets, 5 apps, color personalization with
 persistence, and finishing (splash, sound, cartridge, docs). Plus F1 context help,
 auto-hiding bars, and apps that fill the full work area.
 
-**Open / upgrades:** real hi-res/multicolor bitmap Paint; dock shape and font in
-Settings (variables are ready); Classic/Bold fonts; config in flash instead of on
-disk. Later: a **Commodore 128** port (all hardware-specific code lives in `hal/`).
+**Open / upgrades:** real hi-res/multicolor bitmap Paint; selectable dock shape;
+config in flash instead of on disk. Later: a **Commodore 128** port (all
+hardware-specific code lives in `hal/`).
 
 > The development plan and the Kick Assembler skill document are still in Dutch;
 > the application's on-screen text and this README are English.
