@@ -23,8 +23,13 @@ shell_Init:
 
 // shell_Run - hoofdlus.
 shell_Run:
-!loop:  jsr checkBars
-        jsr evt_Poll
+!loop:  lda activeApp            // Paint = volledig-scherm bitmap: geen balken
+        cmp #2
+        bne !bars+
+        jsr paint_Live           // sleep-tekenen zolang de knop ingedrukt is
+        jmp !ev+
+!bars:  jsr checkBars
+!ev:    jsr evt_Poll
         cmp #EVT_MOUSEDOWN
         bne !k+
         jsr sid_Click
@@ -41,6 +46,9 @@ shell_Run:
         lda evtA
         cmp #$83                 // F1 = context help (space closes it)
         bne !nothelp+
+        lda activeApp            // geen F1-help in Paint (bitmap-modus)
+        cmp #2
+        beq !loop-
         jsr help_Show
         jmp !loop-
 !nothelp:
@@ -231,9 +239,9 @@ drawContent:
 !b:     cmp #1
         bne !c+
         jmp ed_Draw
-!c:     cmp #2
+!c:     cmp #2                   // Paint draait in eigen bitmapmodus
         bne !d+
-        jmp paint_Draw
+        jmp drawStub
 !d:     cmp #3
         bne !e+
         jmp calc_Draw
@@ -396,7 +404,11 @@ num2dec:
 // exitToDesktop - active app sluiten, terug naar bureaublad.
 //--------------------------------------------------------
 exitToDesktop:
-        lda #$ff
+        lda activeApp            // Paint: eerst char-mode herstellen
+        cmp #2
+        bne !np+
+        jsr paint_Exit
+!np:    lda #$ff
         sta activeApp
         jmp shell_DrawAll
 
@@ -515,7 +527,11 @@ wait:   jsr evt_Poll
 // onMouseDown - klik afhandelen (evtA=kol, evtB=rij).
 //--------------------------------------------------------
 onMouseDown:
-        lda evtB
+        lda activeApp            // in Paint gaat elke klik naar het canvas
+        cmp #2
+        bne !np+
+        jmp paint_Click
+!np:    lda evtB
         bne !nomenu+
         lda menuShown            // klik op rij 0 = menubalk -> uitklapmenu
         beq !ret+
@@ -542,10 +558,10 @@ onMouseDown:
         bne !na1+
         jsr ed_Init
         jmp !drawit+
-!na1:   cmp #2                   // Paint
+!na1:   cmp #2                   // Paint -> eigen bitmapmodus (geen char-redraw)
         bne !na2+
-        jsr paint_Init
-        jmp !drawit+
+        jsr paint_Enter
+        rts
 !na2:   cmp #3                   // Calculator
         bne !na3+
         jsr calc_Init

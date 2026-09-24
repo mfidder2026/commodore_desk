@@ -30,7 +30,8 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
 - **Apps**:
   - **Files** — File Manager: reads the disk directory into a scrollable list.
   - **Editor** — text editor: type, RETURN (new line), DEL (backspace).
-  - **Paint** — block paint: canvas + 16-color palette.
+  - **Paint** — real **multicolor bitmap** paint (160×200): full-screen canvas
+    with a 4-color palette (erase / white / red / cyan); hold fire to drag-draw.
   - **Calc** — 16-bit calculator (+ − × ÷).
   - **Settings** — all **theme colors are adjustable**, plus a **font** picker
     (System / Classic / Bold); everything is saved to `CD64.CFG`.
@@ -126,7 +127,9 @@ hal/      vic · input (mouse/joy/kbd) · disk (IEC) · sound (SID)
 include/  palette · layout · memmap · abi · hardware
 ```
 
-- **Display**: hi-res character mode (40×25). The cursor is hardware sprite 0.
+- **Display**: hi-res character mode (40×25) for the desktop; Paint switches to
+  multicolor bitmap in VIC bank 1 (`$4000-$7FFF`, free RAM above the OS) and back.
+  The cursor is hardware sprite 0.
 - **System clock**: a raster IRQ (50 Hz) polls input and generates events.
 - **Memory**: runs from RAM with BASIC/KERNAL banked out; KERNAL is banked back in
   temporarily for disk I/O.
@@ -159,9 +162,8 @@ input HAL, events, desktop shell, widgets, 5 apps, color personalization with
 persistence, and finishing (splash, sound, cartridge, docs). Plus F1 context help,
 auto-hiding bars, and apps that fill the full work area.
 
-**Open / upgrades:** real hi-res/multicolor bitmap Paint; selectable dock shape;
-config in flash instead of on disk. Later: a **Commodore 128** port (all
-hardware-specific code lives in `hal/`).
+**Open / upgrades:** selectable dock shape; config in flash instead of on disk.
+Later: a **Commodore 128** port (all hardware-specific code lives in `hal/`).
 
 > The development plan and the Kick Assembler skill document are still in Dutch;
 > the application's on-screen text and this README are English.
