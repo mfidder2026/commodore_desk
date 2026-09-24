@@ -1,0 +1,13 @@
+# Build-uitvoer
+/build/
+*.prg
+*.bin
+*.crt
+*.d64
+*.vs
+*.sym
+
+# Editor / OS
+*.swp
+Thumbs.db
+.DS_Store
