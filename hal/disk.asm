@@ -284,9 +284,12 @@ loadApp:
         jsr K_SETLFS
         lda #0
         jsr K_LOAD               // carry=1 bij fout (bestand niet gevonden)
-        php                      // laadresultaat bewaren over cfg_io_end
-        jsr cfg_io_end
-        plp                      // carry terug: set = mislukt
+        bcs !err+
+        jsr cfg_io_end           // (zet interrupts weer aan via cli)
+        clc
+        rts
+!err:   jsr cfg_io_end
+        sec
         rts
 
 //--------------------------------------------------------
@@ -313,9 +316,12 @@ loadCharset:
         jsr K_SETLFS
         lda #0
         jsr K_LOAD
-        php
+        bcs !err+
         jsr cfg_io_end
-        plp
+        clc
+        rts
+!err:   jsr cfg_io_end
+        sec
         rts
 
 appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup
