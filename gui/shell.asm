@@ -229,6 +229,50 @@ drawStub:
         rts
 
 //--------------------------------------------------------
+// showLoading - "LOADING <app> / PLEASE WAIT" tijdens het laden van
+//               een app-overlay van disk. In: X = app index (0-4).
+//--------------------------------------------------------
+showLoading:
+        txa
+        pha
+        gfxDrawBox(9, 9, 22, 5, LIGHT_GREY)      // rijen 9-13
+        lda #<sLoad
+        sta r0
+        lda #>sLoad
+        sta r0+1
+        lda #11
+        sta a0
+        lda #11
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        pla
+        tax
+        lda labelLo,x
+        sta r0
+        lda labelHi,x
+        sta r0+1
+        lda #19
+        sta a0
+        lda #11
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        lda #<sWait
+        sta r0
+        lda #>sWait
+        sta r0+1
+        lda #11
+        sta a0
+        lda #12
+        sta a1
+        lda TH_text
+        sta a2
+        jmp gfx_DrawText
+
+//--------------------------------------------------------
 // drawDock - 6 iconen (rij 22-23) + labels (rij 24).
 //--------------------------------------------------------
 drawDock:
@@ -544,6 +588,13 @@ onMouseDown:
         cmp activeApp
         beq !done+
         sta activeApp
+        cmp #5                   // INET is resident (geen overlay)
+        beq !drawit+
+        tax                      // apps 0-4: overlay van disk laden
+        jsr showLoading
+        ldx activeApp
+        jsr loadApp
+        lda activeApp
         cmp #0                   // File Manager -> directory lezen
         bne !na0+
         jsr fm_Load
@@ -560,8 +611,7 @@ onMouseDown:
         bne !na3+
         jsr calc_Init
         jmp !drawit+
-!na3:   cmp #4                   // Settings
-        bne !drawit+
+!na3:   // #4 Settings
         jsr set_Init
 !drawit:
         jsr shell_DrawAll
@@ -645,6 +695,10 @@ nInet:  .text "INTERNET"
         .byte $ff
 
 sDeskHint: .text "CLICK A DOCK ICON  -  TOP EDGE = MENU"
+           .byte $ff
+sLoad:     .text "LOADING"
+           .byte $ff
+sWait:     .text "PLEASE WAIT"
            .byte $ff
 sInet1:    .text "INTERNET APPS"
            .byte $ff

@@ -140,6 +140,12 @@ hal/      vic · input (mouse/joy/kbd) · disk (IEC) · sound (SID)
 include/  palette · layout · memmap · abi · hardware
 ```
 
+- **App overlays**: the resident **core** (kernel, gfx, input, shell/desktop) lives
+  at `$0801`; each app (Files, Editor, Paint, Calc, Settings) is a **separate PRG**
+  loaded from disk into a shared overlay region at `$8000` when you open it
+  (`LOADING …`). Only one app is resident at a time, so the memory ceiling is gone
+  and the OS scales to many apps. The cartridge boots the core and loads the same
+  app PRGs from the attached disk.
 - **Display**: hi-res character mode (40×25) for the desktop; Paint switches to
   multicolor bitmap in VIC bank 1 (`$4000-$7FFF`, free RAM above the OS) and back.
   The cursor is hardware sprite 0.

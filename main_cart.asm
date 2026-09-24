@@ -34,17 +34,33 @@ osStart:
 #import "kernel/banking.asm"
 #import "hal/disk.asm"
 #import "gui/widgets.asm"
-#import "apps/filemanager.asm"
-#import "apps/editor.asm"
-#import "apps/calc.asm"
-#import "apps/paint.asm"
-#import "apps/settings.asm"
 #import "gui/help.asm"
 #import "gui/shell.asm"
 #import "kernel/kernel.asm"
 osEnd:
 
 .var osLen = osEnd - $0801
+
+//--------------------------------------------------------
+// App-overlays: NIET in de cart-ROM. Ze worden op $8000 geassembleerd
+// (voor label-resolutie) en van de aangekoppelde D71 geladen, net als
+// bij de disk-build. De cart bevat dus alleen de kern.
+//--------------------------------------------------------
+.segmentdef Files  [start=$8000]
+.segmentdef Editor [start=$8000]
+.segmentdef Calc   [start=$8000]
+.segmentdef Paint  [start=$8000]
+.segmentdef Setup  [start=$8000]
+.segment Files
+#import "apps/filemanager.asm"
+.segment Editor
+#import "apps/editor.asm"
+.segment Calc
+#import "apps/calc.asm"
+.segment Paint
+#import "apps/paint.asm"
+.segment Setup
+#import "apps/settings.asm"
 
 //--------------------------------------------------------
 // 16 KB cartridge-image ($8000-$BFFF = ROML + ROMH bank 0).

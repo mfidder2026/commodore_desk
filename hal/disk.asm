@@ -261,6 +261,44 @@ nameLoadEnd:
 }
 
 //--------------------------------------------------------
+// loadApp - laad app-overlay (X = index 0-4) naar $8000.
+//           De app-PRG's hebben laadadres $8000 (secondary 1).
+//--------------------------------------------------------
+loadApp:
+        stx loadIdx
+        jsr cfg_io_begin
+        ldx loadIdx
+        lda appLen,x
+        pha
+        lda appPtrLo,x
+        pha
+        lda appPtrHi,x
+        tay
+        pla
+        tax                      // X = naam-lo
+        pla                      // A = lengte
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #1                   // sa=1 -> laadadres uit bestand ($8000)
+        jsr K_SETLFS
+        lda #0
+        jsr K_LOAD
+        jsr cfg_io_end
+        rts
+
+appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup
+appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup
+appLen:   .byte 5, 6, 5, 4, 5
+.encoding "petscii_upper"
+anFiles:  .text "FILES"
+anEdit:   .text "EDITOR"
+anPaint:  .text "PAINT"
+anCalc:   .text "CALC"
+anSetup:  .text "SETUP"
+loadIdx:  .byte 0
+
+//--------------------------------------------------------
 dirCount:  .byte 0
 tmpA:      .byte 0
 savedIrqEn: .byte 0

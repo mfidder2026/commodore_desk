@@ -20,15 +20,22 @@ for %%F in (disk_main.asm hal\vic.asm hal\input.asm hal\disk.asm gfx\font.asm gf
   if errorlevel 1 ( echo Syntax errors in %%F & exit /b 1 )
 )
 
-echo [2/3] Assembleren (bureaublad + bootscherm)...
-"%JAVA_EXE%" -jar "%KICKASS_JAR%" disk_main.asm -o build\cd64.prg -vicesymbols -odir build
+echo [2/3] Assembleren (core + app-overlays + bootscherm)...
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" disk_main.asm -vicesymbols -odir build
 if errorlevel 1 ( echo Build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 
 echo [3/3] D71 maken en PRG's erop schrijven (BOOT start eerst)...
 if exist build\CD64.d71 del build\CD64.d71
-"%C1541%" -format "commodore desk,cd" d71 build\CD64.d71 -write build\boot.prg boot -write build\cd64.prg cd64
+"%C1541%" -format "commodore desk,cd" d71 build\CD64.d71 ^
+  -write build\boot.prg boot ^
+  -write build\cd64.prg cd64 ^
+  -write build\files.prg files ^
+  -write build\editor.prg editor ^
+  -write build\paint.prg paint ^
+  -write build\calc.prg calc ^
+  -write build\setup.prg setup
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
 echo.
