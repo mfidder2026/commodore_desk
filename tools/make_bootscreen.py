@@ -70,6 +70,7 @@ ctext("COMMODORE DESK 64",96,WHITE,2)
 # ---- subtitle + version (scale 1) ----
 ctext("GRAPHICAL DESKTOP ENVIRONMENT",128,CYAN,1)
 ctext("VERSION 1.0   -   VIC-II 320X200",144,LGREY,1)
+ctext("(C) 2026 FREMEN IT WORKERS",160,WHITE,1)
 
 # ---- footer strip (rows 23-24) ----
 fill(0,184,320,200,BLUE)
