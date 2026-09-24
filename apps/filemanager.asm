@@ -74,7 +74,7 @@ doHi:
         sta a3
         lda #$a0
         sta a4
-        lda #THEME_SELECT
+        lda TH_select
         sta a5
         jsr gfx_FillRect
         ldx lvItem
@@ -86,7 +86,7 @@ doHi:
         sta a0
         lda lvRow
         sta a1
-        lda #THEME_SELECT
+        lda TH_select
         sta a2
         jsr gfx_DrawTextRev
         jmp next
@@ -101,7 +101,7 @@ normal:
         sta a0
         lda lvRow
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
 next:   inc lvI
@@ -142,7 +142,7 @@ buttons:
         sta a0
         lda #7
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         lda #<[SCREEN_RAM + 8*40 + 32]

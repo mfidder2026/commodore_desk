@@ -97,7 +97,7 @@ cb_Draw:
         sta a1
         lda #SC_LBRACK
         sta a2
-        lda #THEME_TEXT
+        lda TH_text
         sta a3
         jsr gfx_PutChar
         // X of spatie
@@ -113,7 +113,7 @@ cb_Draw:
         jmp !setch+
 !empty: lda #SC_SPACE
 !setch: sta a2
-        lda #THEME_ACCENT
+        lda TH_accent
         sta a3
         jsr gfx_PutChar
         // ']'
@@ -125,7 +125,7 @@ cb_Draw:
         sta a1
         lda #SC_RBRACK
         sta a2
-        lda #THEME_TEXT
+        lda TH_text
         sta a3
         jsr gfx_PutChar
         // label op kol+4
@@ -135,7 +135,7 @@ cb_Draw:
         sta a0
         lda wRow
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         rts
@@ -233,7 +233,7 @@ dlg_Draw:
         sta a0
         lda #[DLG_ROW+3]
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         // OK-knop
@@ -247,7 +247,7 @@ dlg_Draw:
         sta a1
         lda #DLG_OKW
         sta a2
-        lda #THEME_ACCENT
+        lda TH_accent
         sta a3
         jsr btn_Draw
         // ANNULEER-knop

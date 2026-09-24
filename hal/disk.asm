@@ -27,9 +27,10 @@
 .label K_LOAD   = $ffd5
 .label K_SAVE   = $ffd8
 
-// Config-blok = OS-vars $0200-$020D (LAY 0-6, font 7, thema 8-12).
+// Config-blok = OS-vars $0200-$020F (LAY 0-6, font 7, thema 8-12,
+// menuFill 13, text 14, profile 15).
 .label CFG_START = $0200
-.label CFG_END   = $020e
+.label CFG_END   = $0210
 
 //--------------------------------------------------------
 // dir_Read - lees de directory in dirBuf + dirPtr-tabel.

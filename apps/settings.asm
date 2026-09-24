@@ -44,7 +44,7 @@ rgo:    lda setI
         bne notSel
         lda TH_accent            // geselecteerde rol geaccentueerd
         jmp setCol
-notSel: lda #THEME_TEXT
+notSel: lda TH_text
 setCol: sta a2
         jsr gfx_DrawText
         // kleurstaal van de rol
@@ -73,7 +73,7 @@ rpalette:
         sta a0
         lda #11
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         // 16 kleurstalen (2 breed) op rij 12
@@ -134,7 +134,7 @@ pdone:  lda #<sSave
         sta a0
         lda #13
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         ldx CFG_fontId
@@ -146,7 +146,7 @@ pdone:  lda #<sSave
         sta a0
         lda #13
         sta a1
-        lda #THEME_ACCENT
+        lda TH_accent
         sta a2
         jsr gfx_DrawText
         // MENU-stijl (rij 14) - klik om te wisselen
@@ -158,7 +158,7 @@ pdone:  lda #<sSave
         sta a0
         lda #14
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         ldx CFG_menuFill
@@ -170,7 +170,31 @@ pdone:  lda #<sSave
         sta a0
         lda #14
         sta a1
-        lda #THEME_ACCENT
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        // THEME-profiel (rij 3) - klik om te wisselen
+        lda #<sProf
+        sta r0
+        lda #>sProf
+        sta r0+1
+        lda #4
+        sta a0
+        lda #3
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldx CFG_profile
+        lda profNameLo,x
+        sta r0
+        lda profNameHi,x
+        sta r0+1
+        lda #11
+        sta a0
+        lda #3
+        sta a1
+        lda TH_accent
         sta a2
         jsr gfx_DrawText
         rts
@@ -264,7 +288,7 @@ chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
 chkMenu: // MENU-regel (rij 14, kol 4-20) -> stijl wisselen
         lda evtB
         cmp #14
-        bne done
+        bne chkProf
         lda evtA
         cmp #4
         bcc done
@@ -274,6 +298,25 @@ chkMenu: // MENU-regel (rij 14, kol 4-20) -> stijl wisselen
         eor #1
         sta CFG_menuFill
         jsr set_Draw
+        rts
+chkProf: // THEME-regel (rij 3, kol 4-20) -> volgend profiel
+        lda evtB
+        cmp #3
+        bne done
+        lda evtA
+        cmp #4
+        bcc done
+        cmp #21
+        bcs done
+        lda CFG_profile
+        clc
+        adc #1
+        cmp #NUM_PROFILES
+        bcc !+
+        lda #0
+!:      sta CFG_profile
+        jsr profile_Apply
+        jsr shell_DrawAll
 done:   rts
 }
 
@@ -290,6 +333,9 @@ fontNameHi: .byte >fSystem, >fClassic, >fBold
 
 menuNameLo: .byte <mClear, <mFilled
 menuNameHi: .byte >mClear, >mFilled
+
+profNameLo: .byte <pC64, <pMatrix, <pGeos
+profNameHi: .byte >pC64, >pMatrix, >pGeos
 
 .encoding "screencode_upper"
 rRand: .text "BORDER"
@@ -323,4 +369,12 @@ sMenu:  .text "MENU:"
 mClear:  .text "CLEAR "
          .byte $ff
 mFilled: .text "FILLED"
+         .byte $ff
+sProf:  .text "THEME:"
+        .byte $ff
+pC64:    .text "C64    "
+         .byte $ff
+pMatrix: .text "MATRIX "
+         .byte $ff
+pGeos:   .text "GEOS   "
          .byte $ff

@@ -143,8 +143,9 @@ include/  palette · layout · memmap · abi · hardware
 
 ## Settings (persistence)
 
-In **Settings** you pick a color per theme role (border, desktop, menu bar,
-accent, selection) and a **font** — **System** (crisp), **Classic** (italic) or
+In **Settings** you pick a base **color profile** (Commodore 64 / Matrix /
+GEOS), a color per theme role (border, desktop, menu bar, accent, selection),
+the **drop-down style** (filled/clear) and a **font** — **System** (crisp), **Classic** (italic) or
 **Bold** (heavy). Click the `FONT:` line to cycle; the whole UI switches
 instantly. **SAVE** writes `CD64.CFG` to the D71. At boot the OS loads that file
 back automatically. All three fonts share one UI-glyph block (frames, dock icons),

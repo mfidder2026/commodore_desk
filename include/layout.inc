@@ -63,11 +63,21 @@
 .label TH_accent    = $020b   // titels/accent
 .label TH_select    = $020c   // selectie/highlight
 
+.label TH_text      = $020e   // standaardtekst (runtime)
+
 // ---- Uitklapmenu-stijl (runtime, instelbaar via Settings) ----
 .label CFG_menuFill = $020d   // 0 = doorzichtig, 1 = gevuld
 .const MENU_CLEAR       = 0
 .const MENU_FILLED      = 1
 .const DEFAULT_MENUFILL = MENU_FILLED
+
+// ---- Kleurprofiel (basis-thema, instelbaar via Settings) ----
+.label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=GEOS
+.const PROFILE_C64      = 0
+.const PROFILE_MATRIX   = 1
+.const PROFILE_GEOS     = 2
+.const NUM_PROFILES     = 3
+.const DEFAULT_PROFILE  = PROFILE_C64
 
 // Vast UI-glyphblok binnen elke charset (identiek in alle fonts).
 // Reserveer bijv. de bovenste tekens voor frames/iconen; tekst-glyphs

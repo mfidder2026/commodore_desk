@@ -287,7 +287,7 @@ drawDock:
         lda TH_select
         jmp !setc+
 !notact:
-        lda #THEME_TEXT
+        lda TH_text
 !setc:  sta a2
         ldx dockI
         lda labelLo,x
@@ -368,7 +368,7 @@ menu_Draw:
         jsr gfx_FillRect
         lda #BLACK                               // zwarte tekst op gevuld paneel
         jmp !setc+
-!clear: lda #THEME_TEXT                          // witte tekst (doorzichtig)
+!clear: lda TH_text                          // witte tekst (doorzichtig)
 !setc:  sta menuTxtCol
         lda #<oHelp
         sta r0
@@ -453,7 +453,7 @@ about_Show: {
         sta a0
         lda #10
         sta a1
-        lda #THEME_ACCENT
+        lda TH_accent
         sta a2
         jsr gfx_DrawText
         lda #<aLine2
@@ -464,7 +464,7 @@ about_Show: {
         sta a0
         lda #12
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         lda #<aClose
@@ -475,7 +475,7 @@ about_Show: {
         sta a0
         lda #14
         sta a1
-        lda #THEME_SELECT
+        lda TH_select
         sta a2
         jsr gfx_DrawText
 wait:   jsr evt_Poll

@@ -75,7 +75,7 @@ ed_DrawCell:
         sta a1
         lda edChar
         sta a2
-        lda #THEME_TEXT
+        lda TH_text
         sta a3
         lda edDRow
         cmp edRow

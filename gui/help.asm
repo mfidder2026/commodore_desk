@@ -18,7 +18,7 @@ help_Show: {
         sta a0
         lda #8
         sta a1
-        lda #THEME_ACCENT
+        lda TH_accent
         sta a2
         jsr gfx_DrawText
         // contextregels op basis van de actieve app (+1: 0=bureaublad)
@@ -32,7 +32,7 @@ help_Show: {
         sta a0
         lda #10
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         ldx activeApp
@@ -45,7 +45,7 @@ help_Show: {
         sta a0
         lda #11
         sta a1
-        lda #THEME_TEXT
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         // sluit-hint
@@ -57,7 +57,7 @@ help_Show: {
         sta a0
         lda #13
         sta a1
-        lda #THEME_SELECT
+        lda TH_select
         sta a2
         jsr gfx_DrawText
         // modaal: wachten op spatie

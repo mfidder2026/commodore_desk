@@ -63,7 +63,9 @@ osvars_Init:
         sta CFG_fontId
         lda #DEFAULT_MENUFILL
         sta CFG_menuFill
-        // thema-kleuren defaults
+        lda #DEFAULT_PROFILE
+        sta CFG_profile
+        // thema-kleuren defaults (profiel 0 = Commodore 64)
         lda #THEME_BORDER
         sta TH_border
         lda #THEME_DESKTOP_BG
@@ -74,4 +76,34 @@ osvars_Init:
         sta TH_accent
         lda #THEME_SELECT
         sta TH_select
+        lda #THEME_TEXT
+        sta TH_text
         rts
+
+//--------------------------------------------------------
+// profile_Apply - pas kleurprofiel CFG_profile toe (6 TH_*-kleuren),
+//                 daarna rand/achtergrond naar de VIC.
+//--------------------------------------------------------
+profile_Apply:
+        ldx CFG_profile
+        lda profBorder,x
+        sta TH_border
+        lda profDesk,x
+        sta TH_deskbg
+        lda profMenu,x
+        sta TH_menubg
+        lda profAccent,x
+        sta TH_accent
+        lda profSelect,x
+        sta TH_select
+        lda profText,x
+        sta TH_text
+        jmp theme_Apply
+
+//        C64          Matrix       GEOS
+profBorder: .byte LIGHT_BLUE, BLACK,       GREY
+profDesk:   .byte BLUE,       BLACK,       LIGHT_GREY
+profMenu:   .byte LIGHT_GREY, GREEN,       BLACK
+profAccent: .byte YELLOW,     LIGHT_GREEN, BLUE
+profSelect: .byte CYAN,       DARK_GREY,   LIGHT_BLUE
+profText:   .byte WHITE,      GREEN,       BLACK
