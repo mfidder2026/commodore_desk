@@ -13,9 +13,11 @@ the app in the middle — no draggable windows. Boots as a **D71 disk** and as a
 
 ### Screens
 
-| File Manager | Settings |
-|---|---|
-| ![File Manager](docs/filemanager.png) | ![Settings](docs/settings.png) |
+| File Manager | Settings | Paint |
+|---|---|---|
+| ![File Manager](docs/filemanager.png) | ![Settings](docs/settings.png) | ![Paint](docs/paint.png) |
+
+<sub>Paint: full-screen multicolor bitmap with a 4-color palette (erase / white / red / cyan).</sub>
 
 ---
 
