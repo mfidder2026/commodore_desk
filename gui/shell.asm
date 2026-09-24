@@ -685,7 +685,7 @@ mSet:   .text "SETTINGS   FILE   EDIT   VIEW"
 mInet:  .text "INTERNET   MAIL   CHAT   RSS   FTP"
         .byte $ff
 
-nDesk:  .text "DESKTOP"
+nDesk:  .text "COMMODORE DESK 64"
         .byte $ff
 nFiles: .text "FILE MANAGER"
         .byte $ff
