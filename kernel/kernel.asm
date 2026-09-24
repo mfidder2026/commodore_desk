@@ -100,7 +100,7 @@ profile_Apply:
         sta TH_text
         jmp theme_Apply
 
-//        C64          Matrix       GEOS
+//        C64          Matrix       Paper
 profBorder: .byte LIGHT_BLUE, BLACK,       GREY
 profDesk:   .byte BLUE,       BLACK,       LIGHT_GREY
 profMenu:   .byte LIGHT_GREY, GREEN,       BLACK

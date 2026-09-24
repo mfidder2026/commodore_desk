@@ -327,16 +327,20 @@ loadCharset:
 appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup
 appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup
 appLen:   .byte 5, 6, 5, 4, 5
-fntPtrLo: .byte <anGeos
-fntPtrHi: .byte >anGeos
-fntLen:   .byte 4
+fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy
+fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy
+fntLen:   .byte 6, 5, 4, 6, 5
 .encoding "petscii_upper"
 anFiles:  .text "FILES"
 anEdit:   .text "EDITOR"
 anPaint:  .text "PAINT"
 anCalc:   .text "CALC"
 anSetup:  .text "SETUP"
-anGeos:   .text "GEOS"
+anFremen: .text "FREMEN"
+anSerif:  .text "SERIF"
+anMono:   .text "MONO"
+anCasual: .text "CASUAL"
+anHeavy:  .text "HEAVY"
 loadIdx:  .byte 0
 
 //--------------------------------------------------------

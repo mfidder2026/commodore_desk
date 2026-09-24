@@ -48,6 +48,8 @@ font_Init:
 //--------------------------------------------------------
 font_Apply:
         lda CFG_fontId
+        cmp #FONT_FREMEN         // id 5+ = van disk geladen font
+        bcs !disk+
         cmp #FONT_BOLD
         beq !bold+
         cmp #FONT_CLASSIC
@@ -56,15 +58,15 @@ font_Apply:
         beq !lower+
         cmp #FONT_TINY
         beq !tiny+
-        cmp #FONT_GEOS
-        beq !geos+
         jsr font_Base            // System
         jmp font_OverlayUI
-!geos:  ldx #0                   // GEOS-charset van disk naar $3800
+!disk:  sec                      // charset van disk naar $3800
+        sbc #FONT_FREMEN         // disk-font-index
+        tax
         jsr loadCharset
-        bcs !gfail+              // mislukt -> terugvallen op System
+        bcs !dfail+              // mislukt -> terugvallen op System
         jmp font_OverlayUI
-!gfail: jsr font_Base
+!dfail: jsr font_Base
         jmp font_OverlayUI
 !bold:  jsr font_Base
         jsr font_Bold

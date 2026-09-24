@@ -53,8 +53,13 @@
 .const FONT_BOLD    = 2    // zwaar / hoog-contrast, extra leesbaar
 .const FONT_LOWER   = 3    // kleine letters (C64 lowercase-set)
 .const FONT_TINY    = 4    // eigen 3x5 micro-font (hele kleine letters)
-.const FONT_GEOS    = 5    // eigen GEOS-stijl font (van disk geladen)
-.const NUM_FONTS    = 6
+// Van disk geladen fonts (charset naar $3800). Index op disk = id - FONT_FREMEN.
+.const FONT_FREMEN  = 5    // eigen ronde sans (van disk)
+.const FONT_SERIF   = 6    // serif (van disk)
+.const FONT_MONO    = 7    // monospace/typemachine (van disk)
+.const FONT_CASUAL  = 8    // rond/speels (van disk)
+.const FONT_HEAVY   = 9    // zwaar display (van disk)
+.const NUM_FONTS    = 10
 .const DEFAULT_FONT = FONT_SYSTEM
 
 .label CFG_fontId   = $0207   // actieve font (0..NUM_FONTS-1)
@@ -75,10 +80,10 @@
 .const DEFAULT_MENUFILL = MENU_FILLED
 
 // ---- Kleurprofiel (basis-thema, instelbaar via Settings) ----
-.label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=GEOS
+.label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=Paper
 .const PROFILE_C64      = 0
 .const PROFILE_MATRIX   = 1
-.const PROFILE_GEOS     = 2
+.const PROFILE_PAPER    = 2
 .const NUM_PROFILES     = 3
 .const DEFAULT_PROFILE  = PROFILE_C64
 

@@ -19,7 +19,12 @@
 .segmentdef Calc   [start=$8000]
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
-.segmentdef Geos   [start=$3800]   // font-charset (laadt naar charset-RAM)
+// font-charsets (laden naar charset-RAM $3800; overlappen, 1 tegelijk)
+.segmentdef Fremen [start=$3800]
+.segmentdef Serif  [start=$3800]
+.segmentdef Mono   [start=$3800]
+.segmentdef Casual [start=$3800]
+.segmentdef Heavy  [start=$3800]
 
 .file [name="cd64.prg",   segments="Core"]
 .file [name="files.prg",  segments="Files"]
@@ -27,7 +32,11 @@
 .file [name="calc.prg",   segments="Calc"]
 .file [name="paint.prg",  segments="Paint"]
 .file [name="setup.prg",  segments="Setup"]
-.file [name="geos.prg",   segments="Geos"]
+.file [name="fremen.prg", segments="Fremen"]
+.file [name="serif.prg",  segments="Serif"]
+.file [name="mono.prg",   segments="Mono"]
+.file [name="casual.prg", segments="Casual"]
+.file [name="heavy.prg",  segments="Heavy"]
 
 //--------------------------------------------------------
 // CORE - kernel, drivers, gfx, shell/desktop (altijd resident).
@@ -69,6 +78,14 @@ start:
 .segment Setup
         #import "apps/settings.asm"
 
-// Font-charset (2 KB) - los PRG met laadadres $3800.
-.segment Geos
-        .import binary "data/geos.bin"
+// Font-charsets (elk 2 KB) - losse PRG's met laadadres $3800.
+.segment Fremen
+        .import binary "data/fremen.bin"
+.segment Serif
+        .import binary "data/serif.bin"
+.segment Mono
+        .import binary "data/mono.bin"
+.segment Casual
+        .import binary "data/casual.bin"
+.segment Heavy
+        .import binary "data/heavy.bin"

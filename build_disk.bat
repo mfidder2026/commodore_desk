@@ -36,7 +36,11 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\paint.prg paint ^
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
-  -write build\geos.prg geos
+  -write build\fremen.prg fremen ^
+  -write build\serif.prg serif ^
+  -write build\mono.prg mono ^
+  -write build\casual.prg casual ^
+  -write build\heavy.prg heavy
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
 echo.

@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-# Genereert een EIGEN, GEOS-geinspireerd 8x8-font (origineel ontwerp,
-# geen kopie van het BSW-font) als volledige 2KB C64-charset.
-# Basis = System-chargen (zodat grafiek/kader-tekens bestaan); de
-# leesbare tekens (A-Z, 0-9, leestekens) worden overschreven met de
-# eigen ronde stijl. Reverse-set (128-255) = inverse van 0-127.
+# Font-template voor Commodore Desk 64.
+# Genereert EIGEN 8x8-fonts (originele ontwerpen) als 2KB C64-charsets:
+#   fremen.bin  - ronde, strakke sans-serif (basis)
+#   serif.bin   - met serifs
+#   mono.bin    - typemachine/monospace-gevoel (zwaarder)
+#   casual.bin  - rond/speels
+#   heavy.bin   - zwaar display-font
+# Deze zijn geinspireerd op algemene stijlen (sans/serif/mono/casual);
+# het zijn GEEN kopieen van beschermde fonts als Arial/Times/Helvetica/
+# Comic Sans/Courier.
 #
-# Uit: data/geos.bin (2048 bytes). Load-adres krijgt 'ie in de build.
+# Basis = System-chargen (grafiek/kader-tekens); de leesbare tekens
+# worden overschreven; reverse-set (128-255) = inverse van 0-127.
+BASE = "data/chargen.bin"
 
-BASE = "data/chargen.bin"   # System-charset (2KB) als basis
-
-# 8x8 glyphs, '#'=pixel. Ronde, strakke sans-serif (7 hoog, ~6 breed).
+# Fremen: eigen ronde sans, 8x8. '#'=pixel (7 hoog, ~6 breed).
 G = {
 'A':[".####.","#....#","#....#","######","#....#","#....#","#....#","......"],
 'B':["#####.","#....#","#####.","#....#","#....#","#....#","#####.","......"],
@@ -60,13 +65,10 @@ G = {
 ')':[".#....","..#...","...#..","...#..","...#..","..#...",".#....","......"],
 '+':["......","..#...","..#...","######","..#...","..#...","......","......"],
 '=':["......","......","######","......","######","......","......","......"],
-'>':["#.....",".#....","..#...","...#..","..#...",".#....","#.....","......"],
-'<':["....#.","...#..","..#...",".#....","..#...","...#..","....#.","......"],
 "'":["..#...","..#...",".#....","......","......","......","......","......"],
-'"':[".#.#..",".#.#..",".#.#..","......","......","......","......","......"],
 }
 
-def glyph(rows):
+def to_bytes(rows):
     out=[]
     for r in rows:
         b=0
@@ -82,38 +84,62 @@ def sc(ch):
     if 0x20<=o<=0x3f: return o
     return None
 
-data=bytearray(open(BASE,'rb').read())
-assert len(data)>=2048
-data=data[:2048]
+FREMEN = {ch: to_bytes(rows) for ch,rows in G.items()}
 
-for ch,rows in G.items():
-    code=sc(ch)
-    if code is None: continue
-    g=glyph(rows)
-    for i in range(8):
-        data[code*8+i]=g[i]
+# ---- stijltransformaties (op de 8-byte glyphs) ----
+def rows_used(g): return [i for i in range(8) if g[i]]
 
-# reverse-set (128-255) = inverse van 0-127
-for code in range(128):
-    for i in range(8):
-        data[(code+128)*8+i]=data[code*8+i]^0xff
+def t_serif(g):
+    g=g[:]; ru=rows_used(g)
+    if ru:
+        for r in (ru[0], ru[-1]):
+            v=g[r]; g[r]=(v | (v<<1) | (v>>1)) & 0xff
+    return g
 
-open("data/geos.bin","wb").write(data)
-print("data/geos.bin:",len(data),"bytes")
+def t_mono(g):    # zwaardere, gelijkmatige streek (typemachine-gevoel)
+    return [ (b | (b>>1)) & 0xff for b in g ]
 
-# preview
-try:
-    from PIL import Image
-    chars=" ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:-/!?()"
-    im=Image.new("RGB",(len(chars)*9, 9),(0,0,60)); px=im.load()
-    for i,ch in enumerate(chars):
+def t_casual(g):  # verticaal verdikken -> ronder/speels
+    return [ (g[i] | (g[i+1] if i+1<8 else 0)) & 0xff for i in range(8) ]
+
+def t_heavy(g):   # zwaar display-font
+    return [ (b | (b>>1) | (b<<1)) & 0xff for b in g ]
+
+def build(transform, outname):
+    data=bytearray(open(BASE,'rb').read()[:2048])
+    for ch,base in FREMEN.items():
         code=sc(ch)
         if code is None: continue
-        for ry in range(8):
-            bits=data[code*8+ry]
-            for rx in range(8):
-                if bits&(1<<(7-rx)): px[i*9+rx,ry]=(255,255,255)
-    im.resize((len(chars)*9*4,9*4),Image.NEAREST).save("build/geos_preview.png")
-    print("preview -> build/geos_preview.png")
+        g=transform(base) if transform else base
+        for i in range(8): data[code*8+i]=g[i]
+    for code in range(128):
+        for i in range(8):
+            data[(code+128)*8+i]=data[code*8+i]^0xff
+    open("data/%s.bin"%outname,"wb").write(data)
+    print("data/%s.bin"%outname, len(data),"bytes")
+
+build(None,     "fremen")
+build(t_serif,  "serif")
+build(t_mono,   "mono")
+build(t_casual, "casual")
+build(t_heavy,  "heavy")
+
+# preview van alle vijf
+try:
+    from PIL import Image
+    fonts=["fremen","serif","mono","casual","heavy"]
+    chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789"
+    im=Image.new("RGB",(len(chars)*9, len(fonts)*10),(0,0,60)); px=im.load()
+    for fi,fn in enumerate(fonts):
+        d=open("data/%s.bin"%fn,'rb').read()
+        for i,ch in enumerate(chars):
+            code=sc(ch)
+            if code is None: continue
+            for ry in range(8):
+                bits=d[code*8+ry]
+                for rx in range(8):
+                    if bits&(1<<(7-rx)): px[i*9+rx, fi*10+ry]=(255,255,255)
+    im.resize((len(chars)*9*3, len(fonts)*10*3),Image.NEAREST).save("build/fonts_all.png")
+    print("preview -> build/fonts_all.png")
 except Exception as e:
     print("geen preview:",e)

@@ -328,14 +328,14 @@ setRow:  .byte 0
 roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel
 roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
 
-fontNameLo: .byte <fSystem, <fClassic, <fBold, <fLower, <fTiny, <fGeos
-fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny, >fGeos
+fontNameLo: .byte <fSystem, <fClassic, <fBold, <fLower, <fTiny, <fFremen, <fSerif, <fMono, <fCasual, <fHeavy
+fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny, >fFremen, >fSerif, >fMono, >fCasual, >fHeavy
 
 menuNameLo: .byte <mClear, <mFilled
 menuNameHi: .byte >mClear, >mFilled
 
-profNameLo: .byte <pC64, <pMatrix, <pGeos
-profNameHi: .byte >pC64, >pMatrix, >pGeos
+profNameLo: .byte <pC64, <pMatrix, <pPaper
+profNameHi: .byte >pC64, >pMatrix, >pPaper
 
 .encoding "screencode_upper"
 rRand: .text "BORDER"
@@ -368,7 +368,15 @@ fLower:   .text "LOWER  "
           .byte $ff
 fTiny:    .text "TINY   "
           .byte $ff
-fGeos:    .text "GEOS   "
+fFremen:  .text "FREMEN "
+          .byte $ff
+fSerif:   .text "SERIF  "
+          .byte $ff
+fMono:    .text "MONO   "
+          .byte $ff
+fCasual:  .text "CASUAL "
+          .byte $ff
+fHeavy:   .text "HEAVY  "
           .byte $ff
 sMenu:  .text "MENU:"
         .byte $ff
@@ -382,5 +390,5 @@ pC64:    .text "C64    "
          .byte $ff
 pMatrix: .text "MATRIX "
          .byte $ff
-pGeos:   .text "GEOS   "
+pPaper:  .text "PAPER  "
          .byte $ff
