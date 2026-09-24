@@ -47,16 +47,60 @@ font_Init:
 //              fontwissel in Settings.
 //--------------------------------------------------------
 font_Apply:
-        jsr font_Base
         lda CFG_fontId
         cmp #FONT_BOLD
-        bne !c+
+        beq !bold+
+        cmp #FONT_CLASSIC
+        beq !classic+
+        cmp #FONT_LOWER
+        beq !lower+
+        cmp #FONT_TINY
+        beq !tiny+
+        jsr font_Base            // System
+        jmp font_OverlayUI
+!bold:  jsr font_Base
         jsr font_Bold
-        jmp !ov+
-!c:     cmp #FONT_CLASSIC
-        bne !ov+
+        jmp font_OverlayUI
+!classic:
+        jsr font_Base
         jsr font_Classic
-!ov:    jmp font_OverlayUI
+        jmp font_OverlayUI
+!lower: jmp font_Lower
+!tiny:  jmp font_Tiny
+
+//--------------------------------------------------------
+// font_Lower - System-charset + kleine letters (a-z) uit de C64-ROM
+//              over code 1-26.
+//--------------------------------------------------------
+font_Lower:
+        jsr font_Base
+        ldx #0
+!lp:    lda lowerChars,x
+        sta CHARSET_BASE + 8,x       // code 1 = a
+        inx
+        cpx #208                     // 26 letters * 8
+        bne !lp-
+        jmp font_OverlayUI
+
+//--------------------------------------------------------
+// font_Tiny - System-charset + eigen 3x5 micro-font over A-Z (code
+//             1-26) en 0-9 (code 48-57).
+//--------------------------------------------------------
+font_Tiny:
+        jsr font_Base
+        ldx #0
+!lp:    lda tinyChars,x              // A-Z -> code 1
+        sta CHARSET_BASE + 8,x
+        inx
+        cpx #208
+        bne !lp-
+        ldx #0
+!lp:    lda tinyChars + 208,x        // 0-9 -> code 48
+        sta CHARSET_BASE + [48*8],x
+        inx
+        cpx #80
+        bne !lp-
+        jmp font_OverlayUI
 
 //--------------------------------------------------------
 // font_Base - kopieer de ingesloten System-charset (2 KB) naar RAM.
@@ -230,3 +274,11 @@ frameGlyphs:
 //--------------------------------------------------------
 sysChars:
         .import binary "data/chargen.bin"
+
+// Kleine letters a-z (uit de C64-ROM, 26 glyphs) - overlay voor FONT_LOWER.
+lowerChars:
+        .import binary "data/lower.bin"
+
+// Eigen 3x5 micro-font: A-Z (26) + 0-9 (10) - overlay voor FONT_TINY.
+tinyChars:
+        .import binary "data/tiny.bin"

@@ -45,13 +45,15 @@
 .label LAY_dockLabelRow  = $0206
 
 // ---- Uiterlijk-instellingen (runtime, OS-vars pagina) ----
-// Lettertype = charset. De 3 fonts delen hetzelfde UI-glyphblok
+// Lettertype = charset. De 5 fonts delen hetzelfde UI-glyphblok
 // (frames, dock-iconen, pijltjes); alleen de tekst-glyphs verschillen.
-// Bij wissel/boot wordt de gekozen font naar CHARSET_BASE ($3000) gekopieerd.
+// Bij wissel/boot wordt de gekozen font naar CHARSET_BASE ($3800) gekopieerd.
 .const FONT_SYSTEM  = 0    // strak modern 8x8 (default)
-.const FONT_CLASSIC = 1    // nostalgische originele C64-stijl
+.const FONT_CLASSIC = 1    // nostalgische originele C64-stijl (schuin)
 .const FONT_BOLD    = 2    // zwaar / hoog-contrast, extra leesbaar
-.const NUM_FONTS    = 3
+.const FONT_LOWER   = 3    // kleine letters (C64 lowercase-set)
+.const FONT_TINY    = 4    // eigen 3x5 micro-font (hele kleine letters)
+.const NUM_FONTS    = 5
 .const DEFAULT_FONT = FONT_SYSTEM
 
 .label CFG_fontId   = $0207   // actieve font (0..NUM_FONTS-1)

@@ -100,6 +100,13 @@ head -c 2048 "<VICE>/C64/chargen-901225-01.bin" > data/chargen.bin
 ```
 (The first 2 KB = the uppercase/graphics set.)
 
+**One-time — generate the extra font data.** The Lowercase and Tiny fonts need
+`data/lower.bin` (the C64 lowercase letters, from the ROM) and `data/tiny.bin`
+(a generated 3×5 micro-font). Adjust the ROM path at the top of the script, then:
+```bash
+python tools/make_fonts.py
+```
+
 **Disk (D71):**
 ```bat
 build_disk.bat        :: -> build\CD64.d71
@@ -145,7 +152,8 @@ include/  palette · layout · memmap · abi · hardware
 
 In **Settings** you pick a base **color profile** (Commodore 64 / Matrix /
 GEOS), a color per theme role (border, desktop, menu bar, accent, selection),
-the **drop-down style** (filled/clear) and a **font** — **System** (crisp), **Classic** (italic) or
+the **drop-down style** (filled/clear) and a **font** (5: System, Classic,
+Bold, Lowercase, Tiny) — **System** (crisp), **Classic** (italic) or
 **Bold** (heavy). Click the `FONT:` line to cycle; the whole UI switches
 instantly. **SAVE** writes `CD64.CFG` to the D71. At boot the OS loads that file
 back automatically. All three fonts share one UI-glyph block (frames, dock icons),
@@ -159,6 +167,7 @@ so only the text glyphs change.
 | `boot_main.asm` | Windows-95-style boot loader: shows the splash, chain-loads `CD64` |
 | `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
 | `tools/make_bootscreen.py` | generates the native hi-res boot screen bitmap (`data/boot_*.bin`) |
+| `tools/make_fonts.py` | extracts lowercase + generates the Tiny 3×5 font (`data/lower.bin`, `data/tiny.bin`) |
 | `build_disk.bat` / `build_cart.bat` | build scripts |
 | `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
 | `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |
