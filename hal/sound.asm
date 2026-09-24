@@ -1,9 +1,10 @@
 #importonce
 //========================================================
-// hal/sound.asm - SID-geluid (Fase 10)
+// hal/sound.asm - SID-geluid
 // Commodore Desk 64
 //
-// Korte klik-feedback via SID-stem 1 (ruis + snelle decay).
+// Kort, zacht piepje als klik-feedback via SID-stem 1 (driehoeksgolf,
+// laag volume, snelle decay). Aan/uit via CFG_sound (Settings).
 //========================================================
 
 .label SID_V1_FREQ_LO = $d400
@@ -13,15 +14,15 @@
 .label SID_V1_SR      = $d406
 .label SID_VOLUME     = $d418
 
-// sid_Init - volume aan, stem 1 envelope voor korte tik.
+// sid_Init - laag volume, stem 1 envelope voor een kort zacht piepje.
 sid_Init:
-        lda #$0f
+        lda #$06                 // zacht master-volume (was $0f = hard)
         sta SID_VOLUME
         lda #$00
         sta SID_V1_FREQ_LO
-        lda #$40
+        lda #$28                 // ~hoog piepje
         sta SID_V1_FREQ_HI
-        lda #$08                 // attack 0, decay 8
+        lda #$05                 // attack 0, decay 5 (kort)
         sta SID_V1_AD
         lda #$00                 // sustain 0, release 0
         sta SID_V1_SR
@@ -29,10 +30,12 @@ sid_Init:
         sta SID_V1_CTRL
         rts
 
-// sid_Click - korte klik (retrigger van de envelope).
+// sid_Click - kort piepje (driehoek), alleen als geluid aanstaat.
 sid_Click:
-        lda #$00
-        sta SID_V1_CTRL          // gate uit (retrigger)
-        lda #$81                 // ruis + gate aan
+        lda CFG_sound
+        beq !off+
+        lda #$10                 // gate uit (retrigger), driehoek
         sta SID_V1_CTRL
-        rts
+        lda #$11                 // driehoeksgolf + gate aan
+        sta SID_V1_CTRL
+!off:   rts

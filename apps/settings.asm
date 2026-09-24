@@ -111,7 +111,7 @@ pdone:  lda #<sSave
         sta a1
         lda #6
         sta a2
-        lda #LIGHT_GREY
+        lda TH_accent            // accentkleur -> leesbaar op elk thema
         sta a3
         jsr btn_Draw
         lda #<sSaveHint
@@ -197,6 +197,30 @@ pdone:  lda #<sSave
         lda TH_accent
         sta a2
         jsr gfx_DrawText
+        // SOUND (rij 4) - klik om te wisselen
+        lda #<sSound
+        sta r0
+        lda #>sSound
+        sta r0+1
+        lda #4
+        sta a0
+        lda #4
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldx CFG_sound
+        lda soundNameLo,x
+        sta r0
+        lda soundNameHi,x
+        sta r0+1
+        lda #11
+        sta a0
+        lda #4
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
         rts
 }
 
@@ -272,9 +296,12 @@ chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
         bne chkMenu
         lda evtA
         cmp #4
-        bcc done
-        cmp #21
-        bcs done
+        bcs !+
+        rts
+!:      cmp #21
+        bcc !+
+        rts
+!:
         lda CFG_fontId
         clc
         adc #1
@@ -291,9 +318,12 @@ chkMenu: // MENU-regel (rij 14, kol 4-20) -> stijl wisselen
         bne chkProf
         lda evtA
         cmp #4
-        bcc done
-        cmp #21
-        bcs done
+        bcs !+
+        rts
+!:      cmp #21
+        bcc !+
+        rts
+!:
         lda CFG_menuFill
         eor #1
         sta CFG_menuFill
@@ -302,12 +332,15 @@ chkMenu: // MENU-regel (rij 14, kol 4-20) -> stijl wisselen
 chkProf: // THEME-regel (rij 3, kol 4-20) -> volgend profiel
         lda evtB
         cmp #3
-        bne done
+        bne chkSound
         lda evtA
         cmp #4
-        bcc done
-        cmp #21
-        bcs done
+        bcs !+
+        rts
+!:      cmp #21
+        bcc !+
+        rts
+!:
         lda CFG_profile
         clc
         adc #1
@@ -317,6 +350,24 @@ chkProf: // THEME-regel (rij 3, kol 4-20) -> volgend profiel
 !:      sta CFG_profile
         jsr profile_Apply
         jsr shell_DrawAll
+        rts
+chkSound: // SOUND-regel (rij 4, kol 4-20) -> aan/uit
+        lda evtB
+        cmp #4
+        bne done
+        lda evtA
+        cmp #4
+        bcs !+
+        rts
+!:      cmp #21
+        bcc !+
+        rts
+!:
+        lda CFG_sound
+        eor #1
+        sta CFG_sound
+        jsr sid_Click            // klik-feedback met de nieuwe stand
+        jsr set_Draw
 done:   rts
 }
 
@@ -336,6 +387,9 @@ menuNameHi: .byte >mClear, >mFilled
 
 profNameLo: .byte <pC64, <pMatrix, <pPaper
 profNameHi: .byte >pC64, >pMatrix, >pPaper
+
+soundNameLo: .byte <sNo, <sYes
+soundNameHi: .byte >sNo, >sYes
 
 .encoding "screencode_upper"
 rRand: .text "BORDER"
@@ -391,4 +445,10 @@ pC64:    .text "C64    "
 pMatrix: .text "MATRIX "
          .byte $ff
 pPaper:  .text "PAPER  "
+         .byte $ff
+sSound:  .text "SOUND:"
+         .byte $ff
+sNo:     .text "NO "
+         .byte $ff
+sYes:    .text "YES"
          .byte $ff

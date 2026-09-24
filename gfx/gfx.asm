@@ -397,4 +397,30 @@ gfx_DrawBox:
         inc tmp7
         jmp !v-
 !vdone:
+        // Bij FILLED: binnenkant wissen naar de achtergrond, zodat de box
+        // ondoorzichtig is (je ziet niet meer wat erachter staat).
+        lda CFG_menuFill
+        beq !nofill+
+        lda tmp0
+        clc
+        adc #1
+        sta a0                   // x0+1
+        lda tmp1
+        clc
+        adc #1
+        sta a1                   // y0+1
+        lda tmp2
+        sec
+        sbc #2
+        sta a2                   // w-2
+        lda tmp3
+        sec
+        sbc #2
+        sta a3                   // h-2
+        lda #$20
+        sta a4
+        lda TH_deskbg
+        sta a5
+        jsr gfx_FillRect
+!nofill:
         rts

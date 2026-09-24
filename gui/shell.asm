@@ -412,26 +412,10 @@ exitToDesktop:
 //             sluiten. IRQ blijft de cursor pollen.
 //--------------------------------------------------------
 menu_Draw:
-        gfxDrawBox(1, 1, 14, 5, LIGHT_GREY)      // rijen 1-5, kol 1-14
-        lda CFG_menuFill                         // gevuld?
-        beq !clear+
-        lda #2                                   // interieur vullen (kol 2-13, rij 2-4)
-        sta a0
-        lda #2
-        sta a1
-        lda #12
-        sta a2
-        lda #3
-        sta a3
-        lda #$a0
-        sta a4
-        lda #LIGHT_GREY
-        sta a5
-        jsr gfx_FillRect
-        lda #BLACK                               // zwarte tekst op gevuld paneel
-        jmp !setc+
-!clear: lda TH_text                          // witte tekst (doorzichtig)
-!setc:  sta menuTxtCol
+        // gfxDrawBox maakt de box ondoorzichtig bij FILLED; tekst in themakleur
+        gfxDrawBox(1, 1, 14, 6, TH_accent)       // rijen 1-6, kol 1-14
+        lda TH_text
+        sta menuTxtCol
         lda #<oHelp
         sta r0
         lda #>oHelp
@@ -461,6 +445,17 @@ menu_Draw:
         lda #3
         sta a0
         lda #4
+        sta a1
+        lda menuTxtCol
+        sta a2
+        jsr gfx_DrawText
+        lda #<oReset
+        sta r0
+        lda #>oReset
+        sta r0+1
+        lda #3
+        sta a0
+        lda #5
         sta a1
         lda menuTxtCol
         sta a2
@@ -496,10 +491,17 @@ doClick:
         beq doDesk
         cmp #4
         beq doAbout
+        cmp #5
+        beq doReset
 close:  jmp shell_DrawAll
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
 doDesk: jmp exitToDesktop
 doAbout:jmp about_Show
+doReset:
+        sei
+        lda #$37                 // BASIC+KERNAL+I/O inbanken
+        sta $01
+        jmp ($fffc)             // KERNAL-reset -> terug naar BASIC
 }
 
 //--------------------------------------------------------
@@ -729,6 +731,8 @@ oHelp:  .text "HELP"
 oDesk:  .text "DESKTOP"
         .byte $ff
 oAbout: .text "ABOUT"
+        .byte $ff
+oReset: .text "RESET"
         .byte $ff
 aLine1: .text "COMMODORE DESK 64"
         .byte $ff

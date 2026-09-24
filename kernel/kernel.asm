@@ -67,6 +67,8 @@ osvars_Init:
         sta CFG_menuFill
         lda #DEFAULT_PROFILE
         sta CFG_profile
+        lda #DEFAULT_SOUND
+        sta CFG_sound
         // thema-kleuren defaults (profiel 0 = Commodore 64)
         lda #THEME_BORDER
         sta TH_border

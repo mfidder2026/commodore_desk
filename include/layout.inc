@@ -81,6 +81,8 @@
 
 // ---- Kleurprofiel (basis-thema, instelbaar via Settings) ----
 .label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=Paper
+.label CFG_sound    = $0210   // 0=uit, 1=aan (klik-piepje)
+.const DEFAULT_SOUND    = 1
 .const PROFILE_C64      = 0
 .const PROFILE_MATRIX   = 1
 .const PROFILE_PAPER    = 2
