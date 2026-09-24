@@ -111,13 +111,27 @@ bootStart:
 //--------------------------------------------------------
 // waitKey - wacht tot een toets ingedrukt is (CIA1-matrix).
 //--------------------------------------------------------
+// Wacht op een toets OF ~4 seconden time-out (nooit blijven hangen).
 waitKey:
+        sei                      // KERNAL-IRQ mag $DC00 niet overschrijven
         lda #$00
         sta $dc00                // alle kolommen laag
-!w:     lda $dc01
+        lda #8
+        sta wkOuter
+!o:     ldx #0
+!x:     ldy #0
+!y:     lda $dc01
         cmp #$ff
-        beq !w-                  // $ff = niets ingedrukt
+        bne !done+               // toets ingedrukt -> door
+        iny
+        bne !y-
+        inx
+        bne !x-
+        dec wkOuter
+        bne !o-
+!done:  cli
         rts
+wkOuter: .byte 0
 
 //--------------------------------------------------------
 // Ingesloten bootscherm (multicolor-bitmap, uit design/bootscreen.png).
