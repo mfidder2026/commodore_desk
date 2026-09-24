@@ -7,6 +7,16 @@ de app in het midden — géén sleepbare vensters. Bootbaar als **D71-disk** en
 
 ![status](https://img.shields.io/badge/fase-0--10-brightgreen)
 
+![Commodore Desk 64 — bureaublad](docs/desktop.png)
+
+<sub>Draaiend in VICE: bureaublad met contextuele menubalk, statusbalk en de dock.</sub>
+
+### Schermen
+
+| File Manager | Settings |
+|---|---|
+| ![File Manager](docs/filemanager.png) | ![Settings](docs/settings.png) |
+
 ---
 
 ## Wat kan het
@@ -25,6 +35,27 @@ de app in het midden — géén sleepbare vensters. Bootbaar als **D71-disk** en
 - **Widgets**: knoppen, checkbox, scrollbare lijst, modale dialoog.
 - **Boot-splash** + **SID-klikgeluid**.
 - Strikt het **16-kleuren VIC-II-palet**.
+
+## Kleurenpalet
+
+Uitsluitend de 16 VIC-II-kleuren — geen benaderingen.
+
+![Kleurenpalet](docs/palette.png)
+
+| # | Naam (NL) | Hex | | # | Naam (NL) | Hex |
+|---|---|---|---|---|---|---|
+| 0 | Zwart | `#000000` | | 8 | Oranje | `#DD8855` |
+| 1 | Wit | `#FFFFFF` | | 9 | Bruin | `#664400` |
+| 2 | Rood | `#880000` | | 10 | Lichtrood | `#FF7777` |
+| 3 | Cyaan | `#AAFFEE` | | 11 | Donkergrijs | `#333333` |
+| 4 | Paars | `#CC44CC` | | 12 | Grijs | `#777777` |
+| 5 | Groen | `#00CC55` | | 13 | Lichtgroen | `#AAFF66` |
+| 6 | Blauw | `#0000AA` | | 14 | Lichtblauw | `#0088FF` |
+| 7 | Geel | `#EEEE77` | | 15 | Lichtgrijs | `#BBBBBB` |
+
+De kleuren en thema-rollen staan als constanten in
+[`include/palette.inc`](include/palette.inc); via **Settings** koppel je elke
+thema-rol aan een van deze 16.
 
 ## Besturing
 
