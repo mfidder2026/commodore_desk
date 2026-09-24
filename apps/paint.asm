@@ -8,7 +8,7 @@
 // boven de OS-image - met de bitmap op $6000 en de video-matrix op
 // $4000. Bij het verlaten (ESC) schakelt alles terug naar char-mode.
 //
-// 160x200 "dikke pixels". Achtergrond (bitpaar 00) is BLAUW en gedeeld
+// 160x200 "dikke pixels". Achtergrond (bitpaar 00) is WIT en gedeeld
 // over het hele scherm. Per 8x8-cel zijn er daarnaast 3 vrije kleur-
 // slots (matrix hoge nibble = 01, lage nibble = 10, kleuren-RAM = 11),
 // die Paint automatisch toewijst als je tekent. Zo is het HELE 16-
@@ -25,8 +25,8 @@
 .label pnMPtr  = $fb             // zeropage-pointer (matrix)
 .label pnCPtr  = $fd             // zeropage-pointer (kleuren-RAM)
 
-.const PN_BG     = BLUE          // gedeelde achtergrond (bitpaar 00)
-.const PN_MINIT  = [BLUE<<4]|BLUE // matrix-init: beide slots = achtergrond
+.const PN_BG     = WHITE         // gedeelde achtergrond (bitpaar 00)
+.const PN_MINIT  = [PN_BG<<4]|PN_BG // matrix-init: beide slots = achtergrond
 .const PN_PALTOP = 184           // py >= dit = palet-strook
 
 //--------------------------------------------------------
@@ -65,7 +65,7 @@ paint_Enter:
         sta COLOR_RAM + $300,x
         inx
         bne !c-
-        // 4) achtergrond blauw, rand zwart
+        // 4) achtergrond wit, rand zwart
         lda #PN_BG
         sta BG_COL0
         lda #BLACK
@@ -79,6 +79,8 @@ paint_Enter:
         bne !sp-
         lda #16
         sta $43f8
+        lda #BLACK               // zwarte cursor (zichtbaar op witte canvas)
+        sta SPR0_COL
         // 6) VIC-bank 1 ($4000-$7FFF)
         lda CIA2_PRA
         and #$fc
@@ -92,9 +94,10 @@ paint_Enter:
         sta VIC_CTRL1
         lda #$d8                 // multicolor aan, 40 kolommen
         sta VIC_CTRL2
-        // 9) palet tekenen + startkleur WIT
+        // 9) palet + gum-knop tekenen, startkleur ZWART
         jsr paint_DrawPalette
-        lda #WHITE
+        jsr paint_DrawEraser
+        lda #BLACK
         sta pnCurrent
         rts
 
@@ -113,6 +116,8 @@ paint_Exit:
         sta VIC_MEM
         lda #13                  // cursor-pointer terug (bank 0)
         sta $07f8
+        lda #WHITE               // cursor weer wit voor het bureaublad
+        sta SPR0_COL
         lda TH_deskbg
         sta BG_COL0
         lda TH_border
@@ -168,6 +173,14 @@ paint_Click:
         jmp paint_Plot
 pickColor:
         lda pnFx
+        cmp #136
+        bcc pkColors
+        cmp #152
+        bcs pcDone               // rechtermarge -> negeren
+        lda #PN_BG               // gum-vakje -> wis (teken achtergrond)
+        sta pnCurrent
+        rts
+pkColors:
         lsr
         lsr
         lsr                      // fatx / 8 = staalnummer (0..15)
@@ -175,6 +188,56 @@ pickColor:
         bcs pcDone
         sta pnCurrent
 pcDone: rts
+
+//--------------------------------------------------------
+// paint_DrawEraser - duidelijk gum-vakje (lichtgrijs blok + zwart
+//                    kruis) rechts in de palet-balk (fatx 136-151).
+//--------------------------------------------------------
+paint_DrawEraser:
+        lda #PN_PALTOP           // lichtgrijs blok
+        sta pnPy
+er_y:   lda #136
+        sta pnFx
+er_x:   lda #LIGHT_GREY
+        sta pnCurrent
+        jsr paint_Plot
+        inc pnFx
+        lda pnFx
+        cmp #152
+        bne er_x
+        inc pnPy
+        lda pnPy
+        cmp #200
+        bne er_y
+        lda #0                   // zwart kruis (twee diagonalen)
+        sta pnPalSw              // d = 0..15
+er_d:   lda pnPalSw              // (136+d, 184+d)
+        clc
+        adc #136
+        sta pnFx
+        lda pnPalSw
+        clc
+        adc #PN_PALTOP
+        sta pnPy
+        lda #BLACK
+        sta pnCurrent
+        jsr paint_Plot
+        lda #151                 // (151-d, 184+d)
+        sec
+        sbc pnPalSw
+        sta pnFx
+        lda pnPalSw
+        clc
+        adc #PN_PALTOP
+        sta pnPy
+        lda #BLACK
+        sta pnCurrent
+        jsr paint_Plot
+        inc pnPalSw
+        lda pnPalSw
+        cmp #16
+        bne er_d
+        rts
 
 //--------------------------------------------------------
 // paint_Live - elke lus (alleen als Paint actief is): teken zolang
@@ -396,7 +459,7 @@ mrowHi:   .fill 25, >(i*40)
 shiftTab: .byte 6, 4, 2, 0       // fatx&3 -> aantal bits schuiven
 maskTab:  .byte $c0, $30, $0c, $03
 
-pnCurrent: .byte WHITE
+pnCurrent: .byte BLACK
 pnFx:      .byte 0
 pnPy:      .byte 0
 pnVal:     .byte 0
