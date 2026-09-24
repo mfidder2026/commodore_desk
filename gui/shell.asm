@@ -41,6 +41,12 @@ shell_Run:
         jsr exitToDesktop
         jmp !loop-
 !notExit:
+        lda evtA
+        cmp #$83                 // F1 = context help (space closes it)
+        bne !nothelp+
+        jsr help_Show
+        jmp !loop-
+!nothelp:
         lda activeApp
         cmp #1                   // editor gets the key (space types there)
         bne !notEd+

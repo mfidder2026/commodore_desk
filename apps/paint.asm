@@ -9,7 +9,7 @@
 //========================================================
 
 .const PNW = 32
-.const PNH = 10
+.const PNH = 11
 .label pnPtr = $3c
 
 // paint_Init - canvas leeg ($ff), witte kleur.
@@ -19,7 +19,7 @@ paint_Init:
         ldx #0
 !lp:    lda #$ff
         sta paintBuf,x
-        sta paintBuf + 64,x
+        sta paintBuf + 96,x      // paintBuf[0..351] = 352 cellen (32x11)
         inx
         bne !lp-
         rts
@@ -28,7 +28,7 @@ paint_Init:
 // paint_Draw - canvas + palet.
 //--------------------------------------------------------
 paint_Draw: {
-        gfxDrawBox(2, 5, 36, 12, LIGHT_GREY)
+        gfxDrawBox(2, 4, 36, 13, LIGHT_GREY)
         lda #0
         sta pnRowIdx
 prow:   lda pnRowIdx
@@ -122,7 +122,7 @@ paint_DrawCell:
         sta a0
         lda pnDRow
         clc
-        adc #6
+        adc #5
         sta a1
         lda #$a0
         sta a2
@@ -135,7 +135,7 @@ empty:  lda pnDCol
         sta a0
         lda pnDRow
         clc
-        adc #6
+        adc #5
         sta a1
         lda #$20
         sta a2
@@ -173,9 +173,9 @@ pnSetPtr:
 // paint_Click - canvas verven / kleur kiezen.
 //--------------------------------------------------------
 paint_Click: {
-        // canvas (kol 3-34, rij 6-15)
+        // canvas (kol 3-34, rij 5-15)
         lda evtB
-        cmp #6
+        cmp #5
         bcc chkPal
         cmp #16
         bcs chkPal
@@ -186,7 +186,7 @@ paint_Click: {
         bcs chkPal
         lda evtB
         sec
-        sbc #6
+        sbc #5
         sta pnDRow
         lda evtA
         sec

@@ -40,5 +40,6 @@ start:
 #import "apps/calc.asm"
 #import "apps/paint.asm"
 #import "apps/settings.asm"
+#import "gui/help.asm"
 #import "gui/shell.asm"
 #import "kernel/kernel.asm"

@@ -437,7 +437,7 @@ colMask: .byte $fe, $fd, $fb, $f7, $ef, $df, $bf, $7f
 
 // Keycode (kol*8+rij) -> schermcode. 0 = negeren, $80 = RETURN, $81 = DEL.
 keyTab:
-        .byte $81,$80,$00,$00,$00,$00,$00,$00   // kol0: DEL RET CRSR-R F7 F1 F3 F5 CRSR-D
+        .byte $81,$80,$00,$00,$83,$00,$00,$00   // kol0: DEL RET CRSR-R F7 F1($83=HELP) F3 F5 CRSR-D
         .byte $33,$17,$01,$34,$1a,$13,$05,$00   // kol1: 3 W A 4 Z S E LSHIFT
         .byte $35,$12,$04,$36,$03,$06,$14,$18   // kol2: 5 R D 6 C F T X
         .byte $37,$19,$07,$38,$02,$08,$15,$16   // kol3: 7 Y G 8 B H U V
