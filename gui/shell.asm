@@ -594,6 +594,12 @@ onMouseDown:
         jsr showLoading
         ldx activeApp
         jsr loadApp
+        bcc !loaded+
+        lda #$ff                 // laden mislukt -> terug naar desktop
+        sta activeApp
+        jsr shell_DrawAll
+        rts
+!loaded:
         lda activeApp
         cmp #0                   // File Manager -> directory lezen
         bne !na0+

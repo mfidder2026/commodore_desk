@@ -283,8 +283,10 @@ loadApp:
         ldy #1                   // sa=1 -> laadadres uit bestand ($8000)
         jsr K_SETLFS
         lda #0
-        jsr K_LOAD
+        jsr K_LOAD               // carry=1 bij fout (bestand niet gevonden)
+        php                      // laadresultaat bewaren over cfg_io_end
         jsr cfg_io_end
+        plp                      // carry terug: set = mislukt
         rts
 
 appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup
