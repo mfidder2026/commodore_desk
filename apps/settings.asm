@@ -328,8 +328,8 @@ setRow:  .byte 0
 roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel
 roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
 
-fontNameLo: .byte <fSystem, <fClassic, <fBold, <fLower, <fTiny
-fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny
+fontNameLo: .byte <fSystem, <fClassic, <fBold, <fLower, <fTiny, <fGeos
+fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny, >fGeos
 
 menuNameLo: .byte <mClear, <mFilled
 menuNameHi: .byte >mClear, >mFilled
@@ -367,6 +367,8 @@ fBold:    .text "BOLD   "
 fLower:   .text "LOWER  "
           .byte $ff
 fTiny:    .text "TINY   "
+          .byte $ff
+fGeos:    .text "GEOS   "
           .byte $ff
 sMenu:  .text "MENU:"
         .byte $ff

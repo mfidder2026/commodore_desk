@@ -105,6 +105,7 @@ head -c 2048 "<VICE>/C64/chargen-901225-01.bin" > data/chargen.bin
 (a generated 3×5 micro-font). Adjust the ROM path at the top of the script, then:
 ```bash
 python tools/make_fonts.py
+python tools/make_geosfont.py    # original GEOS-style font -> data/geos.bin
 ```
 
 **Disk (D71):**
@@ -158,8 +159,8 @@ include/  palette · layout · memmap · abi · hardware
 
 In **Settings** you pick a base **color profile** (Commodore 64 / Matrix /
 GEOS), a color per theme role (border, desktop, menu bar, accent, selection),
-the **drop-down style** (filled/clear) and a **font** (5: System, Classic,
-Bold, Lowercase, Tiny) — **System** (crisp), **Classic** (italic) or
+the **drop-down style** (filled/clear) and a **font** (6: System, Classic,
+Bold, Lowercase, Tiny, and a GEOS-style font loaded from disk) — **System** (crisp), **Classic** (italic) or
 **Bold** (heavy). Click the `FONT:` line to cycle; the whole UI switches
 instantly. **SAVE** writes `CD64.CFG` to the D71. At boot the OS loads that file
 back automatically. All three fonts share one UI-glyph block (frames, dock icons),
@@ -174,6 +175,7 @@ so only the text glyphs change.
 | `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
 | `tools/make_bootscreen.py` | generates the native hi-res boot screen bitmap (`data/boot_*.bin`) |
 | `tools/make_fonts.py` | extracts lowercase + generates the Tiny 3×5 font (`data/lower.bin`, `data/tiny.bin`) |
+| `tools/make_geosfont.py` | generates the original GEOS-style 8×8 font (`data/geos.bin`) |
 | `build_disk.bat` / `build_cart.bat` | build scripts |
 | `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
 | `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |

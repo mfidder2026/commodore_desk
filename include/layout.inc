@@ -53,7 +53,8 @@
 .const FONT_BOLD    = 2    // zwaar / hoog-contrast, extra leesbaar
 .const FONT_LOWER   = 3    // kleine letters (C64 lowercase-set)
 .const FONT_TINY    = 4    // eigen 3x5 micro-font (hele kleine letters)
-.const NUM_FONTS    = 5
+.const FONT_GEOS    = 5    // eigen GEOS-stijl font (van disk geladen)
+.const NUM_FONTS    = 6
 .const DEFAULT_FONT = FONT_SYSTEM
 
 .label CFG_fontId   = $0207   // actieve font (0..NUM_FONTS-1)

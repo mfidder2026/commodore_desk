@@ -289,15 +289,48 @@ loadApp:
         plp                      // carry terug: set = mislukt
         rts
 
+//--------------------------------------------------------
+// loadCharset - laad een font-charset (X = disk-font index) naar zijn
+//               laadadres ($3800). Carry=1 bij fout.
+//--------------------------------------------------------
+loadCharset:
+        stx loadIdx
+        jsr cfg_io_begin
+        ldx loadIdx
+        lda fntLen,x
+        pha
+        lda fntPtrLo,x
+        pha
+        lda fntPtrHi,x
+        tay
+        pla
+        tax
+        pla
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #1                   // sa=1 -> laadadres uit bestand ($3800)
+        jsr K_SETLFS
+        lda #0
+        jsr K_LOAD
+        php
+        jsr cfg_io_end
+        plp
+        rts
+
 appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup
 appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup
 appLen:   .byte 5, 6, 5, 4, 5
+fntPtrLo: .byte <anGeos
+fntPtrHi: .byte >anGeos
+fntLen:   .byte 4
 .encoding "petscii_upper"
 anFiles:  .text "FILES"
 anEdit:   .text "EDITOR"
 anPaint:  .text "PAINT"
 anCalc:   .text "CALC"
 anSetup:  .text "SETUP"
+anGeos:   .text "GEOS"
 loadIdx:  .byte 0
 
 //--------------------------------------------------------

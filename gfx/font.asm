@@ -56,7 +56,15 @@ font_Apply:
         beq !lower+
         cmp #FONT_TINY
         beq !tiny+
+        cmp #FONT_GEOS
+        beq !geos+
         jsr font_Base            // System
+        jmp font_OverlayUI
+!geos:  ldx #0                   // GEOS-charset van disk naar $3800
+        jsr loadCharset
+        bcs !gfail+              // mislukt -> terugvallen op System
+        jmp font_OverlayUI
+!gfail: jsr font_Base
         jmp font_OverlayUI
 !bold:  jsr font_Base
         jsr font_Bold

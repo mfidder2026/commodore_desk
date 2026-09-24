@@ -19,6 +19,7 @@
 .segmentdef Calc   [start=$8000]
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
+.segmentdef Geos   [start=$3800]   // font-charset (laadt naar charset-RAM)
 
 .file [name="cd64.prg",   segments="Core"]
 .file [name="files.prg",  segments="Files"]
@@ -26,6 +27,7 @@
 .file [name="calc.prg",   segments="Calc"]
 .file [name="paint.prg",  segments="Paint"]
 .file [name="setup.prg",  segments="Setup"]
+.file [name="geos.prg",   segments="Geos"]
 
 //--------------------------------------------------------
 // CORE - kernel, drivers, gfx, shell/desktop (altijd resident).
@@ -66,3 +68,7 @@ start:
         #import "apps/paint.asm"
 .segment Setup
         #import "apps/settings.asm"
+
+// Font-charset (2 KB) - los PRG met laadadres $3800.
+.segment Geos
+        .import binary "data/geos.bin"

@@ -35,7 +35,8 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\editor.prg editor ^
   -write build\paint.prg paint ^
   -write build\calc.prg calc ^
-  -write build\setup.prg setup
+  -write build\setup.prg setup ^
+  -write build\geos.prg geos
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
 echo.
