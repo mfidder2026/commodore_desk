@@ -221,22 +221,31 @@ gfx_DrawTextRev:
 // gfx_Cls - wis scherm (spaties), vul kleuren-RAM.
 // In: a2 = kleur.  Klobbert: A,X
 //--------------------------------------------------------
+// Alleen de 1000 zichtbare cellen ($0400-$07E7): de sprite-pointers op
+// $07F8-$07FF blijven staan, anders wordt de muiscursor tijdens het
+// hertekenen even rommel.
 gfx_Cls:
         lda #$20
         ldx #0
 !lp:    sta $0400,x
         sta $0500,x
         sta $0600,x
-        sta $0700,x
         inx
+        bne !lp-
+!lp:    sta $0700,x
+        inx
+        cpx #$e8
         bne !lp-
         lda a2
         ldx #0
 !lp:    sta $d800,x
         sta $d900,x
         sta $da00,x
-        sta $db00,x
         inx
+        bne !lp-
+!lp:    sta $db00,x
+        inx
+        cpx #$e8
         bne !lp-
         rts
 
