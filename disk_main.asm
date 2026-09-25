@@ -62,6 +62,7 @@ start:
         #import "gui/widgets.asm"
         #import "gui/help.asm"
         #import "gui/shell.asm"
+        #import "gui/deskapps.asm"
         #import "kernel/kernel.asm"
 
 //--------------------------------------------------------

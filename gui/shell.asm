@@ -212,112 +212,11 @@ inet_Draw:
         sta a2
         jmp gfx_DrawText
 
-// drawDesktopContent - launcher-grid met programma-iconen (2x2 + label).
-// 2 kolommen (x=3 en x=21), rijen stap 3 vanaf rij 3. Cel i:
-//   kol  = (i & 1) ? 21 : 3     rij = 3 + (i>>1)*3
-//   icoon 2x2 op (x,y)..(x+1,y+1); label op (x+3, y).
+// drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
+// programma's) uit deskapps.asm, plus de hint-regel.
 drawDesktopContent:
-        lda #0
-        sta deI
-!lp:    lda deI
-        cmp deskCount
-        bcc !go+
-        jmp !hint+
-!go:    // kolom-x uit bit0
-        lda deI
-        and #1
-        beq !left+
-        lda #21
-        jmp !setx+
-!left:  lda #3
-!setx:  sta deCol
-        // rij-y = 3 + (i>>1)*3
-        lda deI
-        lsr                      // i>>1 = rij-index
-        sta deRow                // tijdelijk rij-index
-        asl
-        clc
-        adc deRow                // *3
-        clc
-        adc #3
-        sta deRow                // y
-        ldx deI
-        lda deskIcon,x
-        sta deIcon
-        lda deskIcoCol,x
-        sta deIcoC
-        // TL (x, y)
-        lda deCol
-        sta a0
-        lda deRow
-        sta a1
-        lda deIcon
-        sta a2
-        lda deIcoC
-        sta a3
-        jsr gfx_PutChar
-        // TR (x+1, y)
-        lda deCol
-        clc
-        adc #1
-        sta a0
-        lda deRow
-        sta a1
-        lda deIcon
-        clc
-        adc #1
-        sta a2
-        lda deIcoC
-        sta a3
-        jsr gfx_PutChar
-        // BL (x, y+1)
-        lda deCol
-        sta a0
-        lda deRow
-        clc
-        adc #1
-        sta a1
-        lda deIcon
-        clc
-        adc #2
-        sta a2
-        lda deIcoC
-        sta a3
-        jsr gfx_PutChar
-        // BR (x+1, y+1)
-        lda deCol
-        clc
-        adc #1
-        sta a0
-        lda deRow
-        clc
-        adc #1
-        sta a1
-        lda deIcon
-        clc
-        adc #3
-        sta a2
-        lda deIcoC
-        sta a3
-        jsr gfx_PutChar
-        // label (x+3, y)
-        lda deCol
-        clc
-        adc #3
-        sta a0
-        lda deRow
-        sta a1
-        lda TH_text
-        sta a2
-        ldx deI
-        lda deskNameLo,x
-        sta r0
-        lda deskNameHi,x
-        sta r0+1
-        jsr gfx_DrawText
-        inc deI
-        jmp !lp-
-!hint:  lda #<sDeskHint
+        jsr da_DrawEntries
+        lda #<sDeskHint
         sta r0
         lda #>sDeskHint
         sta r0+1
@@ -330,52 +229,10 @@ drawDesktopContent:
         jmp gfx_DrawText
 
 //--------------------------------------------------------
-// desk_Click - klik op een launcher-icoon (rij 4-6) -> start het.
+// desk_Click - klik op het bureaublad -> launcher (deskapps.asm).
 //--------------------------------------------------------
 desk_Click:
-        // kolompaar uit x (>=21 -> rechts)
-        lda evtA
-        cmp #3
-        bcc !ret+
-        cmp #21
-        bcc !lc+
-        lda #1                   // rechter kolom
-        jmp !cp+
-!lc:    lda #0                   // linker kolom
-!cp:    sta deCol                // colPair (0/1) hergebruikt deCol
-        // rij-index uit y: t = evtB-3; rem = t mod 3 (2 = tussenruimte)
-        lda evtB
-        sec
-        sbc #3
-        bcc !ret+
-        sta deRow                // t
-        ldx #0                   // rij-index
-!dl:    lda deRow
-        cmp #3
-        bcc !rem+
-        sec
-        sbc #3
-        sta deRow
-        inx
-        jmp !dl-
-!rem:   lda deRow                // rest 0/1 = geldig, 2 = gap
-        cmp #2
-        beq !ret+
-        // entry = rij-index*2 + colPair
-        txa
-        asl
-        clc
-        adc deCol
-        cmp deskCount
-        bcs !ret+
-        tax
-        lda deskKind,x
-        bne !stand+
-        lda deskParam,x          // overlay-app-id
-        jmp openApp
-!stand: lda deskParam,x          // standalone PRG-index
-        jmp desk_RunPrg
-!ret:   rts
+        jmp da_Click
 
 // retStubSrc: RESTORE-terugkeerhandler, geassembleerd voor $C000 (een
 // gebied dat gewone PRG's met rust laten). De launcher kopieert dit hierheen
@@ -503,13 +360,13 @@ rpStub: jsr cfg_io_begin
 .const rpStubLen = * - rpStubSrc
 
 //--------------------------------------------------------
-// desk_RunPrg - start een standalone PRG (A = prg-index). De PRG laadt
-//               op $0801 over de OS heen; lukt het niet, dan PROGRAM NOT
-//               FOUND en terug naar het bureaublad. Naam -> $03C0 (petscii),
-//               lengte -> $03BF; de keten-stub op $0334 doet de LOAD.
+// launchCommon - start het PRG waarvan de naam al op $03C0 (petscii) en
+//                de lengte op $03BF staat. Installeert de RESTORE-
+//                terugkeerhandler ($C000) + SYS-parser ($C040), kopieert
+//                de run-stub naar $0334 en start die. Lukt het laden niet,
+//                dan valt de stub terug op shell_NotFound.
 //--------------------------------------------------------
-desk_RunPrg:
-        pha
+launchCommon:
         // RESTORE-terugkeerhandler naar $C000 kopiëren en NMI-vector erop wijzen
         ldx #0
 !rc:    lda retStubSrc,x
@@ -528,22 +385,7 @@ desk_RunPrg:
         sta $0318
         lda #>$c000
         sta $0319
-        pla
-        tax
-        lda deskPrgLen,x
-        sta $03bf
-        lda deskPrgLo,x
-        sta $fb
-        lda deskPrgHi,x
-        sta $fc
-        ldy #0
-!cn:    cpy $03bf
-        beq !cd+
-        lda ($fb),y
-        sta $03c0,y
-        iny
-        bne !cn-
-!cd:    ldx #0
+        ldx #0
 !cs:    lda rpStubSrc,x
         sta $0334,x
         inx
@@ -774,54 +616,51 @@ exitToDesktop:
 //             sluiten. IRQ blijft de cursor pollen.
 //--------------------------------------------------------
 menu_Draw:
-        // gfxDrawBox maakt de box ondoorzichtig bij FILLED; tekst in themakleur
-        gfxDrawBox(1, 1, 14, 6, TH_accent)       // rijen 1-6, kol 1-14
         lda TH_text
         sta menuTxtCol
-        lda #<oHelp
-        sta r0
-        lda #>oHelp
-        sta r0+1
-        lda #3
-        sta a0
-        lda #2
-        sta a1
-        lda menuTxtCol
-        sta a2
-        jsr gfx_DrawText
-        lda #<oDesk
-        sta r0
-        lda #>oDesk
-        sta r0+1
-        lda #3
-        sta a0
-        lda #3
-        sta a1
-        lda menuTxtCol
-        sta a2
-        jsr gfx_DrawText
-        lda #<oAbout
-        sta r0
-        lda #>oAbout
-        sta r0+1
-        lda #3
-        sta a0
+        lda activeApp
+        cmp #$ff
+        bne !app+
+        // ---- bureaublad-menu: TOEVOEGEN/BEWERKEN/VERWIJDEREN + rest ----
+        lda #1
+        sta menuDesk
+        gfxDrawBox(1, 1, 18, 8, TH_accent)       // rijen 1-8, kol 1-18
+        lda #6
+        sta menuN
+        jmp !draw+
+!app:   lda #0
+        sta menuDesk
+        gfxDrawBox(1, 1, 14, 6, TH_accent)       // rijen 1-6, kol 1-14
         lda #4
+        sta menuN
+!draw:  lda #0
+        sta menuI
+!lp:    ldx menuI
+        lda menuDesk
+        beq !ap+
+        lda dmLo,x
+        sta r0
+        lda dmHi,x
+        sta r0+1
+        jmp !p+
+!ap:    lda amLo,x
+        sta r0
+        lda amHi,x
+        sta r0+1
+!p:     lda #3
+        sta a0
+        lda menuI
+        clc
+        adc #2
         sta a1
         lda menuTxtCol
         sta a2
         jsr gfx_DrawText
-        lda #<oReset
-        sta r0
-        lda #>oReset
-        sta r0+1
-        lda #3
-        sta a0
-        lda #5
-        sta a1
-        lda menuTxtCol
-        sta a2
-        jmp gfx_DrawText
+        inc menuI
+        lda menuI
+        cmp menuN
+        bne !lp-
+        rts
 
 menu_Open: {
         jsr menu_Draw
@@ -841,11 +680,32 @@ wait:   jsr evt_Poll
 keyClick:
         jsr cursorToCell         // cursor -> evtA (kol), evtB (rij)
 doClick:
-        lda evtA                 // buiten kolommen 1-14 -> sluiten
+        lda evtA                 // buiten de menukolommen -> sluiten
         cmp #1
         bcc close
-        cmp #15
+        cmp #19
         bcs close
+        lda menuDesk
+        beq appDisp
+        // bureaublad: rij 2..7 -> item 0..5
+        lda evtB
+        sec
+        sbc #2
+        bcc close
+        cmp #0
+        beq mAdd
+        cmp #1
+        beq mEdit
+        cmp #2
+        beq mDel
+        cmp #3
+        beq doHelp
+        cmp #4
+        beq doAbout
+        cmp #5
+        beq doReset
+        jmp close
+appDisp:
         lda evtB
         cmp #2
         beq doHelp
@@ -856,6 +716,9 @@ doClick:
         cmp #5
         beq doReset
 close:  jmp shell_DrawAll
+mAdd:   jmp da_AddProgram
+mEdit:  jmp da_EditProgram
+mDel:   jmp da_DeleteProgram
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
 doDesk: jmp exitToDesktop
 doAbout:jmp about_Show
@@ -865,6 +728,11 @@ doReset:
         sta $01
         jmp ($fffc)             // KERNAL-reset -> terug naar BASIC
 }
+// menukeuze-tabellen
+dmLo: .byte <oAdd, <oEditP, <oDel, <oHelp, <oAbout, <oReset
+dmHi: .byte >oAdd, >oEditP, >oDel, >oHelp, >oAbout, >oReset
+amLo: .byte <oHelp, <oDesk, <oAbout, <oReset
+amHi: .byte >oHelp, >oDesk, >oAbout, >oReset
 
 //--------------------------------------------------------
 // about_Show - "over deze OS"-venster (modaal, spatie sluit).
@@ -1011,26 +879,24 @@ deRow:       .byte 0
 deIcon:      .byte 0
 deIcoC:      .byte 0
 
-// ---- bureaublad-launcher: standaard-entries ----
-// kind 0 = overlay-app (param = app-id); kind 1 = standalone PRG (param = prg-index)
-deskCount:  .byte 5
-deskNameLo: .byte <dnEdit, <dnPaint, <dnCalc, <dnCow, <dnScr
-deskNameHi: .byte >dnEdit, >dnPaint, >dnCalc, >dnCow, >dnScr
-deskKind:   .byte 0, 0, 0, 1, 1
-deskParam:  .byte 1, 2, 3, 0, 1
-deskIcon:   .byte 111, 115, 119, 107, 123   // 2x2 TL-glyph
-deskIcoCol: .byte WHITE, LIGHT_RED, CYAN, YELLOW, PURPLE
-// standalone-PRG-namen (petscii, voor de LOAD)
-deskPrgLo:  .byte <pnCow, <pnScr
-deskPrgHi:  .byte >pnCow, >pnScr
-deskPrgLen: .byte 6, 8
-.encoding "petscii_upper"
-pnCow:      .text "COWBOY"
-pnScr:      .text "SCRSAVER"
-.encoding "screencode_upper"
+// ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
+// De gebruikersprogramma's staan als records in deskapps.asm.
+biCount:    .byte 3
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc
+biIcon:     .byte 111, 115, 119        // 2x2 TL-glyph
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN
+biApp:      .byte 1, 2, 3              // overlay-app-id
+// 20 kies-iconen (1-cel grafische glyphs) voor gebruikersprogramma's
+userIconGlyphs:
+        .byte 65, 81, 83, 88, 90, 87, 91, 95, 94, 77
+        .byte 73, 74, 75, 85, 78, 76, 66, 79, 86, 64
 menuShown:   .byte 0
 cbRow:       .byte 0
 menuTxtCol:  .byte 0
+menuI:       .byte 0
+menuN:       .byte 0
+menuDesk:    .byte 0
 // gedeelde scratch-vars (o.a. File Manager-lijst)
 lvI:         .byte 0
 lvItem:      .byte 0
@@ -1093,10 +959,6 @@ dnPaint:   .text "PAINT"
            .byte $ff
 dnCalc:    .text "CALC"
            .byte $ff
-dnCow:     .text "COWBOY"
-           .byte $ff
-dnScr:     .text "SCRSAVER"
-           .byte $ff
 sNotFound: .text "PROGRAM NOT FOUND"
            .byte $ff
 sLoad:     .text "LOADING"
@@ -1121,6 +983,12 @@ lInet:  .text "INET"
         .byte $ff
 
 // uitklapmenu + about
+oAdd:   .text "ADD PROGRAM"
+        .byte $ff
+oEditP: .text "EDIT PROGRAM"
+        .byte $ff
+oDel:   .text "DELETE PROGRAM"
+        .byte $ff
 oHelp:  .text "HELP"
         .byte $ff
 oDesk:  .text "DESKTOP"

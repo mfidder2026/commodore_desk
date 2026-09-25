@@ -22,6 +22,7 @@ kernel_Init:
         jsr font_Init            // System-font naar RAM + UI-glyphs
         jsr osvars_Init          // runtime-defaults
         jsr cfg_Load             // CD64.CFG (indien aanwezig) overschrijft ze
+        jsr da_Load              // DESK.APPS (gebruikersprogramma's) of defaults
         jsr font_Apply           // gekozen font toepassen (na cfg_Load)
         jsr sid_Init
         // (bootscherm wordt door het aparte BOOT-laadprogramma getoond)
