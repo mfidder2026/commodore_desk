@@ -298,10 +298,9 @@ da_gridClick:
 //               Uit: A=entry, carry=1 geldig, carry=0 buiten het raster.
 //--------------------------------------------------------
 da_hitEntry:
+        // Ruim klikgebied: hele linker-/rechterhelft telt (grens kol 20).
         lda evtA
-        cmp #3
-        bcc !no+
-        cmp #21
+        cmp #20
         bcc !lc+
         lda #1
         jmp !cp+
