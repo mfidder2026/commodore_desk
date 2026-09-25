@@ -36,7 +36,13 @@
 .const GL_THUMB  = 88    // scroll-thumb (massief)
 .const GL_HILITE = 89    // dock: witte bovenrand
 .const GL_THUMBEND = 90  // scroll-thumb, onderste rij (met schaduw)
-.const OVL_GLYPHS = 27   // 20 iconen + 7 Win95-glyphs vanaf code 64
+// vensterkader met de lijn tegen de BUITENrand van de cel (zoals het bootscherm)
+.const W_L  = 91         // linkerrand
+.const W_R  = 92         // rechterrand
+.const W_B  = 93         // onderrand
+.const W_BL = 94         // hoek linksonder
+.const W_BR = 95         // hoek rechtsonder
+.const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
 //             daar direct; de cart kopieert hem uit ROM). Bewaar een
@@ -181,14 +187,14 @@ font_OverlayUI:
         inx
         cpx #[UI_GLYPH_COUNT*8]
         bne !lp-
-        // launcher-iconen (20) + Win95-glyphs (6) op codes 64..89
+        // launcher-iconen + Win95-glyphs: codes 64..95 = precies 256 bytes
         ldx #0
 !ic:    lda userIcons,x
         sta CHARSET_BASE + [64*8],x
         inx
-        cpx #[OVL_GLYPHS*8]
         bne !ic-
         rts
+.assert "userIcons moet 256 bytes zijn", OVL_GLYPHS*8, 256
 
 //--------------------------------------------------------
 // font_Bold - verzwaar de streken: b = b | (b>>1). Alleen de normale
@@ -347,6 +353,12 @@ userIcons:
         .byte $fe,$fe,$fe,$fe,$fe,$fe,$fe,$fe   // 88 scroll-thumb (midden)
         .byte $ff,$00,$00,$00,$00,$00,$00,$00   // 89 dock-bovenrand
         .byte $fe,$fe,$fe,$fe,$fe,$fe,$fe,$00   // 90 scroll-thumb (onderkant)
+// vensterkader tegen de buitenrand (2 pixels dik)
+        .byte $c0,$c0,$c0,$c0,$c0,$c0,$c0,$c0   // 91 linkerrand
+        .byte $03,$03,$03,$03,$03,$03,$03,$03   // 92 rechterrand
+        .byte $00,$00,$00,$00,$00,$00,$ff,$ff   // 93 onderrand
+        .byte $c0,$c0,$c0,$c0,$c0,$c0,$ff,$ff   // 94 hoek linksonder
+        .byte $03,$03,$03,$03,$03,$03,$ff,$ff   // 95 hoek rechtsonder
 
 // (De System-charset zelf zit niet meer in de Core: disk_main.asm laadt
 //  hem als eigen segment op $3800, main_cart.asm kopieert hem uit ROM.)

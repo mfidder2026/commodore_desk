@@ -296,7 +296,7 @@ dlg_Draw:
         clc
         adc dlgW
         sec
-        sbc #2
+        sbc #1
         sta dlgCX
         lda dlgNoClose
         bne !nc+
@@ -373,7 +373,7 @@ win_Frame:
         sta a0
         lda wfRow
         sta a1
-        lda #FR_V
+        lda #W_L
         sta a2
         lda wfC
         sta a3
@@ -386,7 +386,7 @@ win_Frame:
         sta a0
         lda wfRow
         sta a1
-        lda #FR_V
+        lda #W_R
         sta a2
         lda wfC
         sta a3
@@ -409,7 +409,7 @@ win_Frame:
         sta a2
         lda #1
         sta a3
-        lda #FR_H
+        lda #W_B
         sta a4
         lda wfC
         sta a5
@@ -418,7 +418,7 @@ win_Frame:
         sta a0
         lda wfRow
         sta a1
-        lda #FR_BL
+        lda #W_BL
         sta a2
         lda wfC
         sta a3
@@ -431,7 +431,7 @@ win_Frame:
         sta a0
         lda wfRow
         sta a1
-        lda #FR_BR
+        lda #W_BR
         sta a2
         lda wfC
         sta a3

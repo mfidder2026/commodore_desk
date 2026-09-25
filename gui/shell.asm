@@ -73,7 +73,7 @@ shell_Run:
 //   rij 19     onderrand van het venster
 //   rij 20     grijze desktop (hier wisselt de raster-split de achtergrond)
 //   rij 21-24  dock-plank (kol DOCK_L..DOCK_R) op lichtgrijs
-.const WIN_CLOSE_COL = 37
+.const WIN_CLOSE_COL = 38
 .const DOCK_L = 10
 .const DOCK_R = 30
 
@@ -317,18 +317,7 @@ inet_Draw:
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
 // programma's) uit deskapps.asm, plus de hint-regel.
 drawDesktopContent:
-        jsr da_DrawEntries
-        lda #<sDeskHint          // statusregel onderin het venster
-        sta r0
-        lda #>sDeskHint
-        sta r0+1
-        lda #3
-        sta a0
-        lda #18
-        sta a1
-        lda TH_title
-        sta a2
-        jmp gfx_DrawText
+        jmp da_DrawEntries
 
 //--------------------------------------------------------
 // desk_Click - klik op het bureaublad -> launcher (deskapps.asm).
@@ -1076,8 +1065,6 @@ nSet:   .text "SETTINGS"
 nInet:  .text "INTERNET"
         .byte $ff
 
-sDeskHint: .text "CLICK AN ICON TO START AN APP"
-           .byte $ff
 dnEdit:    .text "EDITOR"
            .byte $ff
 dnPaint:   .text "PAINT"
