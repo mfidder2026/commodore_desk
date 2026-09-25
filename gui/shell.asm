@@ -212,18 +212,220 @@ inet_Draw:
         sta a2
         jmp gfx_DrawText
 
+// drawDesktopContent - launcher-grid met programma-iconen (2x2 + label).
 drawDesktopContent:
-        lda #<sDeskHint
+        lda #0
+        sta deI
+!lp:    lda deI
+        cmp deskCount
+        bcc !go+
+        jmp !hint+
+!go:    lda deI                  // basiskolom = 4 + entry*8
+        asl
+        asl
+        asl
+        clc
+        adc #4
+        sta deCol
+        ldx deI
+        lda deskIcon,x
+        sta deIcon
+        lda deskIcoCol,x
+        sta deIcoC
+        lda deCol                // TL (col+1, rij 4)
+        clc
+        adc #1
+        sta a0
+        lda #4
+        sta a1
+        lda deIcon
+        sta a2
+        lda deIcoC
+        sta a3
+        jsr gfx_PutChar
+        lda deCol                // TR (col+2, rij 4)
+        clc
+        adc #2
+        sta a0
+        lda #4
+        sta a1
+        lda deIcon
+        clc
+        adc #1
+        sta a2
+        lda deIcoC
+        sta a3
+        jsr gfx_PutChar
+        lda deCol                // BL (col+1, rij 5)
+        clc
+        adc #1
+        sta a0
+        lda #5
+        sta a1
+        lda deIcon
+        clc
+        adc #2
+        sta a2
+        lda deIcoC
+        sta a3
+        jsr gfx_PutChar
+        lda deCol                // BR (col+2, rij 5)
+        clc
+        adc #2
+        sta a0
+        lda #5
+        sta a1
+        lda deIcon
+        clc
+        adc #3
+        sta a2
+        lda deIcoC
+        sta a3
+        jsr gfx_PutChar
+        lda deCol                // label (col, rij 6)
+        sta a0
+        lda #6
+        sta a1
+        lda TH_text
+        sta a2
+        ldx deI
+        lda deskNameLo,x
+        sta r0
+        lda deskNameHi,x
+        sta r0+1
+        jsr gfx_DrawText
+        inc deI
+        jmp !lp-
+!hint:  lda #<sDeskHint
         sta r0
         lda #>sDeskHint
         sta r0+1
         lda #2
         sta a0
-        lda #10
+        lda #19
         sta a1
         lda #GREY
         sta a2
         jmp gfx_DrawText
+
+//--------------------------------------------------------
+// desk_Click - klik op een launcher-icoon (rij 4-6) -> start het.
+//--------------------------------------------------------
+desk_Click:
+        lda evtB
+        cmp #4
+        bcc !ret+
+        cmp #7
+        bcs !ret+
+        lda evtA
+        sec
+        sbc #4
+        bcc !ret+
+        lsr
+        lsr
+        lsr                      // /8 -> entry
+        cmp deskCount
+        bcs !ret+
+        tax
+        lda deskKind,x
+        bne !stand+
+        lda deskParam,x          // overlay-app-id
+        jmp openApp
+!stand: lda deskParam,x          // standalone PRG-index
+        jmp desk_RunPrg
+!ret:   rts
+
+// run-stub: geassembleerd voor $0334. Laadt de PRG en start 'm (SYS 2061),
+// of valt bij mislukking netjes terug in de OS (shell_NotFound).
+rpStubSrc:
+.pseudopc $0334 {
+rpStub: jsr cfg_io_begin
+        lda $03bf                // naam-lengte
+        ldx #$c0                 // naam op $03C0
+        ldy #$03
+        jsr $ffbd                // SETNAM
+        lda #1
+        ldx #8
+        ldy #1                   // sa=1 -> laadadres uit bestand ($0801)
+        jsr $ffba                // SETLFS
+        lda #0
+        jsr $ffd5                // LOAD
+        bcs !fail+
+        lda #$37                 // BASIC+KERNAL+I/O voor de PRG
+        sta $01
+        cli
+        jmp $080d                // start (SYS 2061)
+!fail:  jsr cfg_io_end           // OS-toestand herstellen
+        jsr spr_CursorInit       // cursor-sprite terug ($0340 overschreven)
+        jmp shell_NotFound
+}
+.const rpStubLen = * - rpStubSrc
+
+//--------------------------------------------------------
+// desk_RunPrg - start een standalone PRG (A = prg-index). De PRG laadt
+//               op $0801 over de OS heen; lukt het niet, dan PROGRAM NOT
+//               FOUND en terug naar het bureaublad. Naam -> $03C0 (petscii),
+//               lengte -> $03BF; de keten-stub op $0334 doet de LOAD.
+//--------------------------------------------------------
+desk_RunPrg:
+        tax
+        lda deskPrgLen,x
+        sta $03bf
+        lda deskPrgLo,x
+        sta $fb
+        lda deskPrgHi,x
+        sta $fc
+        ldy #0
+!cn:    cpy $03bf
+        beq !cd+
+        lda ($fb),y
+        sta $03c0,y
+        iny
+        bne !cn-
+!cd:    ldx #0
+!cs:    lda rpStubSrc,x
+        sta $0334,x
+        inx
+        cpx #rpStubLen
+        bne !cs-
+        jmp $0334
+
+//--------------------------------------------------------
+// shell_NotFound - melding als een PRG niet geladen kon worden.
+//--------------------------------------------------------
+shell_NotFound:
+        gfxDrawBox(6, 10, 28, 5, TH_accent)
+        lda #<sNotFound
+        sta r0
+        lda #>sNotFound
+        sta r0+1
+        lda #9
+        sta a0
+        lda #11
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        lda #<aClose
+        sta r0
+        lda #>aClose
+        sta r0+1
+        lda #9
+        sta a0
+        lda #13
+        sta a1
+        lda TH_select
+        sta a2
+        jsr gfx_DrawText
+!w:     jsr evt_Poll
+        cmp #EVT_MOUSEDOWN
+        beq !close+
+        cmp #EVT_KEY
+        bne !w-
+        lda evtA
+        cmp #$20
+        bne !w-
+!close: jmp shell_DrawAll
 
 drawStub:
         rts
@@ -273,77 +475,76 @@ showLoading:
         jmp gfx_DrawText
 
 //--------------------------------------------------------
-// drawDock - 6 iconen (rij 22-23) + labels (rij 24).
+// drawDock - 3 statische iconen (FILES, INET, SETUP) op rij 22-24.
+//            dockApp[slot] = app-id; icon/label/kleur zijn per app-id.
 //--------------------------------------------------------
+.const DOCK_SLOTS = 3
 drawDock:
         lda #0
         sta dockI
 !lp:    lda dockI
-        cmp #6
+        cmp #DOCK_SLOTS
         bcc !go+
         jmp !done+
-!go:    ldx dockI                // slotBase uit tabel
+!go:    ldx dockI
+        lda dockApp,x            // app-id voor dit slot
+        sta dApp
         lda dockBase,x
         sta dockTmp
-        // TL (base+2, 22)
-        clc
+        clc                      // TL (base+2, 22)
         adc #2
         sta a0
         lda #22
         sta a1
-        ldx dockI
+        ldx dApp
         lda icon2TL,x
         sta a2
         lda iconColor,x
         sta a3
         jsr gfx_PutChar
-        // TR (base+3, 22)
-        lda dockTmp
+        lda dockTmp              // TR (base+3, 22)
         clc
         adc #3
         sta a0
         lda #22
         sta a1
-        ldx dockI
+        ldx dApp
         lda icon2TR,x
         sta a2
         lda iconColor,x
         sta a3
         jsr gfx_PutChar
-        // BL (base+2, 23)
-        lda dockTmp
+        lda dockTmp              // BL (base+2, 23)
         clc
         adc #2
         sta a0
         lda #23
         sta a1
-        ldx dockI
+        ldx dApp
         lda icon2BL,x
         sta a2
         lda iconColor,x
         sta a3
         jsr gfx_PutChar
-        // BR (base+3, 23)
-        lda dockTmp
+        lda dockTmp              // BR (base+3, 23)
         clc
         adc #3
         sta a0
         lda #23
         sta a1
-        ldx dockI
+        ldx dApp
         lda icon2BR,x
         sta a2
         lda iconColor,x
         sta a3
         jsr gfx_PutChar
-        // label (base+1, 24)
-        lda dockTmp
+        lda dockTmp              // label (base+1, 24)
         clc
         adc #1
         sta a0
         lda #24
         sta a1
-        lda dockI
+        lda dApp
         cmp activeApp
         bne !notact+
         lda TH_select
@@ -351,7 +552,7 @@ drawDock:
 !notact:
         lda TH_text
 !setc:  sta a2
-        ldx dockI
+        ldx dApp
         lda labelLo,x
         sta r0
         lda labelHi,x
@@ -568,66 +769,24 @@ onMouseDown:
 !nomenu:
         cmp #22
         bcc !widget+
-        // dock -> app wisselen (6 slots, grenzen 7/13/20/26/32)
+        // dock: 3 slots (grenzen 14, 26) -> app via dockApp
         lda evtA
         ldx #0
-        cmp #7
-        bcc !hit+
-        inx
-        cmp #13
-        bcc !hit+
-        inx
-        cmp #20
+        cmp #14
         bcc !hit+
         inx
         cmp #26
         bcc !hit+
         inx
-        cmp #32
-        bcc !hit+
-        inx
-!hit:   txa
-        cmp activeApp
-        beq !done+
-        sta activeApp
-        cmp #5                   // INET is resident (geen overlay)
-        beq !drawit+
-        tax                      // apps 0-4: overlay van disk laden
-        jsr showLoading
-        ldx activeApp
-        jsr loadApp
-        bcc !loaded+
-        lda #$ff                 // laden mislukt -> terug naar desktop
-        sta activeApp
-        jsr shell_DrawAll
-        rts
-!loaded:
-        lda activeApp
-        cmp #0                   // File Manager -> directory lezen
-        bne !na0+
-        jsr fm_Load
-        jmp !drawit+
-!na0:   cmp #1                   // Editor
-        bne !na1+
-        jsr ed_Init
-        jmp !drawit+
-!na1:   cmp #2                   // Paint -> eigen bitmapmodus (geen char-redraw)
-        bne !na2+
-        jsr paint_Enter
-        rts
-!na2:   cmp #3                   // Calculator
-        bne !na3+
-        jsr calc_Init
-        jmp !drawit+
-!na3:   // #4 Settings
-        jsr set_Init
-!drawit:
-        jsr shell_DrawAll
-        rts
+!hit:   lda dockApp,x
+        jmp openApp              // laadt/opent de app (tekent zelf)
 !widget:
-        // klik in het werkgebied -> naar de actieve app
+        // klik in het werkgebied
         lda activeApp
-        cmp #0
+        cmp #$ff
+        bne !app+
+        jmp desk_Click           // bureaublad -> launcher-icoon
+!app:   cmp #0
         bne !w1+
         jmp fm_Click
 !w1:    cmp #2
@@ -642,11 +801,70 @@ onMouseDown:
 !done:  rts
 
 //--------------------------------------------------------
+// openApp - open app-id A (0-5). Laadt de overlay (of resident INET),
+//           initialiseert en tekent. Paint gaat naar bitmapmodus.
+//--------------------------------------------------------
+openApp:
+        sta activeApp
+        cmp #5                   // INET is resident (geen overlay)
+        beq !drawit+
+        tax                      // apps 0-4: overlay van disk laden
+        jsr showLoading
+        ldx activeApp
+        jsr loadApp
+        bcc !loaded+
+        lda #$ff                 // laden mislukt -> terug naar desktop
+        sta activeApp
+        jmp shell_DrawAll
+!loaded:
+        lda activeApp
+        cmp #0                   // File Manager -> directory lezen
+        bne !na0+
+        jsr fm_Load
+        jmp !drawit+
+!na0:   cmp #1                   // Editor
+        bne !na1+
+        jsr ed_Init
+        jmp !drawit+
+!na1:   cmp #2                   // Paint -> eigen bitmapmodus
+        bne !na2+
+        jmp paint_Enter          // geen char-redraw
+!na2:   cmp #3                   // Calculator
+        bne !na3+
+        jsr calc_Init
+        jmp !drawit+
+!na3:   jsr set_Init             // #4 Settings
+!drawit:
+        jmp shell_DrawAll
+
+//--------------------------------------------------------
 // Data
 //--------------------------------------------------------
 activeApp:   .byte $ff
 dockI:       .byte 0
 dockTmp:     .byte 0
+dApp:        .byte 0
+deI:         .byte 0
+deCol:       .byte 0
+deIcon:      .byte 0
+deIcoC:      .byte 0
+
+// ---- bureaublad-launcher: standaard-entries ----
+// kind 0 = overlay-app (param = app-id); kind 1 = standalone PRG (param = prg-index)
+deskCount:  .byte 4
+deskNameLo: .byte <dnEdit, <dnPaint, <dnCalc, <dnCow
+deskNameHi: .byte >dnEdit, >dnPaint, >dnCalc, >dnCow
+deskKind:   .byte 0, 0, 0, 1
+deskParam:  .byte 1, 2, 3, 0
+deskIcon:   .byte 111, 115, 119, 107   // 2x2 TL-glyph (edit,paint,calc,folder)
+deskIcoCol: .byte WHITE, LIGHT_RED, CYAN, YELLOW
+// standalone-PRG-namen (petscii, voor de LOAD)
+deskPrgLo:  .byte <pnCow
+deskPrgHi:  .byte >pnCow
+deskPrgLen: .byte 6
+.encoding "petscii_upper"
+pnCow:      .text "COWBOY"
+.encoding "screencode_upper"
 menuShown:   .byte 0
 cbRow:       .byte 0
 menuTxtCol:  .byte 0
@@ -660,8 +878,10 @@ menuHi: .byte >mDesk, >mFiles, >mEdit, >mPaint, >mCalc, >mSet, >mInet
 nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet
 nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet
 
-// dock: startkolom per slot (6 iconen over 40 kolommen)
-dockBase:  .byte 1, 7, 13, 20, 26, 32
+// dock: 3 statische slots. dockApp = welke app-id per slot (FILES, INET, SETUP).
+dockBase:  .byte 6, 18, 30
+dockApp:   .byte 0, 5, 4
+// per app-id (0=files 1=edit 2=paint 3=calc 4=setup 5=inet):
 iconColor: .byte ORANGE, WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, LIGHT_BLUE
 // 2x2 dock-iconen: glyphcodes per kwadrant (TL/TR/BL/BR)
 icon2TL:   .byte 107, 111, 115, 119, 123, 102
@@ -702,7 +922,17 @@ nSet:   .text "SETTINGS"
 nInet:  .text "INTERNET"
         .byte $ff
 
-sDeskHint: .text "CLICK A DOCK ICON  -  TOP EDGE = MENU"
+sDeskHint: .text "CLICK AN ICON TO START AN APP"
+           .byte $ff
+dnEdit:    .text "EDITOR"
+           .byte $ff
+dnPaint:   .text "PAINT"
+           .byte $ff
+dnCalc:    .text "CALC"
+           .byte $ff
+dnCow:     .text "COWBOY"
+           .byte $ff
+sNotFound: .text "PROGRAM NOT FOUND"
            .byte $ff
 sLoad:     .text "LOADING"
            .byte $ff

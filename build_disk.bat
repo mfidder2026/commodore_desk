@@ -25,6 +25,8 @@ echo [2/3] Assembleren (core + app-overlays + bootscherm)...
 if errorlevel 1 ( echo Build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build
+if errorlevel 1 ( echo Cowboy build failed. & exit /b 1 )
 
 echo [3/3] D71 maken en PRG's erop schrijven (BOOT start eerst)...
 if exist build\CD64.d71 del build\CD64.d71
@@ -40,7 +42,8 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\serif.prg serif ^
   -write build\mono.prg mono ^
   -write build\casual.prg casual ^
-  -write build\heavy.prg heavy
+  -write build\heavy.prg heavy ^
+  -write build\cowboy.prg cowboy
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
 echo.
