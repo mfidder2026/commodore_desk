@@ -790,6 +790,193 @@ da_pollClick:
         sec
         rts
 
+//--------------------------------------------------------
+// da_getPrg - PRG-naam bepalen: eerst de disk laten bladeren; kiest de
+//   gebruiker niets (RUN/STOP) dan handmatig typen. Vult prgTmp
+//   ($ff-afgesloten petscii). Uit: carry=0 OK, carry=1 geannuleerd.
+//--------------------------------------------------------
+da_getPrg:
+        jsr da_PrgPick
+        bcc !ok+                 // een bestand gekozen -> prgTmp gevuld
+        // terugval: handmatig typen
+        lda #0
+        sta daLen
+        lda #<sPrg
+        sta r0
+        lda #>sPrg
+        sta r0+1
+        lda #11
+        sta daMax
+        jsr da_askText
+        bcs !cancel+
+        jsr da_savePrg
+!ok:    clc
+        rts
+!cancel:
+        sec
+        rts
+
+//--------------------------------------------------------
+// da_PrgPick - toon de PRG-bestanden op de disk in een scrollbare lijst.
+//   Klik er een -> prgTmp gevuld (petscii,$ff), carry=0. RUN/STOP -> carry=1
+//   (val terug op typen). Geen bestanden -> carry=1.
+//--------------------------------------------------------
+.const DP_VIS = 12
+da_PrgPick:
+        jsr dir_Read             // dirCount + dirPtrLo/Hi (screencode-namen)
+        // entry 0 = disk-header -> overslaan; dpN = aantal echte bestanden
+        lda dirCount
+        sec
+        sbc #1
+        sta dpN
+        bne !have+
+        sec                      // alleen de header -> geen bestanden
+        rts
+!have:  lda #0
+        sta dpTop
+da_ppDraw:
+        gfxDrawBox(4, 3, 32, 16, TH_accent)      // rijen 3-18
+        lda #<sPrgPick
+        sta r0
+        lda #>sPrgPick
+        sta r0+1
+        lda #6
+        sta a0
+        lda #4
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        // omhoog-pijl als er boven meer is
+        lda dpTop
+        beq !nodn+
+        lda #34
+        sta a0
+        lda #6
+        sta a1
+        lda #94
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr gfx_PutChar
+!nodn:  // omlaag-pijl als er onder meer is
+        lda dpTop
+        clc
+        adc #DP_VIS
+        cmp dpN
+        bcs !nodwn+
+        lda #34
+        sta a0
+        lda #17
+        sta a1
+        lda #95
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr gfx_PutChar
+!nodwn: // lijst tekenen (item = dpTop+dpI, echte dir-index = item+1)
+        lda #0
+        sta dpI
+!lp:    lda dpI
+        cmp #DP_VIS
+        bcs !wait+
+        lda dpTop
+        clc
+        adc dpI
+        cmp dpN
+        bcs !nx+
+        clc
+        adc #1                   // sla de header over
+        tax
+        lda dirPtrLo,x
+        sta r0
+        lda dirPtrHi,x
+        sta r0+1
+        lda #6
+        sta a0
+        lda dpI
+        clc
+        adc #6
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+!nx:    inc dpI
+        jmp !lp-
+!wait:  jsr da_pollClick
+        bcs !cancel+
+        lda evtA
+        cmp #34
+        bne !list+
+        lda evtB
+        cmp #6
+        bne !cd+
+        lda dpTop
+        beq !wait-
+        sec
+        sbc #DP_VIS
+        bcs !st+
+        lda #0
+!st:    sta dpTop
+        jmp da_ppDraw
+!cd:    cmp #17
+        bne !wait-
+        lda dpTop
+        clc
+        adc #DP_VIS
+        cmp dpN
+        bcs !wait-
+        sta dpTop
+        jmp da_ppDraw
+!list:  lda evtB
+        cmp #6
+        bcc !wait-
+        cmp #18
+        bcs !wait-
+        sec
+        sbc #6
+        clc
+        adc dpTop
+        cmp dpN
+        bcs !wait-
+        clc
+        adc #1                   // header overslaan -> echte dir-index
+        sta dpItem
+        jsr da_prgFromDir
+        clc
+        rts
+!cancel:
+        sec
+        rts
+
+//--------------------------------------------------------
+// da_prgFromDir - kopieer directory-entry dpItem (screencode) naar prgTmp
+//   (petscii, $ff). Letters $01..$1a -> +$40; rest gelijk.
+//--------------------------------------------------------
+da_prgFromDir:
+        ldx dpItem
+        lda dirPtrLo,x
+        sta r0
+        lda dirPtrHi,x
+        sta r0+1
+        ldy #0
+        ldx #0
+!lp:    lda (r0),y
+        cmp #$ff
+        beq !end+
+        cmp #$1b
+        bcs !keep+
+        clc
+        adc #$40
+!keep:  sta prgTmp,x
+        inx
+        iny
+        cpx #12
+        bne !lp-
+!end:   lda #$ff
+        sta prgTmp,x
+        rts
+
 //========================================================
 // Toevoegen / Bewerken / Verwijderen
 //========================================================
@@ -810,17 +997,8 @@ da_AddProgram:
         jsr da_askText
         bcs !abort+
         jsr da_saveDisp
-        lda #0
-        sta daLen
-        lda #<sPrg
-        sta r0
-        lda #>sPrg
-        sta r0+1
-        lda #11
-        sta daMax
-        jsr da_askText
+        jsr da_getPrg            // disk bladeren of typen
         bcs !abort+
-        jsr da_savePrg
         lda #0
         sta daIcon
         jsr da_IconPick
@@ -856,19 +1034,9 @@ da_EditProgram:
         jsr da_askText
         bcs !done+
         jsr da_saveDisp
-        // prg voorvullen
-        lda daU
-        jsr da_recPtr
-        jsr da_prePrg
-        lda #<sPrg
-        sta r0
-        lda #>sPrg
-        sta r0+1
-        lda #11
-        sta daMax
-        jsr da_askText
+        // prg: disk bladeren of typen
+        jsr da_getPrg
         bcs !done+
-        jsr da_savePrg
         // huidige icoon/kleur als startwaarde
         lda daU
         jsr da_recPtr
@@ -1108,6 +1276,10 @@ daTX:    .byte 0
 daTY:    .byte 0
 daMax:   .byte 0
 daK:     .byte 0
+dpTop:   .byte 0
+dpI:     .byte 0
+dpItem:  .byte 0
+dpN:     .byte 0
 inBuf:   .fill 14, 0
 dispTmp: .fill 14, 0
 prgTmp:  .fill 14, 0
@@ -1116,6 +1288,8 @@ prgTmp:  .fill 14, 0
 sName:     .text "ENTER NAME:"
            .byte $ff
 sPrg:      .text "ENTER PRG FILE:"
+           .byte $ff
+sPrgPick:  .text "PICK A PRG FILE  (STOP=TYPE)"
            .byte $ff
 sPickIcon: .text "PICK AN ICON  (STOP=SKIP)"
            .byte $ff
