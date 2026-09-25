@@ -23,6 +23,9 @@
 .segmentdef Calc   [start=$8000]
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
+.segmentdef DeskTool [start=$8000]      // launcher-beheer (menu ADD/EDIT/DELETE)
+.segmentdef Lower  [start=$3800]
+.segmentdef Tiny   [start=$3800]
 // font-charsets (laden naar charset-RAM $3800; overlappen, 1 tegelijk)
 .segmentdef Fremen [start=$3800]
 .segmentdef Serif  [start=$3800]
@@ -36,6 +39,9 @@
 .file [name="calc.prg",   segments="Calc"]
 .file [name="paint.prg",  segments="Paint"]
 .file [name="setup.prg",  segments="Setup"]
+.file [name="desktool.prg", segments="DeskTool"]
+.file [name="lower.prg",  segments="Lower"]
+.file [name="tiny.prg",   segments="Tiny"]
 .file [name="fremen.prg", segments="Fremen"]
 .file [name="serif.prg",  segments="Serif"]
 .file [name="mono.prg",   segments="Mono"]
@@ -87,6 +93,22 @@ start:
         #import "apps/paint.asm"
 .segment Setup
         #import "apps/settings.asm"
+.segment DeskTool
+        #import "gui/desktool.asm"
+
+// LOWER- en TINY-font als complete charsets op disk: System-charset met
+// de kleine letters (a-z op code 1-26) resp. het 3x5-font (A-Z op 1-26,
+// 0-9 op 48-57) erin gezet. Zo hoeven de overlays niet in de Core.
+.segment Lower
+        .import binary "data/chargen.bin", 0, 8
+        .import binary "data/lower.bin", 0, 208
+        .import binary "data/chargen.bin", 216, 2048-216
+.segment Tiny
+        .import binary "data/chargen.bin", 0, 8
+        .import binary "data/tiny.bin", 0, 208
+        .import binary "data/chargen.bin", 216, 384-216
+        .import binary "data/tiny.bin", 208, 80
+        .import binary "data/chargen.bin", 464, 2048-464
 
 // Font-charsets (elk 2 KB) - losse PRG's met laadadres $3800.
 .segment Fremen

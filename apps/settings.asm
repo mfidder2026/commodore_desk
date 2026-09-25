@@ -368,7 +368,7 @@ done:   rts
 //             laden; pas bij een keuze wordt het font toegepast.
 //--------------------------------------------------------
 font_Pick: {
-        gfxDrawBox(3, 4, 18, 12, TH_accent)      // cols 3-20, rijen 4-15
+        gfxDrawBoxM(3, 4, 18, 12, TH_text)      // cols 3-20, rijen 4-15
         lda #0
         sta fpI
 draw:   lda fpI

@@ -42,6 +42,20 @@
         sta a4
         jsr gfx_DrawBox
 }
+// gfxDrawBoxM - idem, maar de kleur komt uit een geheugenadres (bv. TH_text).
+.macro gfxDrawBoxM(col, row, w, h, colorAddr) {
+        lda #col
+        sta a0
+        lda #row
+        sta a1
+        lda #w
+        sta a2
+        lda #h
+        sta a3
+        lda colorAddr
+        sta a4
+        jsr gfx_DrawBox
+}
 .macro gfxFillRect(col, row, w, h, ch, color) {
         lda #col
         sta a0
@@ -356,7 +370,7 @@ gfx_DrawBox:
         lda tmp1
         sta a1
         jsr gfx_PutChar
-        lda #FR_H
+        lda #W_B                 // onderrand (lijn tegen de buitenkant)
         sta a2
         lda tmp4
         sta a3
@@ -385,7 +399,7 @@ gfx_DrawBox:
         lda tmp7
         sta a1
         jsr gfx_PutChar
-        lda #FR_V
+        lda #W_R                 // rechterrand (lijn tegen de buitenkant)
         sta a2
         lda tmp4
         sta a3

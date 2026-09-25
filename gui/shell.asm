@@ -532,7 +532,7 @@ drawStub:
 showLoading:
         txa
         pha
-        gfxDrawBox(9, 10, 22, 4, LIGHT_GREY)     // rijen 10-13 (2 tekstregels)
+        gfxDrawBoxM(9, 10, 22, 4, TH_text)     // rijen 10-13 (2 tekstregels)
         lda #<sLoad
         sta r0
         lda #>sLoad
@@ -716,13 +716,13 @@ menu_Draw:
         // ---- bureaublad-menu: TOEVOEGEN/BEWERKEN/VERWIJDEREN + rest ----
         lda #1
         sta menuDesk
-        gfxDrawBox(1, 1, 18, 8, TH_accent)       // rijen 1-8, kol 1-18
+        gfxDrawBoxM(1, 1, 18, 8, TH_text)       // rijen 1-8, kol 1-18
         lda #6
         sta menuN
         jmp !draw+
 !app:   lda #0
         sta menuDesk
-        gfxDrawBox(1, 1, 14, 6, TH_accent)       // rijen 1-6, kol 1-14
+        gfxDrawBoxM(1, 1, 14, 6, TH_text)       // rijen 1-6, kol 1-14
         lda #4
         sta menuN
 !draw:  lda #0
@@ -808,9 +808,12 @@ appDisp:
         cmp #5
         beq doReset
 close:  jmp shell_DrawAll
-mAdd:   jmp da_AddProgram
-mEdit:  jmp da_EditProgram
-mDel:   jmp da_DeleteProgram
+mAdd:   ldx #0
+        jmp tool_Run
+mEdit:  ldx #1
+        jmp tool_Run
+mDel:   ldx #2
+        jmp tool_Run
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
 doDesk: jmp exitToDesktop
 doAbout:jmp about_Show
@@ -820,6 +823,28 @@ doReset:
         sta $01
         jmp ($fffc)             // KERNAL-reset -> terug naar BASIC
 }
+//--------------------------------------------------------
+// tool_Run - launcher-beheer (overlay DESKTOOL) laden en starten.
+//            X = 0 toevoegen, 1 bewerken, 2 verwijderen.
+//--------------------------------------------------------
+tool_Run:
+        stx toolFn
+        ldx #6
+        jsr showLoading          // "LOADING TOOLS"
+        ldx #6
+        jsr loadApp              // DESKTOOL -> $8000
+        bcc !ok+
+        jmp shell_DrawAll        // laden mislukt
+!ok:    jsr da_Redraw            // laadvenster weg
+        lda toolFn
+        beq !add+
+        cmp #1
+        beq !edit+
+        jmp da_DeleteProgram
+!add:   jmp da_AddProgram
+!edit:  jmp da_EditProgram
+toolFn: .byte 0
+
 // menukeuze-tabellen
 dmLo: .byte <oAdd, <oEditP, <oDel, <oHelp, <oAbout, <oReset
 dmHi: .byte >oAdd, >oEditP, >oDel, >oHelp, >oAbout, >oReset
@@ -1031,8 +1056,8 @@ icon2TL:   .byte 107, 111, 115, 119, 123, 102
 icon2TR:   .byte 108, 112, 116, 120, 124, 103
 icon2BL:   .byte 109, 113, 117, 121, 125, 104
 icon2BR:   .byte 110, 114, 118, 122, 126, 105
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >lTool
 
 .encoding "screencode_upper"
 mDesk:  .text "CD64   FILE   EDIT   VIEW   SYSTEM"
@@ -1092,6 +1117,8 @@ lCalc:  .text "CALC"
 lSet:   .text "SETUP"
         .byte $ff
 lInet:  .text "INET"
+        .byte $ff
+lTool:  .text "TOOLS"
         .byte $ff
 
 // uitklapmenu + about

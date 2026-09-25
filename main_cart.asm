@@ -52,6 +52,7 @@ osEnd:
 .segmentdef Calc   [start=$8000]
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
+.segmentdef DeskTool [start=$8000]
 .segment Files
 #import "apps/filemanager.asm"
 .segment Editor
@@ -62,6 +63,8 @@ osEnd:
 #import "apps/paint.asm"
 .segment Setup
 #import "apps/settings.asm"
+.segment DeskTool
+#import "gui/desktool.asm"
 
 //--------------------------------------------------------
 // 16 KB cartridge-image ($8000-$BFFF = ROML + ROMH bank 0).

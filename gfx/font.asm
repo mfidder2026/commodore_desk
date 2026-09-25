@@ -93,41 +93,13 @@ font_Apply:
         jsr font_Base
         jsr font_Classic
         jmp font_OverlayUI
-!lower: jmp font_Lower
-!tiny:  jmp font_Tiny
-
-//--------------------------------------------------------
-// font_Lower - System-charset + kleine letters (a-z) uit de C64-ROM
-//              over code 1-26.
-//--------------------------------------------------------
-font_Lower:
-        jsr font_Base
-        ldx #0
-!lp:    lda lowerChars,x
-        sta CHARSET_BASE + 8,x       // code 1 = a
-        inx
-        cpx #208                     // 26 letters * 8
-        bne !lp-
-        jmp font_OverlayUI
-
-//--------------------------------------------------------
-// font_Tiny - System-charset + eigen 3x5 micro-font over A-Z (code
-//             1-26) en 0-9 (code 48-57).
-//--------------------------------------------------------
-font_Tiny:
-        jsr font_Base
-        ldx #0
-!lp:    lda tinyChars,x              // A-Z -> code 1
-        sta CHARSET_BASE + 8,x
-        inx
-        cpx #208
-        bne !lp-
-        ldx #0
-!lp:    lda tinyChars + 208,x        // 0-9 -> code 48
-        sta CHARSET_BASE + [48*8],x
-        inx
-        cpx #80
-        bne !lp-
+// LOWER en TINY zijn complete charsets op disk (lower.prg / tiny.prg,
+// disk-fontindex 5 en 6), net als Fremen e.d.: scheelt ~550 bytes Core.
+!lower: ldx #5
+        jmp !ld+
+!tiny:  ldx #6
+!ld:    jsr loadCharset
+        bcs !dfail-
         jmp font_OverlayUI
 
 //--------------------------------------------------------
@@ -272,18 +244,21 @@ fTmp:   .byte 0
 // zodat aangrenzende cellen aansluiten. Volgorde = FR_TL..FR_V.
 //--------------------------------------------------------
 frameGlyphs:
+        // Win95-stijl: de lijn (2 px) ligt tegen de BUITENrand van de cel.
+        // Bovenrand = FR_H, linkerrand = FR_V; onder- en rechterrand zijn
+        // W_B / W_R (codes 93/92), zie gfx_DrawBox.
         // FR_TL
-        .byte %00000000,%00000000,%00000000,%00011111,%00011000,%00011000,%00011000,%00011000
+        .byte %11111111,%11111111,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000
         // FR_TR
-        .byte %00000000,%00000000,%00000000,%11111000,%00011000,%00011000,%00011000,%00011000
+        .byte %11111111,%11111111,%00000011,%00000011,%00000011,%00000011,%00000011,%00000011
         // FR_BL
-        .byte %00011000,%00011000,%00011000,%00011111,%00000000,%00000000,%00000000,%00000000
+        .byte %11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11111111,%11111111
         // FR_BR
-        .byte %00011000,%00011000,%00011000,%11111000,%00000000,%00000000,%00000000,%00000000
-        // FR_H
-        .byte %00000000,%00000000,%00000000,%11111111,%00000000,%00000000,%00000000,%00000000
-        // FR_V
-        .byte %00011000,%00011000,%00011000,%00011000,%00011000,%00011000,%00011000,%00011000
+        .byte %00000011,%00000011,%00000011,%00000011,%00000011,%00000011,%11111111,%11111111
+        // FR_H (bovenrand)
+        .byte %11111111,%11111111,%00000000,%00000000,%00000000,%00000000,%00000000,%00000000
+        // FR_V (linkerrand)
+        .byte %11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000,%11000000
 
         // ---- INET 2x2-icoon (globe), codes 102-105 (TL,TR,BL,BR) ----
         .byte $07,$18,$24,$44,$44,$84,$ff,$84   // 102 TL
@@ -361,12 +336,5 @@ userIcons:
         .byte $03,$03,$03,$03,$03,$03,$ff,$ff   // 95 hoek rechtsonder
 
 // (De System-charset zelf zit niet meer in de Core: disk_main.asm laadt
-//  hem als eigen segment op $3800, main_cart.asm kopieert hem uit ROM.)
-
-// Kleine letters a-z (uit de C64-ROM, 26 glyphs) - overlay voor FONT_LOWER.
-lowerChars:
-        .import binary "data/lower.bin"
-
-// Eigen 3x5 micro-font: A-Z (26) + 0-9 (10) - overlay voor FONT_TINY.
-tinyChars:
-        .import binary "data/tiny.bin"
+//  hem als eigen segment op $3800, main_cart.asm kopieert hem uit ROM.
+//  LOWER en TINY zijn eigen charset-bestanden op disk: zie disk_main.asm.)

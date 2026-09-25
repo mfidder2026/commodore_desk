@@ -336,18 +336,23 @@ loadCharset:
         sec
         rts
 
-appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup
-appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup
-appLen:   .byte 5, 6, 5, 4, 5
-fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy
-fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy
-fntLen:   .byte 6, 5, 4, 6, 5
+// index 0-4 = apps, 5 = (INET, resident: niet gebruikt), 6 = DESKTOOL
+appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anTool, <anTool
+appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anTool, >anTool
+appLen:   .byte 5, 6, 5, 4, 5, 8, 8
+// disk-fonts: 0-4 = Fremen..Heavy, 5 = Lower, 6 = Tiny
+fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy, <anLower, <anTiny
+fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy, >anLower, >anTiny
+fntLen:   .byte 6, 5, 4, 6, 5, 5, 4
 .encoding "petscii_upper"
 anFiles:  .text "FILES"
 anEdit:   .text "EDITOR"
 anPaint:  .text "PAINT"
 anCalc:   .text "CALC"
 anSetup:  .text "SETUP"
+anTool:   .text "DESKTOOL"
+anLower:  .text "LOWER"
+anTiny:   .text "TINY"
 anFremen: .text "FREMEN"
 anSerif:  .text "SERIF"
 anMono:   .text "MONO"

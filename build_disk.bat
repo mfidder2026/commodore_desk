@@ -38,6 +38,9 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\paint.prg paint ^
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
+  -write build\desktool.prg desktool ^
+  -write build\lower.prg lower ^
+  -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
   -write build\serif.prg serif ^
   -write build\mono.prg mono ^
@@ -57,6 +60,9 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\paint.prg paint ^
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
+  -write build\desktool.prg desktool ^
+  -write build\lower.prg lower ^
+  -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
   -write build\serif.prg serif ^
   -write build\mono.prg mono ^
