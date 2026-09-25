@@ -290,7 +290,7 @@ chkSave: // SAVE-knop (4,15,6)
         sta a2
         jsr gfx_DrawText
         rts
-chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
+chkFont: // FONT-regel (rij 13, kol 4-20) -> open keuzelijst
         lda evtB
         cmp #13
         bne chkMenu
@@ -301,16 +301,8 @@ chkFont: // FONT-regel (rij 13, kol 4-20) -> volgend font
 !:      cmp #21
         bcc !+
         rts
-!:
-        lda CFG_fontId
-        clc
-        adc #1
-        cmp #NUM_FONTS
-        bcc !+
-        lda #0
-!:      sta CFG_fontId
-        jsr font_Apply
-        jsr shell_DrawAll
+!:      jsr font_Pick            // modale keuzelijst; laadt pas bij keuze
+        jsr shell_DrawAll        // alles opnieuw tekenen met het nieuwe font
         rts
 chkMenu: // MENU-regel (rij 14, kol 4-20) -> stijl wisselen
         lda evtB
@@ -370,6 +362,68 @@ chkSound: // SOUND-regel (rij 4, kol 4-20) -> aan/uit
         jsr set_Draw
 done:   rts
 }
+
+//--------------------------------------------------------
+// font_Pick - modale keuzelijst met alle fonts. Bladeren zonder te
+//             laden; pas bij een keuze wordt het font toegepast.
+//--------------------------------------------------------
+font_Pick: {
+        gfxDrawBox(3, 4, 18, 12, TH_accent)      // cols 3-20, rijen 4-15
+        lda #0
+        sta fpI
+draw:   lda fpI
+        cmp #NUM_FONTS
+        bcs wait
+        ldx fpI
+        lda fontNameLo,x
+        sta r0
+        lda fontNameHi,x
+        sta r0+1
+        lda #5
+        sta a0
+        lda fpI
+        clc
+        adc #5
+        sta a1
+        lda fpI                  // huidige keuze gemarkeerd
+        cmp CFG_fontId
+        bne norm
+        lda TH_select
+        jmp col
+norm:   lda TH_text
+col:    sta a2
+        jsr gfx_DrawText
+        inc fpI
+        jmp draw
+wait:   jsr evt_Poll
+        cmp #EVT_MOUSEDOWN
+        beq click
+        cmp #EVT_KEY
+        bne wait
+        lda evtA
+        cmp #$20
+        beq key
+        cmp #$80
+        beq key
+        cmp #$82                 // ESC = annuleren
+        beq done
+        jmp wait
+key:    jsr cursorToCell
+click:  lda evtA                 // binnen de box-kolommen?
+        cmp #4
+        bcc done
+        cmp #21
+        bcs done
+        lda evtB
+        sec
+        sbc #5                   // rij -> index
+        cmp #NUM_FONTS
+        bcs done                 // buiten de lijst
+        sta CFG_fontId
+        jsr font_Apply
+done:   rts
+}
+fpI:    .byte 0
 
 //--------------------------------------------------------
 selRole: .byte 0
