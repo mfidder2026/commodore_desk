@@ -442,7 +442,7 @@ drawStub:
 showLoading:
         txa
         pha
-        gfxDrawBox(9, 9, 22, 5, LIGHT_GREY)      // rijen 9-13
+        gfxDrawBox(9, 10, 22, 4, LIGHT_GREY)     // rijen 10-13 (2 tekstregels)
         lda #<sLoad
         sta r0
         lda #>sLoad

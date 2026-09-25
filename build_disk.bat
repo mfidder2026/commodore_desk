@@ -47,8 +47,27 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\scrsaver.prg scrsaver
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
+echo [3b/3] Ook een D64 maken (1541-compatibel, zelfde bestanden)...
+if exist build\CD64.d64 del build\CD64.d64
+"%C1541%" -format "commodore desk,cd" d64 build\CD64.d64 ^
+  -write build\boot.prg boot ^
+  -write build\cd64.prg cd64 ^
+  -write build\files.prg files ^
+  -write build\editor.prg editor ^
+  -write build\paint.prg paint ^
+  -write build\calc.prg calc ^
+  -write build\setup.prg setup ^
+  -write build\fremen.prg fremen ^
+  -write build\serif.prg serif ^
+  -write build\mono.prg mono ^
+  -write build\casual.prg casual ^
+  -write build\heavy.prg heavy ^
+  -write build\cowboy.prg cowboy ^
+  -write build\scrsaver.prg scrsaver
+if errorlevel 1 ( echo c1541 D64 failed. & exit /b 1 )
+
 echo.
-echo Klaar: build\CD64.d71
+echo Klaar: build\CD64.d71 en build\CD64.d64
 echo Inhoud:
 "%C1541%" -attach build\CD64.d71 -dir
 echo.
