@@ -68,6 +68,7 @@ da_total:
 // Tekenen
 //========================================================
 da_DrawEntries:
+        jsr da_clampScroll
         lda #0
         sta daSlot
 !lp:    lda daSlot
@@ -208,76 +209,109 @@ da_drawLabel:
         sta a2
         jmp gfx_DrawText
 
-// da_drawScrollbar - pijltjes rechts als er meer entries zijn.
-da_drawScrollbar:
+// Scrollbalk van het bureaubladvenster: kolom 37, pijlen op rij 2 en 18.
+.const DA_SCR_COL = 37
+.const DA_SCR_TOP = 2
+.const DA_SCR_BOT = 18
+
+// da_maxRow - A = hoogste eerste zichtbare rij (0 = alles past).
+da_maxRow:
         jsr da_total
-        cmp #DA_VIS+1
-        bcc !none+
-        lda daScroll
-        beq !chkdn+
-        lda #38
-        sta a0
-        lda #3
-        sta a1
-        lda #94                 // pijl-omhoog-achtige glyph
-        sta a2
-        lda TH_accent
-        sta a3
-        jsr gfx_PutChar
-!chkdn: lda daScroll
         clc
-        adc #DA_VIS
-        sta daTmp
-        jsr da_total
-        cmp daTmp
-        bcc !none+
-        beq !none+
-        lda #38
-        sta a0
-        lda #15
-        sta a1
-        lda #95                 // pijl-omlaag-achtige glyph
-        sta a2
-        lda TH_accent
+        adc #1
+        lsr                      // aantal rijen = (totaal+1)/2
+        sec
+        sbc #DA_VISROWS
+        bcs !m+
+        lda #0
+!m:     rts
+
+// da_clampScroll - daScroll binnen bereik houden (bv. na verwijderen).
+da_clampScroll:
+        jsr da_maxRow
+        asl                      // max in entries (2 per rij)
+        cmp daScroll
+        bcs !ok+
+        sta daScroll
+!ok:    rts
+
+// da_drawScrollbar - Win95-scrollbalk rechts in het venster.
+da_drawScrollbar:
+        jsr da_maxRow
+        sta a4
+        lda daScroll
+        lsr
         sta a3
-        jsr gfx_PutChar
-!none:  rts
+        lda #DA_SCR_COL
+        sta a0
+        lda #DA_SCR_TOP
+        sta a1
+        lda #DA_SCR_BOT
+        sta a2
+        jmp scr_Draw
+
+// da_Redraw - alleen de vensterinhoud opnieuw tekenen (geen flikkering
+//             van titelbalk/dock).
+da_Redraw:
+        lda #2
+        sta a0
+        lda #2
+        sta a1
+        lda #35
+        sta a2
+        lda #17
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        jmp drawDesktopContent
 
 //========================================================
 // Klik-afhandeling
 //========================================================
 da_Click:
         lda evtA
-        cmp #38
-        bcs da_scrollClick       // scrollbar-kolom
+        cmp #DA_SCR_COL
+        beq da_scrollClick       // scrollbalk-kolom
         jmp da_gridClick
 
+// da_scrollClick - pijl = 1 rij, track boven/onder de thumb = 1 pagina.
 da_scrollClick:
-        lda evtB
+        jsr scr_Hit
+        cmp #1
+        beq !up+
+        cmp #2
+        beq !dn+
+        cmp #3
+        beq !pu+
         cmp #4
-        bcs !dn+
-        lda daScroll
+        beq !pd+
+        rts
+!up:    lda daScroll
         beq !r+
         sec
         sbc #2
-        sta daScroll
-        jmp shell_DrawAll
-!dn:    lda evtB
-        cmp #15
-        bcc !r+
-        lda daScroll
-        clc
-        adc #DA_VIS
-        sta daTmp
-        jsr da_total
-        cmp daTmp
-        bcc !r+
-        beq !r+
-        lda daScroll
+        jmp !st+
+!dn:    lda daScroll
         clc
         adc #2
-        sta daScroll
-        jmp shell_DrawAll
+        jmp !cl+
+!pu:    lda daScroll
+        sec
+        sbc #DA_VIS
+        bcs !st+
+        lda #0
+        jmp !st+
+!pd:    lda daScroll
+        clc
+        adc #DA_VIS
+!cl:    sta daScroll
+        jsr da_clampScroll
+        jmp da_Redraw
+!st:    sta daScroll
+        jmp da_Redraw
 !r:     rts
 
 da_gridClick:
@@ -513,7 +547,12 @@ da_setPrg:
 da_TextInput:
         jsr da_tiDraw
 !wait:  jsr evt_Poll
-        cmp #EVT_KEY
+        cmp #EVT_MOUSEDOWN       // klik op de sluitknop = annuleren
+        bne !nk+
+        jsr dlg_HitClose
+        bcs !cancel+
+        jmp !wait-
+!nk:    cmp #EVT_KEY
         bne !wait-
         lda evtA
         cmp #$80                 // RETURN
@@ -625,14 +664,34 @@ da_tiDraw:
 //   Caller zet daMax en daLen (0 of voorgevuld). Uit: carry uit invoer.
 //--------------------------------------------------------
 da_askText:
-        gfxDrawBox(3, 8, 34, 4, TH_accent)       // rijen 8-11
+        lda r0                   // prompt bewaren; titel = daTitle
+        sta daPr
+        lda r0+1
+        sta daPr+1
+        lda daTitle
+        sta r0
+        lda daTitle+1
+        sta r0+1
+        lda #3
+        sta a0
+        lda #7
+        sta a1
+        lda #34
+        sta a2
+        lda #6
+        sta a3
+        jsr dlg_Draw             // rijen 7-12
+        lda daPr
+        sta r0
+        lda daPr+1
+        sta r0+1
         lda #5
         sta a0
         lda #9
         sta a1
         lda TH_text
         sta a2
-        jsr gfx_DrawText         // prompt (r0)
+        jsr gfx_DrawText         // prompt
         lda #5
         sta daTX
         lda #10
@@ -644,7 +703,19 @@ da_askText:
 //   RUN/STOP behoudt de huidige daIcon.
 //--------------------------------------------------------
 da_IconPick:
-        gfxDrawBox(3, 5, 34, 7, TH_accent)       // rijen 5-11
+        lda #<sTIcon
+        sta r0
+        lda #>sTIcon
+        sta r0+1
+        lda #3
+        sta a0
+        lda #5
+        sta a1
+        lda #34
+        sta a2
+        lda #8
+        sta a3
+        jsr dlg_Draw             // rijen 5-12
         lda #<sPickIcon
         sta r0
         lda #>sPickIcon
@@ -653,7 +724,7 @@ da_IconPick:
         sta a0
         lda #6
         sta a1
-        lda TH_text
+        lda TH_title
         sta a2
         jsr gfx_DrawText
         lda #0
@@ -717,7 +788,19 @@ da_IconPick:
 // da_ColorPick - kies 1 van de 16 kleuren. Uit: daColor.
 //--------------------------------------------------------
 da_ColorPick:
-        gfxDrawBox(3, 12, 34, 4, TH_accent)      // rijen 12-15
+        lda #<sTColor
+        sta r0
+        lda #>sTColor
+        sta r0+1
+        lda #3
+        sta a0
+        lda #12
+        sta a1
+        lda #34
+        sta a2
+        lda #5
+        sta a3
+        jsr dlg_Draw             // rijen 12-16
         lda #<sPickCol
         sta r0
         lda #>sPickCol
@@ -726,7 +809,7 @@ da_ColorPick:
         sta a0
         lda #13
         sta a1
-        lda TH_text
+        lda TH_title
         sta a2
         jsr gfx_DrawText
         lda #0
@@ -783,7 +866,10 @@ da_pollClick:
         beq !cancel+
         jmp !w-
 !kc:    jsr cursorToCell
-!ok:    clc
+!ok:    jsr dlg_HitClose         // sluitknop van de dialoog = annuleren
+        bcs !cancel+
+        jsr sid_Click
+        clc
         rts
 !cancel:
         sec
@@ -820,7 +906,11 @@ da_getPrg:
 //   Klik er een -> prgTmp gevuld (petscii,$ff), carry=0. RUN/STOP -> carry=1
 //   (val terug op typen). Geen bestanden -> carry=1.
 //--------------------------------------------------------
+// Win95-dialoog (4,2,32,17): titel rij 2, hint rij 3, lijst rijen 5-16,
+// scrollbalk kol 34 (pijlen op rij 4 en 17, track naast de lijst).
 .const DP_VIS = 12
+.const DP_ROW = 5
+.const DP_SCR = 34
 da_PrgPick:
         jsr dir_Read             // dirCount + dirPtrLo/Hi (screencode-namen)
         // entry 0 = disk-header -> overslaan; dpN = aantal echte bestanden
@@ -833,52 +923,52 @@ da_PrgPick:
         rts
 !have:  lda #0
         sta dpTop
-da_ppDraw:
-        gfxDrawBox(4, 3, 32, 16, TH_accent)      // rijen 3-18
         lda #<sPrgPick
         sta r0
         lda #>sPrgPick
         sta r0+1
+        lda #4
+        sta a0
+        lda #2
+        sta a1
+        lda #32
+        sta a2
+        lda #17
+        sta a3
+        jsr dlg_Draw             // rijen 2-18
+        lda #<sPrgHint
+        sta r0
+        lda #>sPrgHint
+        sta r0+1
         lda #6
         sta a0
-        lda #4
+        lda #3
         sta a1
-        lda TH_text
+        lda TH_title
         sta a2
         jsr gfx_DrawText
-        // omhoog-pijl als er boven meer is
-        lda dpTop
-        beq !nodn+
-        lda #34
-        sta a0
-        lda #6
-        sta a1
-        lda #94
-        sta a2
-        lda TH_accent
-        sta a3
-        jsr gfx_PutChar
-!nodn:  // omlaag-pijl als er onder meer is
-        lda dpTop
-        clc
-        adc #DP_VIS
-        cmp dpN
-        bcs !nodwn+
-        lda #34
-        sta a0
-        lda #17
-        sta a1
-        lda #95
-        sta a2
-        lda TH_accent
-        sta a3
-        jsr gfx_PutChar
-!nodwn: // lijst tekenen (item = dpTop+dpI, echte dir-index = item+1)
-        lda #0
+da_ppList:
+        lda #0                   // lijst (item = dpTop+dpI, dir-index = item+1)
         sta dpI
 !lp:    lda dpI
         cmp #DP_VIS
-        bcs !wait+
+        bcs !sb+
+        clc
+        adc #DP_ROW
+        sta daTY
+        lda #5                   // regel wissen (kol 5-33)
+        sta a0
+        lda daTY
+        sta a1
+        lda #29
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
         lda dpTop
         clc
         adc dpI
@@ -893,51 +983,85 @@ da_ppDraw:
         sta r0+1
         lda #6
         sta a0
-        lda dpI
-        clc
-        adc #6
+        lda daTY
         sta a1
         lda TH_text
         sta a2
         jsr gfx_DrawText
 !nx:    inc dpI
         jmp !lp-
-!wait:  jsr da_pollClick
-        bcs !cancel+
-        lda evtA
-        cmp #34
-        bne !list+
-        lda evtB
-        cmp #6
-        bne !cd+
+!sb:    jsr dp_Max               // scrollbalk
+        sta a4
         lda dpTop
+        sta a3
+        lda #DP_SCR
+        sta a0
+        lda #DP_ROW-1
+        sta a1
+        lda #DP_ROW+DP_VIS
+        sta a2
+        jsr scr_Draw
+!wait:  jsr da_pollClick         // ESC of sluitknop -> zelf typen
+        bcc !clk+
+        sec
+        rts
+!clk:   lda evtA
+        cmp #DP_SCR
+        bne !list+
+        jsr scr_Hit
+        cmp #1
+        beq !up+
+        cmp #2
+        beq !dn+
+        cmp #3
+        beq !pu+
+        cmp #4
+        beq !pd+
+        jmp !wait-
+!up:    lda dpTop
         beq !wait-
+        dec dpTop
+        jmp da_ppList
+!dn:    jsr dp_Max
+        cmp dpTop
+        beq !wait-
+        bcc !wait-
+        inc dpTop
+        jmp da_ppList
+!pu:    lda dpTop
         sec
         sbc #DP_VIS
         bcs !st+
         lda #0
 !st:    sta dpTop
-        jmp da_ppDraw
-!cd:    cmp #17
-        bne !wait-
-        lda dpTop
+        jmp da_ppList
+!pd:    lda dpTop
         clc
         adc #DP_VIS
-        cmp dpN
-        bcs !wait-
         sta dpTop
-        jmp da_ppDraw
+        jsr dp_Max
+        cmp dpTop
+        bcs !pl+
+        sta dpTop
+!pl:    jmp da_ppList
+!w2:    jmp !wait-               // (tussenstap: !wait ligt te ver weg)
 !list:  lda evtB
-        cmp #6
-        bcc !wait-
-        cmp #18
-        bcs !wait-
+        cmp #DP_ROW
+        bcc !w2-
+        cmp #DP_ROW+DP_VIS
+        bcs !w2-
+        lda evtA
+        cmp #5
+        bcc !w2-
+        cmp #DP_SCR
+        bcs !w2-
+        lda evtB
         sec
-        sbc #6
+        sbc #DP_ROW
         clc
         adc dpTop
         cmp dpN
-        bcs !wait-
+        bcs !w2-
         clc
         adc #1                   // header overslaan -> echte dir-index
         sta dpItem
@@ -947,6 +1071,15 @@ da_ppDraw:
 !cancel:
         sec
         rts
+
+// dp_Max - A = hoogste dpTop (0 = alles past).
+dp_Max:
+        lda dpN
+        sec
+        sbc #DP_VIS
+        bcs !m+
+        lda #0
+!m:     rts
 
 //--------------------------------------------------------
 // da_prgFromDir - kopieer directory-entry dpItem (screencode) naar prgTmp
@@ -985,7 +1118,11 @@ da_AddProgram:
         cmp #DESK_MAXUSER
         bcc !ok+
         jmp da_showFull
-!ok:    lda #0
+!ok:    lda #<oAdd               // dialoogtitel "ADD PROGRAM"
+        sta daTitle
+        lda #>oAdd
+        sta daTitle+1
+        lda #0
         sta daLen                // leeg beginnen
         lda #<sName
         sta r0
@@ -1018,7 +1155,11 @@ da_EditProgram:
         lda DA_count
         bne !ok+
         jmp shell_DrawAll        // niets om te bewerken
-!ok:    jsr da_hintEdit
+!ok:    lda #<oEditP             // dialoogtitel "EDIT PROGRAM"
+        sta daTitle
+        lda #>oEditP
+        sta daTitle+1
+        jsr da_hintEdit
         jsr da_pickUser
         bcs !done+
         // naam voorvullen
@@ -1073,31 +1214,79 @@ da_DeleteProgram:
 // da_confirm - JA/NEE-bevestiging. Uit: carry=0 = JA (Y), carry=1 = NEE.
 //--------------------------------------------------------
 da_confirm:
-        gfxDrawBox(6, 10, 28, 5, TH_accent)      // rijen 10-14
+        lda #<oDel               // Win95-dialoog: titel, vraag, JA/NEE-knoppen
+        sta r0
+        lda #>oDel
+        sta r0+1
+        lda #6
+        sta a0
+        lda #9
+        sta a1
+        lda #28
+        sta a2
+        lda #7
+        sta a3
+        jsr dlg_Draw             // rijen 9-15
         lda #<sConfirm
         sta r0
         lda #>sConfirm
         sta r0+1
-        lda #8
+        lda #9
         sta a0
         lda #11
         sta a1
         lda TH_text
         sta a2
         jsr gfx_DrawText
-        lda #<sYesNo
+        lda #<sBtnYes            // knoppen: YES (11,13,5) en NO (22,13,4)
         sta r0
-        lda #>sYesNo
+        lda #>sBtnYes
         sta r0+1
-        lda #8
+        lda #11
         sta a0
         lda #13
         sta a1
-        lda TH_select
+        lda #5
         sta a2
-        jsr gfx_DrawText
+        lda TH_menubg
+        sta a3
+        jsr btn_Draw
+        lda #<sBtnNo
+        sta r0
+        lda #>sBtnNo
+        sta r0+1
+        lda #22
+        sta a0
+        lda #13
+        sta a1
+        lda #4
+        sta a2
+        lda TH_menubg
+        sta a3
+        jsr btn_Draw
 !w:     jsr evt_Poll
-        cmp #EVT_KEY
+        cmp #EVT_MOUSEDOWN
+        bne !key+
+        jsr dlg_HitClose         // sluitknop = NEE
+        bcs !no+
+        lda #11
+        sta a0
+        lda #13
+        sta a1
+        lda #5
+        sta a2
+        jsr btn_HitTest
+        bcs !yes+
+        lda #22
+        sta a0
+        lda #13
+        sta a1
+        lda #4
+        sta a2
+        jsr btn_HitTest
+        bcs !no+
+        jmp !w-
+!key:   cmp #EVT_KEY
         bne !w-
         lda evtA
         cmp #$19                 // 'Y'
@@ -1305,30 +1494,72 @@ da_hintEdit:
         lda #>sEditHint
         sta r0+1
         jmp da_hintDraw
+// da_hintDraw - hint (r0) in de statusregel van het venster (rij 18).
+//               Er staat geen dialoog open: sluitknop-positie vergeten.
 da_hintDraw:
-        pha
-        gfxDrawBox(2, 17, 36, 3, TH_accent)      // rijen 17-19
-        lda #4
+        lda #$ff
+        sta dlgY
+        lda r0
+        sta daPr
+        lda r0+1
+        sta daPr+1
+        lda #2
         sta a0
         lda #18
         sta a1
+        lda #34
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
         lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        lda daPr
+        sta r0
+        lda daPr+1
+        sta r0+1
+        lda #3
+        sta a0
+        lda #18
+        sta a1
+        lda TH_accent
         sta a2
         jmp gfx_DrawText
+
+// da_showFull - Win95-melding "lijst vol" met OK-knop.
 da_showFull:
-        gfxDrawBox(6, 10, 28, 5, TH_accent)
+        lda #<nDesk
+        sta r0
+        lda #>nDesk
+        sta r0+1
+        lda #6
+        sta a0
+        lda #8
+        sta a1
+        lda #28
+        sta a2
+        lda #7
+        sta a3
+        jsr dlg_Draw             // rijen 8-14
         lda #<sFull
         sta r0
         lda #>sFull
         sta r0+1
         lda #10
         sta a0
-        lda #12
+        lda #10
         sta a1
         lda TH_text
         sta a2
         jsr gfx_DrawText
-        jsr da_pollClick
+        lda #18
+        sta a0
+        lda #12
+        sta a1
+        jsr dlg_OkButton
+        jsr dlg_WaitClose
         jmp shell_DrawAll
 
 //--------------------------------------------------------
@@ -1351,6 +1582,8 @@ dpTop:   .byte 0
 dpI:     .byte 0
 dpItem:  .byte 0
 dpN:     .byte 0
+daTitle: .word oAdd              // titel van de invoerdialoog (ADD/EDIT)
+daPr:    .word 0
 inBuf:   .fill 14, 0
 dispTmp: .fill 14, 0
 prgTmp:  .fill 14, 0
@@ -1360,21 +1593,29 @@ sName:     .text "ENTER NAME:"
            .byte $ff
 sPrg:      .text "ENTER PRG FILE:"
            .byte $ff
-sPrgPick:  .text "PICK A PRG FILE  (STOP=TYPE)"
+sPrgPick:  .text "PICK A PRG FILE"
            .byte $ff
-sPickIcon: .text "PICK AN ICON  (STOP=SKIP)"
+sPrgHint:  .text "ESC = TYPE THE NAME"
            .byte $ff
-sPickCol:  .text "PICK A COLOR  (STOP=SKIP)"
+sTIcon:    .text "PICK AN ICON"
            .byte $ff
-sDelHint:  .text "CLICK A PROGRAM TO DELETE (STOP=X)"
+sTColor:   .text "PICK A COLOR"
            .byte $ff
-sEditHint: .text "CLICK A PROGRAM TO EDIT (STOP=X)"
+sPickIcon: .text "CLICK ONE  (ESC = KEEP)"
+           .byte $ff
+sPickCol:  .text "CLICK ONE  (ESC = KEEP)"
+           .byte $ff
+sDelHint:  .text "CLICK A PROGRAM TO DELETE (ESC)"
+           .byte $ff
+sEditHint: .text "CLICK A PROGRAM TO EDIT (ESC)"
            .byte $ff
 sFull:     .text "PROGRAM LIST IS FULL"
            .byte $ff
 sConfirm:  .text "DELETE THIS PROGRAM?"
            .byte $ff
-sYesNo:    .text "Y = YES    N = NO"
+sBtnYes:   .text "YES"
+           .byte $ff
+sBtnNo:    .text "NO"
            .byte $ff
 
 seedIcon: .byte 3, 7

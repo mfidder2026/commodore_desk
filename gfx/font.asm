@@ -27,6 +27,17 @@
 
 .const UI_GLYPH_COUNT = 31    // FR_* (6) + 1-cel iconen (5) + 2x2-iconen (20)
 
+// Win95-glyphs (codes 84-89, direct na de 20 launcher-iconen 64-83).
+// Gezette pixels = celkleur, lege pixels = achtergrond ($D021).
+.const GL_CLOSE  = 84    // sluitknop: grijze knop met kruisje
+.const GL_UP     = 85    // scrollknop omhoog
+.const GL_DOWN   = 86    // scrollknop omlaag
+.const GL_TRACK  = 87    // scroll-track (dither)
+.const GL_THUMB  = 88    // scroll-thumb (massief)
+.const GL_HILITE = 89    // dock: witte bovenrand
+.const GL_THUMBEND = 90  // scroll-thumb, onderste rij (met schaduw)
+.const OVL_GLYPHS = 27   // 20 iconen + 7 Win95-glyphs vanaf code 64
+
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
 //             daar direct; de cart kopieert hem uit ROM). Bewaar een
 //             schone kopie in RAM onder I/O ($D000) voor latere
@@ -170,12 +181,12 @@ font_OverlayUI:
         inx
         cpx #[UI_GLYPH_COUNT*8]
         bne !lp-
-        // launcher-iconen (20 stuks) op codes 64..83
+        // launcher-iconen (20) + Win95-glyphs (6) op codes 64..89
         ldx #0
 !ic:    lda userIcons,x
         sta CHARSET_BASE + [64*8],x
         inx
-        cpx #[20*8]
+        cpx #[OVL_GLYPHS*8]
         bne !ic-
         rts
 
@@ -327,6 +338,15 @@ userIcons:
         .byte $38,$44,$44,$38,$10,$10,$18,$14   // 17 key
         .byte $c0,$fc,$cc,$fc,$c0,$c0,$c0,$c0   // 18 flag
         .byte $00,$ff,$81,$b1,$8d,$b1,$9f,$ff   // 19 terminal
+// Win95-glyphs (codes 84-89)
+// knoppen: 7x7 vlak + 1 pixel schaduw rechts/onder (= achtergrond) -> 3D
+        .byte $fe,$ba,$d6,$ee,$d6,$ba,$fe,$00   // 84 sluitknop (kruisje uitgespaard)
+        .byte $fe,$fe,$ee,$c6,$82,$fe,$fe,$00   // 85 pijl omhoog (uitgespaard)
+        .byte $fe,$fe,$82,$c6,$ee,$fe,$fe,$00   // 86 pijl omlaag (uitgespaard)
+        .byte $aa,$55,$aa,$55,$aa,$55,$aa,$55   // 87 scroll-track (dither)
+        .byte $fe,$fe,$fe,$fe,$fe,$fe,$fe,$fe   // 88 scroll-thumb (midden)
+        .byte $ff,$00,$00,$00,$00,$00,$00,$00   // 89 dock-bovenrand
+        .byte $fe,$fe,$fe,$fe,$fe,$fe,$fe,$00   // 90 scroll-thumb (onderkant)
 
 // (De System-charset zelf zit niet meer in de Core: disk_main.asm laadt
 //  hem als eigen segment op $3800, main_cart.asm kopieert hem uit ROM.)

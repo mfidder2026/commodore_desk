@@ -448,9 +448,9 @@ soundNameHi: .byte >sNo, >sYes
 .encoding "screencode_upper"
 rRand: .text "BORDER"
        .byte $ff
-rDesk: .text "DESKTOP"
+rDesk: .text "WINDOW"
        .byte $ff
-rMenu: .text "MENU BAR"
+rMenu: .text "BARS"
        .byte $ff
 rAcc:  .text "ACCENT"
        .byte $ff

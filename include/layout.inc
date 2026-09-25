@@ -82,6 +82,12 @@
 // ---- Kleurprofiel (basis-thema, instelbaar via Settings) ----
 .label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=Paper
 .label CFG_sound    = $0210   // 0=uit, 1=aan (klik-piepje)
+
+// ---- Win95-structuurkleuren (afgeleid van het profiel, NIET opgeslagen;
+//      liggen net buiten het CFG-blok $0200-$0210) ----
+.label TH_desktop   = $0211   // grijze desktop rond het venster
+.label TH_title     = $0212   // titelbalk van vensters/dialogen
+.label TH_bartext   = $0213   // tekst op menubalk/dock (op TH_menubg)
 .const DEFAULT_SOUND    = 1
 .const PROFILE_C64      = 0
 .const PROFILE_MATRIX   = 1

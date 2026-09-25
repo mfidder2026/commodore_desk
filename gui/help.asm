@@ -8,19 +8,20 @@
 //========================================================
 
 help_Show: {
-        gfxDrawBox(3, 7, 34, 9, LIGHT_GREY)      // rijen 7-15
-        // titel
+        // Win95-dialoog met titelbalk + sluitknop (rijen 7-15)
         lda #<hTitle
         sta r0
         lda #>hTitle
         sta r0+1
-        lda #5
+        lda #3
         sta a0
-        lda #8
+        lda #7
         sta a1
-        lda TH_accent
+        lda #34
         sta a2
-        jsr gfx_DrawText
+        lda #9
+        sta a3
+        jsr dlg_Draw
         // contextregels op basis van de actieve app (+1: 0=bureaublad)
         ldx activeApp
         inx
@@ -30,7 +31,7 @@ help_Show: {
         sta r0+1
         lda #5
         sta a0
-        lda #10
+        lda #9
         sta a1
         lda TH_text
         sta a2
@@ -43,30 +44,28 @@ help_Show: {
         sta r0+1
         lda #5
         sta a0
-        lda #11
+        lda #10
         sta a1
         lda TH_text
         sta a2
         jsr gfx_DrawText
-        // sluit-hint
-        lda #<hClose
+        lda #<hClose             // hoe sluiten
         sta r0
         lda #>hClose
         sta r0+1
         lda #5
         sta a0
-        lda #13
+        lda #12
         sta a1
-        lda TH_select
+        lda TH_title
         sta a2
         jsr gfx_DrawText
-        // modaal: wachten op spatie
-wait:   jsr evt_Poll
-        cmp #EVT_KEY
-        bne wait
-        lda evtA
-        cmp #$20
-        bne wait
+        lda #18                  // OK-knop
+        sta a0
+        lda #13
+        sta a1
+        jsr dlg_OkButton
+        jsr dlg_WaitClose
         jmp shell_DrawAll        // sluiten + scherm herstellen
 }
 
@@ -79,20 +78,20 @@ help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2
 .encoding "screencode_upper"
 hTitle: .text "HELP"
         .byte $ff
-hClose: .text "SPACE = CLOSE"
+hClose: .text "ESC OR THE X BUTTON CLOSES"
         .byte $ff
 
-hd1: .text "CLICK A DOCK ICON TO OPEN"
+hd1: .text "CLICK AN ICON TO START IT."
      .byte $ff
-hd2: .text "AN APP.  PRESS F1 FOR HELP."
+hd2: .text "MENU: ADD/EDIT/DELETE PRG."
      .byte $ff
 hf1: .text "CLICK A FILE TO SELECT."
      .byte $ff
-hf2: .text "UP/DN SCROLL. ESC EXITS."
+hf2: .text "SCROLL WITH THE RIGHT BAR."
      .byte $ff
 he1: .text "TYPE TO EDIT TEXT."
      .byte $ff
-he2: .text "PRESS ESC TO EXIT."
+he2: .text "ESC OR X CLOSES THE WINDOW."
      .byte $ff
 hp1: .text "PICK A COLOR, CLICK CANVAS."
      .byte $ff

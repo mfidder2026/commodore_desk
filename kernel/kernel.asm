@@ -22,6 +22,7 @@ kernel_Init:
         jsr font_Init            // System-font naar RAM + UI-glyphs
         jsr osvars_Init          // runtime-defaults
         jsr cfg_Load             // CD64.CFG (indien aanwezig) overschrijft ze
+        jsr profile_Derive       // Win95-structuurkleuren bij het profiel
         jsr da_Load              // DESK.APPS (gebruikersprogramma's) of defaults
         jsr font_Apply           // gekozen font toepassen (na cfg_Load)
         jsr sid_Init
@@ -103,12 +104,33 @@ profile_Apply:
         sta TH_select
         lda profText,x
         sta TH_text
+        jsr profile_Derive
         jmp theme_Apply
 
-//        C64          Matrix       Paper
-profBorder: .byte LIGHT_BLUE, BLACK,       GREY
-profDesk:   .byte BLUE,       BLACK,       LIGHT_GREY
-profMenu:   .byte LIGHT_GREY, GREEN,       BLACK
-profAccent: .byte YELLOW,     LIGHT_GREEN, BLUE
-profSelect: .byte CYAN,       DARK_GREY,   LIGHT_BLUE
-profText:   .byte WHITE,      GREEN,       BLACK
+// profile_Derive - Win95-structuurkleuren (desktop, titelbalk, balktekst)
+//                  uit het profiel afleiden. Ook na cfg_Load aanroepen.
+profile_Derive:
+        ldx CFG_profile
+        cpx #NUM_PROFILES
+        bcc !ok+
+        ldx #0
+!ok:    lda profDesktop,x
+        sta TH_desktop
+        lda profTitle,x
+        sta TH_title
+        lda profBarText,x
+        sta TH_bartext
+        rts
+
+// Venster = TH_deskbg (achtergrond $D021 boven), balken = TH_menubg
+// (menubalk + dock, achtergrond $D021 onder), desktop = grijs eromheen.
+//          C64/Win95     Matrix       Paper
+profBorder:  .byte LIGHT_BLUE, BLACK,       GREY
+profDesk:    .byte BLUE,       BLACK,       WHITE
+profMenu:    .byte LIGHT_GREY, GREEN,       GREY
+profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE
+profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE
+profText:    .byte WHITE,      GREEN,       BLACK
+profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY
+profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE
+profBarText: .byte BLUE,       BLACK,       BLACK

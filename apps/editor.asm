@@ -29,7 +29,7 @@ ed_Init:
 // ed_Draw - het hele tekstveld tekenen (op app-activatie).
 //--------------------------------------------------------
 ed_Draw:
-        gfxDrawBox(1, 2, 38, 18, LIGHT_GREY)
+        // (het Win95-venster levert titelbalk + kader; tekstveld 3..34 x 3..18)
         lda #0
         sta edRowIdx
 rowLoop:
