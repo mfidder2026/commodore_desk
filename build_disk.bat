@@ -43,7 +43,8 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\mono.prg mono ^
   -write build\casual.prg casual ^
   -write build\heavy.prg heavy ^
-  -write build\cowboy.prg cowboy
+  -write build\cowboy.prg cowboy ^
+  -write build\scrsaver.prg scrsaver
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
 echo.

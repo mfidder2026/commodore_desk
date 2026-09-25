@@ -213,6 +213,9 @@ inet_Draw:
         jmp gfx_DrawText
 
 // drawDesktopContent - launcher-grid met programma-iconen (2x2 + label).
+// 2 kolommen (x=3 en x=21), rijen stap 3 vanaf rij 3. Cel i:
+//   kol  = (i & 1) ? 21 : 3     rij = 3 + (i>>1)*3
+//   icoon 2x2 op (x,y)..(x+1,y+1); label op (x+3, y).
 drawDesktopContent:
         lda #0
         sta deI
@@ -220,34 +223,45 @@ drawDesktopContent:
         cmp deskCount
         bcc !go+
         jmp !hint+
-!go:    lda deI                  // basiskolom = 4 + entry*8
-        asl
-        asl
+!go:    // kolom-x uit bit0
+        lda deI
+        and #1
+        beq !left+
+        lda #21
+        jmp !setx+
+!left:  lda #3
+!setx:  sta deCol
+        // rij-y = 3 + (i>>1)*3
+        lda deI
+        lsr                      // i>>1 = rij-index
+        sta deRow                // tijdelijk rij-index
         asl
         clc
-        adc #4
-        sta deCol
+        adc deRow                // *3
+        clc
+        adc #3
+        sta deRow                // y
         ldx deI
         lda deskIcon,x
         sta deIcon
         lda deskIcoCol,x
         sta deIcoC
-        lda deCol                // TL (col+1, rij 4)
-        clc
-        adc #1
+        // TL (x, y)
+        lda deCol
         sta a0
-        lda #4
+        lda deRow
         sta a1
         lda deIcon
         sta a2
         lda deIcoC
         sta a3
         jsr gfx_PutChar
-        lda deCol                // TR (col+2, rij 4)
+        // TR (x+1, y)
+        lda deCol
         clc
-        adc #2
+        adc #1
         sta a0
-        lda #4
+        lda deRow
         sta a1
         lda deIcon
         clc
@@ -256,11 +270,12 @@ drawDesktopContent:
         lda deIcoC
         sta a3
         jsr gfx_PutChar
-        lda deCol                // BL (col+1, rij 5)
+        // BL (x, y+1)
+        lda deCol
+        sta a0
+        lda deRow
         clc
         adc #1
-        sta a0
-        lda #5
         sta a1
         lda deIcon
         clc
@@ -269,11 +284,14 @@ drawDesktopContent:
         lda deIcoC
         sta a3
         jsr gfx_PutChar
-        lda deCol                // BR (col+2, rij 5)
+        // BR (x+1, y+1)
+        lda deCol
         clc
-        adc #2
+        adc #1
         sta a0
-        lda #5
+        lda deRow
+        clc
+        adc #1
         sta a1
         lda deIcon
         clc
@@ -282,9 +300,12 @@ drawDesktopContent:
         lda deIcoC
         sta a3
         jsr gfx_PutChar
-        lda deCol                // label (col, rij 6)
+        // label (x+3, y)
+        lda deCol
+        clc
+        adc #3
         sta a0
-        lda #6
+        lda deRow
         sta a1
         lda TH_text
         sta a2
@@ -312,18 +333,39 @@ drawDesktopContent:
 // desk_Click - klik op een launcher-icoon (rij 4-6) -> start het.
 //--------------------------------------------------------
 desk_Click:
-        lda evtB
-        cmp #4
-        bcc !ret+
-        cmp #7
-        bcs !ret+
+        // kolompaar uit x (>=21 -> rechts)
         lda evtA
-        sec
-        sbc #4
+        cmp #3
         bcc !ret+
-        lsr
-        lsr
-        lsr                      // /8 -> entry
+        cmp #21
+        bcc !lc+
+        lda #1                   // rechter kolom
+        jmp !cp+
+!lc:    lda #0                   // linker kolom
+!cp:    sta deCol                // colPair (0/1) hergebruikt deCol
+        // rij-index uit y: t = evtB-3; rem = t mod 3 (2 = tussenruimte)
+        lda evtB
+        sec
+        sbc #3
+        bcc !ret+
+        sta deRow                // t
+        ldx #0                   // rij-index
+!dl:    lda deRow
+        cmp #3
+        bcc !rem+
+        sec
+        sbc #3
+        sta deRow
+        inx
+        jmp !dl-
+!rem:   lda deRow                // rest 0/1 = geldig, 2 = gap
+        cmp #2
+        beq !ret+
+        // entry = rij-index*2 + colPair
+        txa
+        asl
+        clc
+        adc deCol
         cmp deskCount
         bcs !ret+
         tax
@@ -335,8 +377,107 @@ desk_Click:
         jmp desk_RunPrg
 !ret:   rts
 
+// retStubSrc: RESTORE-terugkeerhandler, geassembleerd voor $C000 (een
+// gebied dat gewone PRG's met rust laten). De launcher kopieert dit hierheen
+// en wijst de NMI-vector $0318/$0319 erop, VOORDAT het PRG start. Een net
+// PRG draait met de KERNAL ingebankt, dus RESTORE -> $FE43 -> jmp ($0318) ->
+// deze handler, die CD64 herlaadt. Zo keert elk PRG terug ZONDER code-aanpassing.
+retStubSrc:
+.pseudopc $c000 {
+retStub:
+        sei
+        lda #$37                 // KERNAL+BASIC+I/O inbanken voor LOAD
+        sta $01
+        lda #$00
+        sta $9d                  // KERNAL-laadmeldingen uit
+        lda #retNameEnd-retName
+        ldx #<retName
+        ldy #>retName
+        jsr $ffbd                // SETNAM "CD64"
+        lda #1
+        ldx #8
+        ldy #1
+        jsr $ffba                // SETLFS 1,8,1
+        lda #0
+        jsr $ffd5                // LOAD CD64 -> $0801 (raakt $C000 niet)
+        jmp $0810                // start bureaublad (kernel_Init)
+.encoding "petscii_upper"
+retName:    .text "CD64"
+retNameEnd:
+.encoding "screencode_upper"
+}
+.const retStubLen = * - retStubSrc
+
 // run-stub: geassembleerd voor $0334. Laadt de PRG en start 'm (SYS 2061),
 // of valt bij mislukking netjes terug in de OS (shell_NotFound).
+// sysRunSrc: SYS-adresparser, geassembleerd voor $C040 (veilig RAM). Leest
+// de SYS-instructie uit de BASIC-regel van het geladen PRG op $0801 en
+// springt daarheen. Zo hoeft de launcher het startadres niet te hardcoden
+// (cowboy = SYS 2062, scrsaver kan anders zijn, enz.).
+sysRunSrc:
+.pseudopc $c040 {
+sysRun: ldx #0
+!fs:    lda $0801,x              // SYS-token ($9E) zoeken
+        cmp #$9e
+        beq !gs+
+        inx
+        cpx #$10
+        bne !fs-
+        jmp $080d                // geen SYS -> standaardingang
+!gs:    inx
+!sd:    lda $0801,x              // eerste cijfer zoeken
+        cmp #$30
+        bcc !sk+
+        cmp #$3a
+        bcc !gd+
+!sk:    inx
+        cpx #$20
+        bne !sd-
+        jmp $080d
+!gd:    lda #0                   // decimaal adres -> $fb/$fc
+        sta $fb
+        sta $fc
+!pl:    lda $0801,x
+        cmp #$30
+        bcc !run+
+        cmp #$3a
+        bcs !run+
+        sec
+        sbc #$30
+        pha                      // cijfer bewaren
+        lda $fb                  // addr *= 10  (x4 + x1, dan x2)
+        sta $fd
+        lda $fc
+        sta $fe
+        asl $fb
+        rol $fc
+        asl $fb
+        rol $fc
+        lda $fb
+        clc
+        adc $fd
+        sta $fb
+        lda $fc
+        adc $fe
+        sta $fc
+        asl $fb
+        rol $fc
+        pla                      // + cijfer
+        clc
+        adc $fb
+        sta $fb
+        lda $fc
+        adc #0
+        sta $fc
+        inx
+        jmp !pl-
+!run:   jmp ($00fb)              // spring naar het geparste SYS-adres
+}
+.const sysRunLen = * - sysRunSrc
+
+// run-stub: klein, geassembleerd voor $0334. Laadt de PRG en geeft de
+// besturing aan de SYS-parser op $C040, of valt bij mislukking netjes
+// terug in de OS (shell_NotFound).
 rpStubSrc:
 .pseudopc $0334 {
 rpStub: jsr cfg_io_begin
@@ -354,7 +495,7 @@ rpStub: jsr cfg_io_begin
         lda #$37                 // BASIC+KERNAL+I/O voor de PRG
         sta $01
         cli
-        jmp $080d                // start (SYS 2061)
+        jmp sysRun               // SYS-adres parsen en starten ($C040)
 !fail:  jsr cfg_io_end           // OS-toestand herstellen
         jsr spr_CursorInit       // cursor-sprite terug ($0340 overschreven)
         jmp shell_NotFound
@@ -368,6 +509,26 @@ rpStub: jsr cfg_io_begin
 //               lengte -> $03BF; de keten-stub op $0334 doet de LOAD.
 //--------------------------------------------------------
 desk_RunPrg:
+        pha
+        // RESTORE-terugkeerhandler naar $C000 kopiëren en NMI-vector erop wijzen
+        ldx #0
+!rc:    lda retStubSrc,x
+        sta $c000,x
+        inx
+        cpx #retStubLen
+        bne !rc-
+        // SYS-adresparser naar $C040 kopiëren
+        ldx #0
+!pc:    lda sysRunSrc,x
+        sta $c040,x
+        inx
+        cpx #sysRunLen
+        bne !pc-
+        lda #<$c000
+        sta $0318
+        lda #>$c000
+        sta $0319
+        pla
         tax
         lda deskPrgLen,x
         sta $03bf
@@ -846,24 +1007,26 @@ dockTmp:     .byte 0
 dApp:        .byte 0
 deI:         .byte 0
 deCol:       .byte 0
+deRow:       .byte 0
 deIcon:      .byte 0
 deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: standaard-entries ----
 // kind 0 = overlay-app (param = app-id); kind 1 = standalone PRG (param = prg-index)
-deskCount:  .byte 4
-deskNameLo: .byte <dnEdit, <dnPaint, <dnCalc, <dnCow
-deskNameHi: .byte >dnEdit, >dnPaint, >dnCalc, >dnCow
-deskKind:   .byte 0, 0, 0, 1
-deskParam:  .byte 1, 2, 3, 0
-deskIcon:   .byte 111, 115, 119, 107   // 2x2 TL-glyph (edit,paint,calc,folder)
-deskIcoCol: .byte WHITE, LIGHT_RED, CYAN, YELLOW
+deskCount:  .byte 5
+deskNameLo: .byte <dnEdit, <dnPaint, <dnCalc, <dnCow, <dnScr
+deskNameHi: .byte >dnEdit, >dnPaint, >dnCalc, >dnCow, >dnScr
+deskKind:   .byte 0, 0, 0, 1, 1
+deskParam:  .byte 1, 2, 3, 0, 1
+deskIcon:   .byte 111, 115, 119, 107, 123   // 2x2 TL-glyph
+deskIcoCol: .byte WHITE, LIGHT_RED, CYAN, YELLOW, PURPLE
 // standalone-PRG-namen (petscii, voor de LOAD)
-deskPrgLo:  .byte <pnCow
-deskPrgHi:  .byte >pnCow
-deskPrgLen: .byte 6
+deskPrgLo:  .byte <pnCow, <pnScr
+deskPrgHi:  .byte >pnCow, >pnScr
+deskPrgLen: .byte 6, 8
 .encoding "petscii_upper"
 pnCow:      .text "COWBOY"
+pnScr:      .text "SCRSAVER"
 .encoding "screencode_upper"
 menuShown:   .byte 0
 cbRow:       .byte 0
@@ -931,6 +1094,8 @@ dnPaint:   .text "PAINT"
 dnCalc:    .text "CALC"
            .byte $ff
 dnCow:     .text "COWBOY"
+           .byte $ff
+dnScr:     .text "SCRSAVER"
            .byte $ff
 sNotFound: .text "PROGRAM NOT FOUND"
            .byte $ff

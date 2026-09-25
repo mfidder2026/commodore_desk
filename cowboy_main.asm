@@ -1,15 +1,17 @@
 //========================================================
-// cowboy_main.asm - voorbeeld standalone-PRG voor de launcher
+// cowboy_main.asm - GEWOON voorbeeld-PRG voor de launcher
 // Commodore Desk 64
 //
-// Laadt op $0801 (SYS 2061), toont een eigen scherm en keert bij een
-// toets terug naar het bureaublad door "CD64" te herladen. Draait als
-// gewone C64-PRG met de KERNAL beschikbaar.
+// Dit is een heel normaal C64-programma (laadt op $0801, SYS 2061).
+// Het weet NIETS van Commodore Desk 64: het tekent een schermpje en
+// blijft draaien. Terugkeren naar het bureaublad doet de gebruiker met
+// de RESTORE-toets; die terugkeer regelt de launcher generiek, zodat
+// elk net PRG werkt zonder dat je de code hoeft aan te passen.
 //========================================================
         *=$0801
-        BasicUpstart2($080d)     // 10 SYS 2061
+        BasicUpstart2(start)     // 10 SYS <start>
 
-        *=$080d
+.encoding "petscii_upper"
 start:
         lda #$06                 // blauw scherm/rand
         sta $d020
@@ -20,27 +22,11 @@ start:
         jsr $ffd2
         ldx #0
 !lp:    lda msg,x
-        beq !wait+
+        beq !idle+
         jsr $ffd2                // CHROUT
         inx
         bne !lp-
-!wait:  jsr $ffe4                // GETIN
-        beq !wait-
-        // terug naar het bureaublad: CD64 herladen en starten
-        lda #4
-        ldx #<dname
-        ldy #>dname
-        jsr $ffbd                // SETNAM
-        lda #1
-        ldx #8
-        ldy #1
-        jsr $ffba                // SETLFS
-        lda #0
-        jsr $ffd5                // LOAD "CD64",8,1
-        jmp $0810                // start CD64 (kernel_Init)
-
-.encoding "petscii_upper"
-dname:  .text "CD64"
+!idle:  jmp !idle-               // gewoon blijven draaien
 
 msg:    .byte $0d, $0d
         .text "         HOWDY, PARTNER!"
@@ -55,5 +41,5 @@ msg:    .byte $0d, $0d
         .byte $0d, $0d, $0d
         .text "     LAUNCHED FROM THE DESKTOP!"
         .byte $0d, $0d
-        .text "     PRESS ANY KEY TO RETURN..."
+        .text "     PRESS RESTORE TO GO BACK."
         .byte $00
