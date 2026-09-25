@@ -20,7 +20,11 @@
 //--------------------------------------------------------
 .segmentdef OSIMG [start=$0801, max=$37ff]   // mag de charset ($3800) niet raken
         .segment OSIMG
-osStart:
+        // Zelfde indeling als disk_main (BASIC-regel op $0801, start op
+        // $0810): de overlays komen van disk en roepen de Core aan op de
+        // adressen van de disk-build. Elk verschil laat ze crashen.
+        .fill $0f, 0
+osStart:                         // = $0810
         jmp kernel_Init
 #import "hal/vic.asm"
 #import "hal/sound.asm"
@@ -53,6 +57,7 @@ osEnd:
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
 .segmentdef DeskTool [start=$8000]
+.segmentdef Inet   [start=$8000]
 .segment Files
 #import "apps/filemanager.asm"
 .segment Editor
@@ -65,6 +70,12 @@ osEnd:
 #import "apps/settings.asm"
 .segment DeskTool
 #import "gui/desktool.asm"
+.segment Inet
+#import "net/net.inc"
+#import "net/uci.asm"
+#import "net/cs8900.asm"
+#import "net/netdrv.asm"
+#import "apps/inet.asm"
 
 //--------------------------------------------------------
 // 16 KB cartridge-image ($8000-$BFFF = ROML + ROMH bank 0).
@@ -97,6 +108,12 @@ tramp:
         sta $de02
         lda #0
         sta $de00
+        // Zeropage wissen (zoals RAMTAS): de KERNAL-serieelroutines lezen
+        // o.a. $94/$A3; met power-on-rommel hangt de eerste LOAD.
+        ldx #2
+!zp:    sta $00,x
+        inx
+        bne !zp-
         // OS kopiëren: $8000 -> $0801 (osLen bytes)
         lda #$00
         sta $fb
@@ -147,6 +164,21 @@ tramp:
         sei
         jsr $fd15                // RESTOR: KERNAL-vectoren ($0314 e.d.)
         jsr $fda3                // IOINIT: CIA/VIC/SID init (nodig voor disk-I/O)
+        lda #1                   // INET: $DE00/$DF00 zijn van de EasyFlash
+        sta cartMode
+        // ~1,6 s wachten: de drive is na de gezamenlijke reset nog aan
+        // het opstarten. Een ATN in die fase mist hij, waarna hij DATA
+        // vasthoudt en de eerste LOAD eeuwig blijft hangen.
+        lda #5
+        sta $02
+        ldx #0
+        ldy #0
+!dl:    dex
+        bne !dl-
+        dey
+        bne !dl-
+        dec $02
+        bne !dl-
         jmp osStart              // $0801 in RAM
 trampEnd:
 }

@@ -105,7 +105,7 @@ hs1: .text "CLICK A ROLE, THEN A COLOR."
      .byte $ff
 hs2: .text "SAVE WRITES CD64.CFG."
      .byte $ff
-hi1: .text "INTERNET APPS - COMING SOON."
+hi1: .text "NETWORK DRIVER TEST."
      .byte $ff
-hi2: .text "MAIL, CHAT, RSS, FTP, PING."
+hi2: .text "RESCAN SEARCHES AGAIN."
      .byte $ff

@@ -24,6 +24,7 @@
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
 .segmentdef DeskTool [start=$8000]      // launcher-beheer (menu ADD/EDIT/DELETE)
+.segmentdef Inet   [start=$8000]        // INET + netwerkdrivers (net/)
 .segmentdef Lower  [start=$3800]
 .segmentdef Tiny   [start=$3800]
 // font-charsets (laden naar charset-RAM $3800; overlappen, 1 tegelijk)
@@ -40,6 +41,7 @@
 .file [name="paint.prg",  segments="Paint"]
 .file [name="setup.prg",  segments="Setup"]
 .file [name="desktool.prg", segments="DeskTool"]
+.file [name="inet.prg",   segments="Inet"]
 .file [name="lower.prg",  segments="Lower"]
 .file [name="tiny.prg",   segments="Tiny"]
 .file [name="fremen.prg", segments="Fremen"]
@@ -95,6 +97,12 @@ start:
         #import "apps/settings.asm"
 .segment DeskTool
         #import "gui/desktool.asm"
+.segment Inet
+        #import "net/net.inc"
+        #import "net/uci.asm"
+        #import "net/cs8900.asm"
+        #import "net/netdrv.asm"
+        #import "apps/inet.asm"
 
 // LOWER- en TINY-font als complete charsets op disk: System-charset met
 // de kleine letters (a-z op code 1-26) resp. het 3x5-font (A-Z op 1-26,

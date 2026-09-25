@@ -22,7 +22,7 @@ shell_Init:
 
 // shell_Run - hoofdlus.
 shell_Run:
-!loop:  lda activeApp            // Paint = volledig-scherm bitmap: geen balken
+!loop:  lda activeApp           // Paint = volledig-scherm bitmap: geen balken
         cmp #2
         bne !bars+
         jsr paint_Live           // sleep-tekenen zolang de knop ingedrukt is
@@ -286,33 +286,6 @@ drawContent:
         bne !f+
         jmp inet_Draw
 !f:     jmp drawStub
-
-//--------------------------------------------------------
-// inet_Draw - placeholder-pagina voor de internet-apps.
-//--------------------------------------------------------
-inet_Draw:
-        lda #<sInet1
-        sta r0
-        lda #>sInet1
-        sta r0+1
-        lda #6
-        sta a0
-        lda #8
-        sta a1
-        lda TH_accent
-        sta a2
-        jsr gfx_DrawText
-        lda #<sInet2
-        sta r0
-        lda #>sInet2
-        sta r0+1
-        lda #6
-        sta a0
-        lda #10
-        sta a1
-        lda TH_text
-        sta a2
-        jmp gfx_DrawText
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
 // programma's) uit deskapps.asm, plus de hint-regel.
@@ -960,19 +933,20 @@ onMouseDown:
         bne !w3+
         jmp calc_Click
 !w3:    cmp #4
-        bne !done+
+        bne !w4+
         jmp set_Click
+!w4:    cmp #5
+        bne !done+
+        jmp inet_Click
 !done:  rts
 
 //--------------------------------------------------------
-// openApp - open app-id A (0-5). Laadt de overlay (of resident INET),
+// openApp - open app-id A (0-5). Laadt de overlay van disk,
 //           initialiseert en tekent. Paint gaat naar bitmapmodus.
 //--------------------------------------------------------
 openApp:
         sta activeApp
-        cmp #5                   // INET is resident (geen overlay)
-        beq !drawit+
-        tax                      // apps 0-4: overlay van disk laden
+        tax                      // overlay van disk laden
         jsr showLoading
         ldx activeApp
         jsr loadApp
@@ -997,7 +971,11 @@ openApp:
         bne !na3+
         jsr calc_Init
         jmp !drawit+
-!na3:   jsr set_Init             // #4 Settings
+!na3:   cmp #4                   // Settings
+        bne !na4+
+        jsr set_Init
+        jmp !drawit+
+!na4:   jsr inet_Init            // #5 INET: netwerkhardware zoeken
 !drawit:
         jmp shell_DrawAll
 
@@ -1005,6 +983,7 @@ openApp:
 // Data
 //--------------------------------------------------------
 activeApp:   .byte $ff
+cartMode:    .byte 0             // 1 = cart-build (I/O-ruimte niet aanraken)
 dockI:       .byte 0
 dockTmp:     .byte 0
 dApp:        .byte 0
@@ -1101,10 +1080,6 @@ sNotFound: .text "PROGRAM NOT FOUND"
 sLoad:     .text "LOADING"
            .byte $ff
 sWait:     .text "PLEASE WAIT"
-           .byte $ff
-sInet1:    .text "INTERNET APPS"
-           .byte $ff
-sInet2:    .text "COMING SOON"
            .byte $ff
 lFiles: .text "FILES"
         .byte $ff

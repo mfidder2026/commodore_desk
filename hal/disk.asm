@@ -336,10 +336,10 @@ loadCharset:
         sec
         rts
 
-// index 0-4 = apps, 5 = (INET, resident: niet gebruikt), 6 = DESKTOOL
-appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anTool, <anTool
-appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anTool, >anTool
-appLen:   .byte 5, 6, 5, 4, 5, 8, 8
+// index 0-5 = apps (5 = INET), 6 = DESKTOOL
+appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool
+appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool
+appLen:   .byte 5, 6, 5, 4, 5, 4, 8
 // disk-fonts: 0-4 = Fremen..Heavy, 5 = Lower, 6 = Tiny
 fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy, <anLower, <anTiny
 fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy, >anLower, >anTiny
@@ -350,6 +350,7 @@ anEdit:   .text "EDITOR"
 anPaint:  .text "PAINT"
 anCalc:   .text "CALC"
 anSetup:  .text "SETUP"
+anInet:   .text "INET"
 anTool:   .text "DESKTOOL"
 anLower:  .text "LOWER"
 anTiny:   .text "TINY"

@@ -39,6 +39,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
   -write build\desktool.prg desktool ^
+  -write build\inet.prg inet ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
@@ -61,6 +62,7 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
   -write build\desktool.prg desktool ^
+  -write build\inet.prg inet ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
