@@ -13,7 +13,11 @@
 #import "include/memmap.inc"
 #import "include/abi.inc"
 
-.segmentdef Core   [start=$0801]
+// Core mag NOOIT de charset op $3800 raken: max=$37FF laat de assembler
+// een fout geven zodra de Core te groot wordt.
+.segmentdef Core   [start=$0801, max=$37ff]
+// System-charset: zit in hetzelfde cd64.prg, direct op $3800 geladen.
+.segmentdef SysCharset [start=$3800]
 .segmentdef Files  [start=$8000]
 .segmentdef Editor [start=$8000]
 .segmentdef Calc   [start=$8000]
@@ -26,7 +30,7 @@
 .segmentdef Casual [start=$3800]
 .segmentdef Heavy  [start=$3800]
 
-.file [name="cd64.prg",   segments="Core"]
+.file [name="cd64.prg",   segments="Core,SysCharset"]
 .file [name="files.prg",  segments="Files"]
 .file [name="editor.prg", segments="Editor"]
 .file [name="calc.prg",   segments="Calc"]
@@ -64,6 +68,11 @@ start:
         #import "gui/shell.asm"
         #import "gui/deskapps.asm"
         #import "kernel/kernel.asm"
+
+// System-charset (2 KB, hoofdletter/grafiek-set uit de C64 char-ROM),
+// meegeladen op $3800 zodat hij niet in de Core hoeft te staan.
+.segment SysCharset
+        .import binary "data/chargen.bin"
 
 //--------------------------------------------------------
 // App-overlays - elk een los PRG dat op $8000 geladen wordt.

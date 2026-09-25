@@ -18,7 +18,7 @@
 // OS-image, geassembleerd op $0801 (het RAM-doeladres).
 // Zelfde modules/volgorde als disk_main.asm.
 //--------------------------------------------------------
-.segmentdef OSIMG [start=$0801]
+.segmentdef OSIMG [start=$0801, max=$37ff]   // mag de charset ($3800) niet raken
         .segment OSIMG
 osStart:
         jmp kernel_Init
@@ -121,7 +121,25 @@ tramp:
         sta ($fd),y
         iny
         bne !tl-
-!fin:   lda #$04                 // cartridge UIT -> zuivere C64 (RAM + ROMs)
+!fin:   // System-charset: ROM $B100 -> RAM $3800 (8 pagina's)
+        lda #$00
+        sta $fb
+        sta $fd
+        lda #$b1
+        sta $fc
+        lda #$38
+        sta $fe
+        ldx #8
+!cc:    ldy #0
+!ci:    lda ($fb),y
+        sta ($fd),y
+        iny
+        bne !ci-
+        inc $fc
+        inc $fe
+        dex
+        bne !cc-
+        lda #$04                 // cartridge UIT -> zuivere C64 (RAM + ROMs)
         sta $de02
         sei
         jsr $fd15                // RESTOR: KERNAL-vectoren ($0314 e.d.)
@@ -129,6 +147,11 @@ tramp:
         jmp osStart              // $0801 in RAM
 trampEnd:
 }
+
+        // System-charset in vrije ROMH-ruimte (de trampoline kopieert hem
+        // bij het opstarten naar $3800).
+        *=$b100
+        .import binary "data/chargen.bin"
 
         *=$bffa
         .word coldStart          // NMI

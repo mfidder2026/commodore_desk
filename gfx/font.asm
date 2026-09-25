@@ -27,13 +27,14 @@
 
 .const UI_GLYPH_COUNT = 31    // FR_* (6) + 1-cel iconen (5) + 2x2-iconen (20)
 
-// font_Init - kopieer de ingesloten System-charset naar $3000,
-//             overlay de UI-glyphs, en richt de VIC op $3000
-//             ($D018 = $1C). Geen char-ROM-afhankelijkheid, dus
-//             identiek bruikbaar op disk én cartridge.
+// font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
+//             daar direct; de cart kopieert hem uit ROM). Bewaar een
+//             schone kopie in RAM onder I/O ($D000) voor latere
+//             fontwissels, overlay de UI-glyphs en richt de VIC op $3800.
 // Klobbert: A,X
+.label CS_SAVE = $d000              // schone System-charset (RAM onder I/O)
 font_Init:
-        jsr font_Base
+        jsr font_SaveBase
         jsr font_OverlayUI
         // VIC: scherm $0400 (bits 4-7=1), charset $3800 (bits 1-3=7) -> $1E.
         lda #$1e
@@ -113,28 +114,49 @@ font_Tiny:
         jmp font_OverlayUI
 
 //--------------------------------------------------------
-// font_Base - kopieer de ingesloten System-charset (2 KB) naar RAM.
+// font_Base     - schone System-charset (2 KB) terugzetten: $D000 -> $3800.
+// font_SaveBase - schone kopie maken bij het opstarten:   $3800 -> $D000.
+// $D000-$D7FF is RAM onder de I/O; tijdens het kopiëren staat $01 op
+// $34 (alles RAM) met interrupts uit.
 //--------------------------------------------------------
 font_Base:
+        php
+        sei
+        lda $01
+        pha
+        lda #$34
+        sta $01
         ldx #0
-!lp:    lda sysChars + $000,x
-        sta CHARSET_BASE + $000,x
-        lda sysChars + $100,x
-        sta CHARSET_BASE + $100,x
-        lda sysChars + $200,x
-        sta CHARSET_BASE + $200,x
-        lda sysChars + $300,x
-        sta CHARSET_BASE + $300,x
-        lda sysChars + $400,x
-        sta CHARSET_BASE + $400,x
-        lda sysChars + $500,x
-        sta CHARSET_BASE + $500,x
-        lda sysChars + $600,x
-        sta CHARSET_BASE + $600,x
-        lda sysChars + $700,x
-        sta CHARSET_BASE + $700,x
+!lp:
+    .for (var p=0; p<8; p++) {
+        lda CS_SAVE + p*$100,x
+        sta CHARSET_BASE + p*$100,x
+    }
         inx
         bne !lp-
+        pla
+        sta $01
+        plp
+        rts
+
+font_SaveBase:
+        php
+        sei
+        lda $01
+        pha
+        lda #$34
+        sta $01
+        ldx #0
+!lp:
+    .for (var p=0; p<8; p++) {
+        lda CHARSET_BASE + p*$100,x
+        sta CS_SAVE + p*$100,x
+    }
+        inx
+        bne !lp-
+        pla
+        sta $01
+        plp
         rts
 
 //--------------------------------------------------------
@@ -306,12 +328,8 @@ userIcons:
         .byte $c0,$fc,$cc,$fc,$c0,$c0,$c0,$c0   // 18 flag
         .byte $00,$ff,$81,$b1,$8d,$b1,$9f,$ff   // 19 terminal
 
-//--------------------------------------------------------
-// System-charset (2 KB, hoofdletter/grafiek-set uit de C64 char-ROM),
-// ingesloten zodat we niet van de char-ROM afhankelijk zijn.
-//--------------------------------------------------------
-sysChars:
-        .import binary "data/chargen.bin"
+// (De System-charset zelf zit niet meer in de Core: disk_main.asm laadt
+//  hem als eigen segment op $3800, main_cart.asm kopieert hem uit ROM.)
 
 // Kleine letters a-z (uit de C64-ROM, 26 glyphs) - overlay voor FONT_LOWER.
 lowerChars:
