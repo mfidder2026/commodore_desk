@@ -367,6 +367,8 @@ rpStub: jsr cfg_io_begin
 //                dan valt de stub terug op shell_NotFound.
 //--------------------------------------------------------
 launchCommon:
+        lda #0
+        sta $d015                // cursor-sprite uit (geen garbage over het PRG)
         // RESTORE-terugkeerhandler naar $C000 kopiëren en NMI-vector erop wijzen
         ldx #0
 !rc:    lda retStubSrc,x
@@ -382,7 +384,7 @@ launchCommon:
         cpx #sysRunLen
         bne !pc-
         lda #<$c000
-        sta $0318
+        sta $0318                // NMI (RESTORE)  -> retStub
         lda #>$c000
         sta $0319
         ldx #0
@@ -887,10 +889,10 @@ biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc
 biIcon:     .byte 111, 115, 119        // 2x2 TL-glyph
 biIcoCol:   .byte WHITE, LIGHT_RED, CYAN
 biApp:      .byte 1, 2, 3              // overlay-app-id
-// 20 kies-iconen (1-cel grafische glyphs) voor gebruikersprogramma's
+// 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
-        .byte 65, 81, 83, 88, 90, 87, 91, 95, 94, 77
-        .byte 73, 74, 75, 85, 78, 76, 66, 79, 86, 64
+        .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
+        .byte 74, 75, 76, 77, 78, 79, 80, 81, 82, 83
 menuShown:   .byte 0
 cbRow:       .byte 0
 menuTxtCol:  .byte 0

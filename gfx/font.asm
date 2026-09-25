@@ -148,6 +148,13 @@ font_OverlayUI:
         inx
         cpx #[UI_GLYPH_COUNT*8]
         bne !lp-
+        // launcher-iconen (20 stuks) op codes 64..83
+        ldx #0
+!ic:    lda userIcons,x
+        sta CHARSET_BASE + [64*8],x
+        inx
+        cpx #[20*8]
+        bne !ic-
         rts
 
 //--------------------------------------------------------
@@ -272,6 +279,32 @@ frameGlyphs:
         .byte $80,$88,$98,$f0,$fe,$0e,$0c,$0f
         .byte $f0,$30,$70,$7f,$0f,$19,$11,$01
         .byte $0f,$0c,$0e,$fe,$f0,$98,$88,$80
+
+//--------------------------------------------------------
+// userIcons - 20 launcher-iconen (1 cel, 8x8) op charset-codes 64..83.
+// Elk 8 bytes; bit7 = linkerpixel, byte0 = bovenste rij.
+//--------------------------------------------------------
+userIcons:
+        .byte $fe,$c6,$c6,$fe,$82,$ba,$82,$fe   // 0  floppy disk
+        .byte $00,$78,$fc,$84,$84,$84,$fc,$00   // 1  folder
+        .byte $7c,$44,$7c,$54,$44,$54,$7c,$00   // 2  document
+        .byte $18,$5a,$3c,$e7,$e7,$3c,$5a,$18   // 3  gear
+        .byte $18,$18,$db,$7e,$7e,$db,$18,$18   // 4  sparkle/star
+        .byte $66,$ff,$ff,$ff,$7e,$3c,$18,$00   // 5  heart
+        .byte $3c,$7e,$ff,$ff,$ff,$ff,$7e,$3c   // 6  ball
+        .byte $18,$18,$18,$3c,$7e,$ff,$81,$ff   // 7  joystick
+        .byte $e0,$e0,$70,$38,$1c,$0e,$07,$07   // 8  tool
+        .byte $3c,$42,$99,$bd,$bd,$99,$42,$3c   // 9  globe
+        .byte $00,$ff,$c3,$a5,$99,$81,$ff,$00   // 10 envelope
+        .byte $3c,$42,$92,$92,$9e,$82,$42,$3c   // 11 clock
+        .byte $1e,$12,$12,$12,$32,$76,$e4,$40   // 12 music note
+        .byte $18,$18,$3c,$3c,$7e,$ff,$ff,$7e   // 13 paint drop
+        .byte $18,$18,$18,$ff,$ff,$18,$18,$18   // 14 cross
+        .byte $40,$60,$70,$78,$78,$70,$60,$40   // 15 play arrow
+        .byte $3c,$42,$a5,$81,$a5,$99,$42,$3c   // 16 smiley
+        .byte $38,$44,$44,$38,$10,$10,$18,$14   // 17 key
+        .byte $c0,$fc,$cc,$fc,$c0,$c0,$c0,$c0   // 18 flag
+        .byte $00,$ff,$81,$b1,$8d,$b1,$9f,$ff   // 19 terminal
 
 //--------------------------------------------------------
 // System-charset (2 KB, hoofdletter/grafiek-set uit de C64 char-ROM),

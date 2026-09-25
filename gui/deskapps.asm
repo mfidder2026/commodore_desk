@@ -999,6 +999,7 @@ da_AddProgram:
         jsr da_saveDisp
         jsr da_getPrg            // disk bladeren of typen
         bcs !abort+
+        jsr da_defaultName       // lege naam? -> gebruik de PRG-naam
         lda #0
         sta daIcon
         jsr da_IconPick
@@ -1062,10 +1063,81 @@ da_DeleteProgram:
 !ok:    jsr da_hintDelete
         jsr da_pickUser
         bcs !done+
+        jsr da_confirm           // bevestiging vragen
+        bcs !done+
         jsr da_removeRec
         dec DA_count
         jsr da_Save
 !done:  jmp shell_DrawAll
+
+//--------------------------------------------------------
+// da_confirm - JA/NEE-bevestiging. Uit: carry=0 = JA (Y), carry=1 = NEE.
+//--------------------------------------------------------
+da_confirm:
+        gfxDrawBox(6, 10, 28, 5, TH_accent)      // rijen 10-14
+        lda #<sConfirm
+        sta r0
+        lda #>sConfirm
+        sta r0+1
+        lda #8
+        sta a0
+        lda #11
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        lda #<sYesNo
+        sta r0
+        lda #>sYesNo
+        sta r0+1
+        lda #8
+        sta a0
+        lda #13
+        sta a1
+        lda TH_select
+        sta a2
+        jsr gfx_DrawText
+!w:     jsr evt_Poll
+        cmp #EVT_KEY
+        bne !w-
+        lda evtA
+        cmp #$19                 // 'Y'
+        beq !yes+
+        cmp #$0e                 // 'N'
+        beq !no+
+        cmp #$82                 // RUN/STOP
+        beq !no+
+        jmp !w-
+!yes:   clc
+        rts
+!no:    sec
+        rts
+
+//--------------------------------------------------------
+// da_defaultName - is dispTmp leeg? Vul 'm met de PRG-naam (prgTmp),
+//                  petscii -> screencode.
+//--------------------------------------------------------
+da_defaultName:
+        lda dispTmp
+        cmp #$ff
+        bne !done+               // er staat al een naam
+        ldx #0
+!lp:    lda prgTmp,x
+        cmp #$ff
+        beq !end+
+        cmp #$41
+        bcc !keep+
+        cmp #$5b
+        bcs !keep+
+        sec
+        sbc #$40                 // petscii-letter -> screencode
+!keep:  sta dispTmp,x
+        inx
+        cpx #12
+        bne !lp-
+!end:   lda #$ff
+        sta dispTmp,x
+!done:  rts
 
 //--------------------------------------------------------
 // da_writeRec - schrijf daIcon/daColor/dispTmp/prgTmp naar record ($fb).
@@ -1300,6 +1372,10 @@ sDelHint:  .text "CLICK A PROGRAM TO DELETE (STOP=X)"
 sEditHint: .text "CLICK A PROGRAM TO EDIT (STOP=X)"
            .byte $ff
 sFull:     .text "PROGRAM LIST IS FULL"
+           .byte $ff
+sConfirm:  .text "DELETE THIS PROGRAM?"
+           .byte $ff
+sYesNo:    .text "Y = YES    N = NO"
            .byte $ff
 
 seedIcon: .byte 3, 7
