@@ -393,6 +393,14 @@ da_Launch:
         inx
         cpx $03bf
         bne !cp-
+        lda $fb                  // "LOADING <naam> / PLEASE WAIT": laden
+        clc                      // duurt op een echte drive lang
+        adc #REC_DISP
+        sta r0
+        lda $fc
+        adc #0
+        sta r0+1
+        jsr showLoadName
         jmp launchCommon
 !bad:   jmp shell_NotFound
 

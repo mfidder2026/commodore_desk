@@ -122,18 +122,21 @@ nm:     .encoding "petscii_upper"
 nEnd:   .encoding "screencode_upper"
 }
 
-// Standaardconfig (nog geen DHCP).
+// Standaardconfig (nog geen DHCP). IP/MASK/GW: VICE op de Windows-PC via
+// de Hyper-V/WSL-adapter (Windows = gateway, routeert ook naar Tailscale).
+// Op een echte C64 in het LAN: in NETWORK aanpassen. Chatserver: LM Studio
+// (OpenAI-compatibel) met gemma-1.1-2b-it.
 ncDefault:
         .text "NC"
-        .byte 192, 168, 1, 64
-        .byte 255, 255, 255, 0
-        .byte 192, 168, 1, 1
+        .byte 172, 27, 211, 64
+        .byte 255, 255, 240, 0
+        .byte 172, 27, 208, 1
         .byte 1, 1, 1, 1
-        .text "192.168.1.15"
-        .fill 33-12, $ff
-        .text "11434"
-        .fill 6-5, $ff
+        .text "100.112.242.111"
+        .fill 33-15, $ff
+        .text "1234"
+        .fill 6-4, $ff
         .fill 41, $ff
-        .text "LLAMA3.2:1B"
-        .fill 33-11, $ff
+        .text "GEMMA-1.1-2B-IT"
+        .fill 33-15, $ff
 .assert "ncDefault = NETCFG-lengte", * - ncDefault, NETCFG_END - NETCFG

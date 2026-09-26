@@ -154,6 +154,15 @@ looks for `wpcap.dll`, which only exists in that mode (it ends up in
 Check that your VICE build supports ethernet: `x64sc -help` must list
 `-ethernetcart`. (The official Windows GTK3 builds do.)
 
+> **Wi-Fi does not work.** Wi-Fi adapters and access points drop frames that
+> come from a "foreign" network card (the C64's own MAC), so even your router
+> won't answer ARP. Use a **wired** adapter, or on Windows the
+> **`vEthernet (WSL)`** Hyper-V adapter: Windows itself is the gateway there
+> (`172.27.208.1`) and routes on — including to **Tailscale** addresses. The
+> NETWORK defaults match that setup (IP `172.27.211.64`, mask `255.255.240.0`,
+> gateway `172.27.208.1`); WSL must be running, and WSL may pick a different
+> subnet after a reboot (`Get-NetIPAddress -InterfaceAlias "vEthernet (WSL*"`).
+
 **2. VICE settings (GUI).**
 
 | Where | Setting |

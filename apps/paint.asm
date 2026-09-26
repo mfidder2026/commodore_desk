@@ -33,6 +33,10 @@
 // paint_Enter - schakel naar multicolor-bitmap en teken canvas+palet.
 //--------------------------------------------------------
 paint_Enter:
+        lda #1                   // spatie = pen
+        sta paintSpace
+        lda #0
+        sta plValid
         // 1) bitmap wissen ($6000-$7FFF = 32 pagina's) -> alles achtergrond
         lda #<BITMAP
         sta pnPtr
@@ -105,6 +109,8 @@ paint_Enter:
 // paint_Exit - terug naar char-mode desktop (VASTE $D011/$D016!).
 //--------------------------------------------------------
 paint_Exit:
+        lda #0
+        sta paintSpace
         lda #$1b                 // char-mode, DEN, 25 rijen, yscroll 3
         sta VIC_CTRL1
         lda #$c8                 // multicolor uit, 40 kolommen
@@ -244,14 +250,118 @@ er_d:   lda pnPalSw              // (136+d, 184+d)
 //              de knop ingedrukt is (sleep-tekenen).
 //--------------------------------------------------------
 paint_Live:
-        lda crsBtn
-        beq plDone
+        lda crsBtn               // pen van het papier?
+        beq plUp
         jsr paint_CursorToFat
         lda pnPy
         cmp #PN_PALTOP
-        bcs plDone               // niet over het palet tekenen
+        bcs plUp                 // niet over het palet tekenen
+        lda plValid
+        bne plLine               // al aan het tekenen: lijn doortrekken
+        lda #1
+        sta plValid
+        lda pnFx
+        sta plX
+        lda pnPy
+        sta plY
         jmp paint_Plot
-plDone: rts
+plUp:   lda #0
+        sta plValid
+        rts
+
+// plLine - lijn (Bresenham) van (plX,plY) naar (pnFx,pnPy); het
+//          beginpunt staat er al. De cursor beweegt meerdere pixels per
+//          beeld, zonder lijn zou de streep gaten hebben.
+plLine: {
+        lda pnFx
+        cmp plX
+        bne go
+        lda pnPy
+        cmp plY
+        bne go
+        rts
+go:     lda pnFx                 // dx = |tx - x|, sx = +1/-1
+        sec
+        sbc plX
+        ldx #1
+        bcs px
+        eor #$ff
+        adc #1
+        ldx #$ff
+px:     sta plDx
+        stx plSx
+        lda pnPy                 // dy, sy
+        sec
+        sbc plY
+        ldx #1
+        bcs py
+        eor #$ff
+        adc #1
+        ldx #$ff
+py:     sta plDy
+        stx plSy
+        lda plDx
+        cmp plDy
+        bcc ymaj
+        sta plCnt                // x-hoofdrichting
+        lsr
+        sta plErr
+xl:     lda plX
+        clc
+        adc plSx
+        sta plX
+        lda plErr
+        clc
+        adc plDy
+        bcs xo
+        cmp plDx
+        bcc xn
+xo:     sec
+        sbc plDx
+        sta plErr
+        lda plY
+        clc
+        adc plSy
+        sta plY
+        jmp xp
+xn:     sta plErr
+xp:     jsr plDot
+        dec plCnt
+        bne xl
+        rts
+ymaj:   lda plDy                 // y-hoofdrichting
+        sta plCnt
+        lsr
+        sta plErr
+yl:     lda plY
+        clc
+        adc plSy
+        sta plY
+        lda plErr
+        clc
+        adc plDx
+        bcs yo
+        cmp plDy
+        bcc yn
+yo:     sec
+        sbc plDy
+        sta plErr
+        lda plX
+        clc
+        adc plSx
+        sta plX
+        jmp yp
+yn:     sta plErr
+yp:     jsr plDot
+        dec plCnt
+        bne yl
+        rts
+plDot:  lda plX
+        sta pnFx
+        lda plY
+        sta pnPy
+        jmp paint_Plot
+}
 
 //--------------------------------------------------------
 // paint_CursorToFat - cursor (crsX/crsY) -> dikke-pixel (pnFx 0-159)
@@ -460,6 +570,15 @@ shiftTab: .byte 6, 4, 2, 0       // fatx&3 -> aantal bits schuiven
 maskTab:  .byte $c0, $30, $0c, $03
 
 pnCurrent: .byte BLACK
+plValid:   .byte 0               // 1 = pen staat op het papier
+plX:       .byte 0
+plY:       .byte 0
+plDx:      .byte 0
+plDy:      .byte 0
+plSx:      .byte 0
+plSy:      .byte 0
+plErr:     .byte 0
+plCnt:     .byte 0
 pnFx:      .byte 0
 pnPy:      .byte 0
 pnVal:     .byte 0

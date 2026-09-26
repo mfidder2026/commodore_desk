@@ -442,14 +442,22 @@ drawStub:
 //               een app-overlay van disk. In: X = app index (0-4).
 //--------------------------------------------------------
 showLoading:
-        txa
+        lda labelLo,x
+        sta r0
+        lda labelHi,x
+        sta r0+1
+// showLoadName - idem met de naam in r0 (bv. een gebruikersprogramma).
+showLoadName:
+        lda r0
         pha
-        gfxDrawBoxM(9, 10, 22, 4, TH_text)     // rijen 10-13 (2 tekstregels)
+        lda r0+1
+        pha
+        gfxDrawBoxM(8, 10, 24, 4, TH_text)     // rijen 10-13 (2 tekstregels)
         lda #<sLoad
         sta r0
         lda #>sLoad
         sta r0+1
-        lda #11
+        lda #10
         sta a0
         lda #11
         sta a1
@@ -457,12 +465,10 @@ showLoading:
         sta a2
         jsr gfx_DrawText
         pla
-        tax
-        lda labelLo,x
-        sta r0
-        lda labelHi,x
         sta r0+1
-        lda #19
+        pla
+        sta r0
+        lda #18
         sta a0
         lda #11
         sta a1
@@ -473,7 +479,7 @@ showLoading:
         sta r0
         lda #>sWait
         sta r0+1
-        lda #11
+        lda #10
         sta a0
         lda #12
         sta a1

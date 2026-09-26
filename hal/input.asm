@@ -300,7 +300,16 @@ rdKeyboard:
 !doUp:
         jsr moveUp
 !noUD:
-        rts
+        lda paintSpace           // Paint: spatie ingedrukt = pen op papier
+        beq !r+
+        lda #%01111111           // kolom 7
+        sta CIA1_PRA
+        lda CIA1_PRB
+        and #$10                 // rij 4 = spatie (0 = ingedrukt)
+        bne !r+
+        lda #1
+        sta crsBtn
+!r:     rts
 
 //--------------------------------------------------------
 // rdMouse - 1351 op poort 1 via POT_X/POT_Y (delta-tracking).
@@ -417,6 +426,7 @@ crsXlo:  .byte 0
 crsXhi:  .byte 0
 crsY:    .byte 0
 crsBtn:  .byte 0
+paintSpace: .byte 0              // 1 = spatie is de pen (alleen in Paint)
 inSrc:   .byte 0
 joyRaw:  .byte 0
 kbCol0:  .byte 0
