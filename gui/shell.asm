@@ -321,7 +321,9 @@ sysRun: ldx #0
         sta $fc
         inx
         jmp !pl-
-!run:   jmp ($00fb)              // spring naar het geparste SYS-adres
+!run:   jsr !go+                 // als subroutine: een RTS van het
+        jmp $c000                // programma brengt ons terug naar CD64
+!go:    jmp ($00fb)              // spring naar het geparste SYS-adres
 }
 .const sysRunLen = * - sysRunSrc
 
@@ -378,8 +380,10 @@ launchCommon:
         bne !pc-
         lda #<$c000
         sta $0318                // NMI (RESTORE)  -> retStub
-        lda #>$c000
-        sta $0319
+        sta $0302                // BASIC-hoofdlus (IMAIN) -> retStub: een
+        lda #>$c000              // programma dat naar READY springt komt
+        sta $0319                // zo ook terug in CD64
+        sta $0303
         ldx #0
 !cs:    lda rpStubSrc,x
         sta $0334,x
