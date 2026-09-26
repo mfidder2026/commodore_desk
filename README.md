@@ -24,7 +24,7 @@ draggable windows. Boots as a **D71 disk** and as an
 
 ## Features
 
-- **Desktop shell**: a fixed menu bar (`CD64 · DESKTOP · FILES · INET · SETUP`),
+- **Desktop shell**: a fixed menu bar (`CD64 · DESKTOP · FILES · SYSTEM`),
   one large window (rows 1-23) and a **status bar** with date and time.
 - **Windows-95-style boot screen**: a separate loader (`BOOT`) shows a sharp
   **hi-res bitmap** splash, then chain-loads the desktop — so the splash costs
@@ -42,17 +42,18 @@ draggable windows. Boots as a **D71 disk** and as an
     (System / Classic / Bold); everything is saved to `CD64.CFG`.
 - **F1 context help** — a help panel whose text depends on the active app; press
   space to close it.
-- **Drop-down menus** — `CD64` (HELP · RESET · EXIT · ABOUT) and `DESKTOP`
-  (ADD / EDIT / DELETE PROGRAM); click an item or click away to close.
-- **INET** menu — **NETWORK**: detects an RR-Net (CS8900) or an Ultimate (UCI)
+- **Drop-down menus** — `CD64` (HELP · RESET · EXIT · ABOUT), `DESKTOP`
+  (ADD / EDIT / DELETE PROGRAM) and `SYSTEM` (SETTINGS · NETWORK); click an
+  item or click away to close.
+- **Network** — **SYSTEM → NETWORK**: detects an RR-Net (CS8900) or an Ultimate (UCI)
   and holds *all* network settings in one place: IP, mask, gateway, DNS and the
   **chat server** (OpenAI-compatible: host, port, API key, model), saved to
   `NET.CFG`.
-  **PING** — ARP + 4 ICMP echo requests with round-trip time; while it waits
-  the C64 also answers pings. **CHAT** — talk to an OpenAI-compatible AI server
+  **PING** (desktop icon) — ARP + 4 ICMP echo requests with round-trip time; while it waits
+  the C64 also answers pings. **CHAT** (desktop icon) — talk to an OpenAI-compatible AI server
   (e.g. Ollama on your Mac, which can also relay Ollama Cloud models) over plain
   HTTP; the answer streams in with word wrap. Own TCP/IP stack on the RR-Net
-  (CS8900). EMAIL is listed but not available yet. See *Networking in VICE* below.
+  (CS8900). See *Networking in VICE* below.
 - **Widgets**: buttons, checkbox, scrollable list, modal dialog.
 - **SID click sound**.
 - Strictly the **16-color VIC-II palette**.
@@ -88,8 +89,8 @@ role to one of these 16.
 | Context help | — | — | **F1** (space closes it) |
 | Back to desktop (close app) | — | — | **ESC** (= RUN/STOP) |
 
-Click **CD64** or **DESKTOP** in the menu bar to open its drop-down; **FILES**,
-**INET** and **SETUP** open the app directly. Click the **clock** in the status bar
+Click **CD64**, **DESKTOP** or **SYSTEM** in the menu bar to open its drop-down;
+**FILES** opens the File Manager directly. Click the **clock** in the status bar
 to open SETUP, where the `CLOCK:` line sets the date and time. **ESC** closes the active app and
 returns to the desktop — that's how you leave the text editor (where space types a
 space) and Paint. (In VICE on a PC the RUN/STOP key is mapped to **Esc**.)
@@ -187,7 +188,7 @@ Example (replace the GUID with your own):
 x64sc -drive8type 1541 +georam +reu -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -ethernetioif "\Device\NPF_{12345678-90AB-CDEF-1234-567890ABCDEF}" -autostart build/CD64.d64
 ```
 
-**4. Test.** Click **INET → NETWORK** in the menu bar. Expected:
+**4. Test.** Click **SYSTEM → NETWORK** in the menu bar. Expected:
 ```text
 PLATFORM : RR-NET
 DEVICE   : CS8900 $DE00 REV $09

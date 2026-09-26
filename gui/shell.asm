@@ -67,11 +67,9 @@ shell_Run:
 //   rij 23     onderrand van het venster
 //   rij 24     statusbalk met datum en tijd
 .const WIN_CLOSE_COL = 38
-// INET-uitklapmenu: globale itemnummers (zie miLo)
-.const MI_NETWORK   = 7
-.const MI_PING      = 8
-.const MI_CHAT      = 9
-.const MI_FIRST_OFF = 10              // vanaf hier: nog niet beschikbaar
+// SYSTEM-uitklapmenu: globale itemnummers (zie miLo)
+.const MI_SETTINGS  = 7
+.const MI_NETWORK   = 8
 
 shell_DrawAll:
         lda TH_deskbg
@@ -152,7 +150,7 @@ win_Main:
 // drawMenubar - vaste menubalk. De knop van het actieve venster staat
 //               "ingedrukt" (niet-reverse: vensterkleur achter de tekst).
 //--------------------------------------------------------
-.const MB_ITEMS = 5
+.const MB_ITEMS = 4
 drawMenubar:
         lda #0
         sta a0
@@ -171,7 +169,10 @@ drawMenubar:
         sta a1
         lda TH_menubg
         sta a2
-        lda mbApp,x
+        lda mbApp,x              // "ingedrukt" als een van de twee
+        cmp activeApp            // apps van deze knop open is
+        beq !act+
+        lda mbApp2,x
         cmp activeApp
         beq !act+
         jsr gfx_DrawTextRev
@@ -594,10 +595,7 @@ dlp:    lda menuI
         adc #2
         sta a1
         lda TH_text
-        cpx #MI_FIRST_OFF        // nog niet beschikbaar -> grijs
-        bcc !+
-        lda #GREY
-!:      sta a2
+        sta a2
         jsr gfx_DrawText
         inc menuI
         lda menuI
@@ -650,13 +648,10 @@ item:   ldx menuId
         beq doExit
         cmp #3
         beq doAbout
+        cmp #MI_SETTINGS
+        beq doSet
         cmp #MI_NETWORK
         beq doNet
-        cmp #MI_PING
-        beq doPing
-        cmp #MI_CHAT
-        beq doChat
-        bcs doSoon               // PING/CHAT/EMAIL: nog niet klaar
         pha                      // 4-6: launcher-beheer op het bureaublad
         lda activeApp
         cmp #$ff
@@ -668,20 +663,12 @@ item:   ldx menuId
         tax
         jmp tool_Run
 close:  jmp shell_DrawAll
-doNet:  lda #5                   // NETWORK = de INET-overlay
-        .byte $2c                // (bit abs: sla lda #6 over)
-doPing: lda #6
-        .byte $2c
-doChat: lda #7
+doSet:  lda #4                   // SETTINGS
+        .byte $2c                // (bit abs: sla lda #5 over)
+doNet:  lda #5                   // NETWORK
         cmp activeApp
         beq close
         jmp openApp
-doSoon: jsr shell_DrawAll
-        lda #<sSoon
-        sta r0
-        lda #>sSoon
-        sta r0+1
-        jmp msg_Show
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
 doAbout:jmp about_Show
 doReset:
@@ -750,21 +737,22 @@ tool_Run:
 toolFn: .byte 0
 
 // menubalk: knoppen, kolommen, klikzones (einde, exclusief) en app-id
-mbStrLo: .byte <mbCd, <oDesk, <lFiles, <lInet, <lSet
-mbStrHi: .byte >mbCd, >oDesk, >lFiles, >lInet, >lSet
-mbCol:   .byte 1, 8, 18, 26, 33
-mbEnd:   .byte 7, 17, 25, 32
-mbApp:   .byte $fe, $ff, 0, 5, 4      // $fe = nooit "ingedrukt"
-mbMenu:  .byte 0, 1, $ff, 2, $ff      // uitklapmenu per knop ($ff = app)
-// uitklapmenu's: 0 = CD64, 1 = DESKTOP, 2 = INET
-mnX:     .byte 0, 7, 24
-mnW:     .byte 10, 18, 11
-mnN:     .byte 4, 3, 4
+mbStrLo: .byte <mbCd, <oDesk, <lFiles, <mbSys
+mbStrHi: .byte >mbCd, >oDesk, >lFiles, >mbSys
+mbCol:   .byte 1, 8, 18, 26
+mbEnd:   .byte 7, 17, 25
+mbApp:   .byte $fe, $ff, 0, 4         // $fe = nooit "ingedrukt"
+mbApp2:  .byte $fe, $ff, 0, 5         // tweede app van dezelfde knop
+mbMenu:  .byte 0, 1, $ff, 2           // uitklapmenu per knop ($ff = app)
+// uitklapmenu's: 0 = CD64, 1 = DESKTOP, 2 = SYSTEM
+mnX:     .byte 0, 7, 25
+mnW:     .byte 10, 18, 12
+mnN:     .byte 4, 3, 2
 mnFirst: .byte 0, 4, 7
 miLo:    .byte <oHelp, <oReset, <oExit, <oAbout, <oAdd, <oEditP, <oDel
-         .byte <oNet, <oPing, <oChat, <oMail
+         .byte <nSet, <oNet
 miHi:    .byte >oHelp, >oReset, >oExit, >oAbout, >oAdd, >oEditP, >oDel
-         .byte >oNet, >oPing, >oChat, >oMail
+         .byte >nSet, >oNet
 
 //--------------------------------------------------------
 // about_Show - "over deze OS"-dialoog (Win95-stijl: titelbalk, sluitknop,
@@ -942,12 +930,12 @@ deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
 // De gebruikersprogramma's staan als records in deskapps.asm.
-biCount:    .byte 3
-biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc
-biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc
-biIcon:     .byte 111, 115, 119        // 2x2 TL-glyph
-biIcoCol:   .byte WHITE, LIGHT_RED, CYAN
-biApp:      .byte 1, 2, 3              // overlay-app-id
+biCount:    .byte 5
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat
+biIcon:     .byte 111, 115, 119, 107, 102   // 2x2 TL-glyph
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW
+biApp:      .byte 1, 2, 3, 6, 7        // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
@@ -1040,9 +1028,7 @@ oPing:  .text "PING"
         .byte $ff
 oChat:  .text "CHAT"
         .byte $ff
-oMail:  .text "EMAIL"
-        .byte $ff
-sSoon:  .text "NOT AVAILABLE YET"
+mbSys:  .text "SYSTEM"
         .byte $ff
 aLine1: .text "COMMODORE DESK 64"
         .byte $ff
