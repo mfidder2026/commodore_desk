@@ -76,3 +76,8 @@
 .label ck2         = $fb            // tweede pointer (kopiëren)
 .const NET_TXBUF   = $e600          // $E600-$EBFF TX-pakket
 .const NET_WORK    = $ec00          // $EC00-$EFFF protocol/parser
+// modellenlijst van de chatserver (RAM onder de KERNAL)
+.label MD_BUF      = $f800
+.const MD_NAME     = 32
+.const MD_STRIDE   = 33
+.const MD_MAX      = 60

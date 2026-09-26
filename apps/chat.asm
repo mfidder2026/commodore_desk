@@ -15,7 +15,6 @@
 // KERNAL) zodat het na een hertekening terugkomt.
 //========================================================
 
-.const PAT_LEN = 9              // lengte van "content"
 .const CO_L = 3                  // uitvoervak: kol 3-36, rij 3-19
 .const CO_W = 34
 .const CO_T = 3
@@ -186,6 +185,123 @@ show:   ldx lbX
 }
 
 //--------------------------------------------------------
+// http_Do - verzoek in REQ (rqLen) naar HOST:PORT sturen en het antwoord
+//           byte voor byte door chat_RxByte laten verwerken (httpMode,
+//           zoekpatroon en outVec bepalen wat er met de tekst gebeurt).
+//           Uit: carry=1 klaar, carry=0 -> X/Y = foutmelding.
+//--------------------------------------------------------
+http_Do: {
+        lda #0
+        sta netAbort
+        // hardware + server
+        lda netPlatform
+        cmp #NET_PLAT_RRNET
+        beq hw
+        ldx #<sChNoHw
+        ldy #>sChNoHw
+        jmp fail
+hw:     lda csReady
+        bne hwOk
+        jsr cs_Init
+        bcs ci
+        ldx #<sPgChip
+        ldy #>sPgChip
+        jmp fail
+ci:     lda #1
+        sta csReady
+hwOk:   jsr host_Parse           // HOST moet (nog) een IP zijn
+        bcs hp
+        ldx #<sChHost
+        ldy #>sChHost
+        jmp fail
+hp:     jsr ip_NextHop
+        jsr arp_Resolve
+        bcs arp
+        ldx #<sPgNoArp
+        ldy #>sPgNoArp
+        jmp fail
+arp:    lda #<chat_RxByte
+        sta tcpRxVec
+        lda #>chat_RxByte
+        sta tcpRxVec+1
+        lda #0                   // parser-toestand
+        sta hState
+        sta hCrlf
+        sta hSp
+        sta hDig
+        sta pm
+        sta afterKey
+        sta inStr
+        sta esc
+        sta uni
+        sta u8need
+        sta gotText
+        jsr tcp_Connect
+        bcs con
+        ldx #<sChConn
+        ldy #>sChConn
+        jmp fail
+con:    lda #<REQ
+        sta tcpDataPtr
+        lda #>REQ
+        sta tcpDataPtr+1
+        lda rqLen
+        sta tcpDataLen
+        lda rqLen+1
+        sta tcpDataLen+1
+        jsr tcp_Send
+        bcs sent
+        jsr tcp_Close
+        ldx #<sChSend
+        ldy #>sChSend
+        jmp fail
+sent:   jsr idleReset
+        // antwoord ontvangen tot FIN / RST / ESC / 90 s stilte
+rx:     jsr evt_Poll
+        cmp #EVT_KEY
+        bne r1
+        lda evtA
+        cmp #$82
+        bne r1
+        jsr tcp_Close
+        ldx #<sPgStop
+        ldy #>sPgStop
+        jmp fail
+r1:     lda #0
+        sta tcpGotData
+        jsr net_Poll
+        lda tcpGotData
+        beq r2
+        jsr idleReset
+r2:     lda tcpFin
+        bne fin
+        lda tcpRst
+        bne rst
+        jsr idleCheck
+        bcc rx
+        jsr tcp_Close
+        ldx #<sChTime
+        ldy #>sChTime
+        jmp fail
+rst:    lda hState               // antwoord al (deels) binnen?
+        cmp #2
+        beq end
+        ldx #<sChRst
+        ldy #>sChRst
+        jmp fail
+fin:    jsr tcp_Close
+end:    lda hState               // geen HTTP-antwoord gezien?
+        cmp #2
+        beq ok
+        ldx #<sChNoAns
+        ldy #>sChNoAns
+fail:   clc
+        rts
+ok:     sec
+        rts
+}
+
+//--------------------------------------------------------
 // chat_Ask - vraag tonen, verzoek bouwen, verbinden, antwoord streamen.
 //--------------------------------------------------------
 chat_Ask: {
@@ -212,112 +328,19 @@ q2:     jsr co_Flush
         lda #0
         sta ciLen
         jsr ci_Draw
-        lda #0
-        sta netAbort
-        // hardware + server
-        lda netPlatform
-        cmp #NET_PLAT_RRNET
-        beq hw
-        ldx #<sChNoHw
-        ldy #>sChNoHw
-        jmp err
-hw:     lda csReady
-        bne hwOk
-        jsr cs_Init
-        bcs ci
-        ldx #<sPgChip
-        ldy #>sPgChip
-        jmp err
-ci:     lda #1
-        sta csReady
-hwOk:   jsr host_Parse           // HOST moet (nog) een IP zijn
-        bcs hp
-        ldx #<sChHost
-        ldy #>sChHost
-        jmp err
-hp:     jsr ip_NextHop
-        jsr arp_Resolve
-        bcs arp
-        ldx #<sPgNoArp
-        ldy #>sPgNoArp
-        jmp err
-arp:    lda #<chat_RxByte
-        sta tcpRxVec
-        lda #>chat_RxByte
-        sta tcpRxVec+1
-        lda #0                   // parser-toestand
-        sta hState
-        sta hCrlf
-        sta hSp
-        sta hDig
-        sta pm
-        sta afterKey
-        sta inStr
-        sta esc
-        sta uni
-        sta u8need
-        sta gotText
-        jsr tcp_Connect
-        bcs con
-        ldx #<sChConn
-        ldy #>sChConn
-        jmp err
-con:    lda #<REQ
-        sta tcpDataPtr
-        lda #>REQ
-        sta tcpDataPtr+1
-        lda rqLen
-        sta tcpDataLen
-        lda rqLen+1
-        sta tcpDataLen+1
-        jsr tcp_Send
-        bcs sent
-        jsr tcp_Close
-        ldx #<sChSend
-        ldy #>sChSend
-        jmp err
-sent:   jsr idleReset
-        // antwoord ontvangen tot FIN / RST / ESC / 90 s stilte
-rx:     jsr evt_Poll
-        cmp #EVT_KEY
-        bne r1
-        lda evtA
-        cmp #$82
-        bne r1
-        jsr tcp_Close
-        ldx #<sPgStop
-        ldy #>sPgStop
-        jmp err
-r1:     lda #0
-        sta tcpGotData
-        jsr net_Poll
-        lda tcpGotData
-        beq r2
-        jsr idleReset
-r2:     lda tcpFin
-        bne fin
-        lda tcpRst
-        bne rst
-        jsr idleCheck
-        bcc rx
-        jsr tcp_Close
-        ldx #<sChTime
-        ldy #>sChTime
-        jmp err
-rst:    lda gotText
-        bne end
-        ldx #<sChRst
-        ldy #>sChRst
-        jmp err
-fin:    jsr tcp_Close
-end:    jsr co_Flush
-        lda hState               // geen HTTP-antwoord gezien?
-        cmp #2
-        beq e2
-        ldx #<sChNoAns
-        ldy #>sChNoAns
-        jmp err
-e2:     lda coCol
+        lda #0                   // CHAT-modus: "content"-strings tonen
+        sta httpMode
+        ldx #<patContent
+        ldy #>patContent
+        jsr pat_Set
+        lda #<as_Chat
+        sta outVec
+        lda #>as_Chat
+        sta outVec+1
+        jsr http_Do
+        bcc err
+        jsr co_Flush
+        lda coCol
         beq e3
         jsr co_Nl
 e3:     jmp co_Nl                // lege regel tussen de vragen
@@ -528,6 +551,70 @@ nokey:  ldx #<aH4
         rts
 }
 
+// rq_BuildGet - "GET /v1/models" in REQ, lengte rqLen.
+rq_BuildGet: {
+        lda #<REQ
+        sta rqPtr
+        lda #>REQ
+        sta rqPtr+1
+        lda #0
+        sta rqLen
+        sta rqLen+1
+        ldx #<aG1
+        ldy #>aG1
+        jsr rq_Str
+        ldx #NC_HOST-NETCFG
+        jsr rq_Cfg
+        lda NC_KEY
+        cmp #$ff
+        beq nokey
+        ldx #<aH3
+        ldy #>aH3
+        jsr rq_Str
+        ldx #NC_KEY-NETCFG
+        jsr rq_Cfg
+nokey:  ldx #<aH4
+        ldy #>aH4
+        jmp rq_Str
+}
+
+// mdl_Char - teken van een "id"-string naar het huidige lijst-item.
+mdl_Char: {
+        jsr a2sc
+        bcs out
+        ldy mdLen
+        cpy #MD_NAME
+        bcs over                 // te lang: dit model overslaan
+        sta (rqPtr),y
+        inc mdLen
+out:    rts
+over:   lda #$ff
+        sta mdLen
+        rts
+}
+// mdl_End - einde van een "id": item afsluiten, volgende.
+mdl_End: {
+        ldy mdLen
+        beq none
+        cpy #$ff
+        beq none                 // te lang geweest
+        lda mdCount
+        cmp #MD_MAX
+        bcs none
+        lda #$ff
+        sta (rqPtr),y
+        inc mdCount
+        lda rqPtr
+        clc
+        adc #MD_STRIDE
+        sta rqPtr
+        bcc none
+        inc rqPtr+1
+none:   lda #0
+        sta mdLen
+        rts
+}
+
 rq_Chr: {                        // A -> (rqPtr)++, bewaart X/Y
         sty rqY
         ldy #0
@@ -613,8 +700,12 @@ n1:     cmp #$1b
         lda #$5b                 // [
         rts
 n2:     cmp #$1d
-        bne n3
+        bne n4
         lda #$5d                 // ]
+        rts
+n4:     cmp #$64
+        bne n3
+        lda #$5f                 // _
 n3:     rts                      // $20-$3f = ASCII
 }
 
@@ -668,6 +759,10 @@ cr:     inc hCrlf
         rts
 notOk:  lda #0                   // fout: "HTTP nnn" en daarna de body zelf
         sta httpOk
+        lda httpMode
+        beq nk
+        rts
+nk:
         lda #LIGHT_RED
         sta coColor
         ldx #0
@@ -711,7 +806,7 @@ find:   ldx pm                   // zoeken naar "content"
         bne miss
         inx
         stx pm
-        cpx #PAT_LEN
+        cpx patLen
         bne o2
         lda #1
         sta afterKey
@@ -767,9 +862,32 @@ nb:     cmp #$22
         bne u8_Byte
         lda #0                   // einde van de string
         sta inStr
+        lda httpMode
+        beq nbc
+        jmp mdl_End
+nbc:
         rts
 }
-pat:    .byte $22, $63, $6f, $6e, $74, $65, $6e, $74, $22   // "content"
+pat:    .fill 9, 0               // actief zoekpatroon (pat_Set)
+patLen: .byte 0
+patContent: .byte 9, $22, $63, $6f, $6e, $74, $65, $6e, $74, $22   // "content"
+patId:      .byte 4, $22, $69, $64, $22                             // "id"
+
+// pat_Set - X/Y = patroon (lengte + bytes) -> pat/patLen.
+pat_Set: {
+        stx ck2
+        sty ck2+1
+        ldy #0
+        lda (ck2),y
+        sta patLen
+        tax
+lp:     iny
+        lda (ck2),y
+        sta pat-1,y
+        dex
+        bne lp
+        rts
+}
 
 hexVal: {                        // ASCII-hexcijfer -> 0-15
         cmp #$41
@@ -879,19 +997,31 @@ latin:  .text "AAAAAAACEEEEIIIIDNOOOOOxOUUUUYTs"
 .encoding "screencode_upper"
 
 // as_Out - ASCII-teken -> schermcode -> gesprek.
-as_Out: {
+as_Out: jmp (outVec)            // CHAT: as_Chat, modellen: mdl_Char
+
+// as_Chat - ASCII-teken in het gesprek zetten.
+as_Chat: {
         ldx #1
         stx gotText
         cmp #$0a
         bne n
         jmp co_NlText
-n:      cmp #$20
-        bcc out                  // overige stuurtekens
+n:      jsr a2sc
+        bcs out
+        jmp co_Char
+out:    rts
+}
+
+// a2sc - ASCII A -> schermcode A (carry=0), of carry=1 = niet te tonen.
+a2sc: {
+        cmp #$20
+        bcc no                   // stuurtekens
         cmp #$40
-        bcc put                  // spatie, cijfers, leestekens
+        bcc ok                   // spatie, cijfers, leestekens
         bne n40
         lda #0                   // @
-        jmp put
+        clc
+        rts
 n40:    cmp #$5b
         bcc up
         cmp #$61
@@ -900,17 +1030,22 @@ n40:    cmp #$5b
         bcc lo
         tax                      // { | } ~
         lda symHi-$7b,x
-        jmp put
+        clc
+        rts
 lo:     sec
         sbc #$60
-        jmp put
+        clc
+        rts
 up:     sec
         sbc #$40
-        jmp put
+        clc
+        rts
 sym:    tax                      // [ \ ] ^ _ `
         lda symLo-$5b,x
-put:    jmp co_Char
-out:    rts
+ok:     clc
+        rts
+no:     sec
+        rts
 }
 symLo:  .byte $1b, $2f, $1d, $1e, $64, $27     // [ \ ] ^ _ `
 symHi:  .byte $28, $5d, $29, $2d, $20          // { | } ~ DEL
@@ -1116,6 +1251,11 @@ lp:     lda #$20
 
 //--------------------------------------------------------
 chatInited: .byte 0
+httpMode: .byte 0                // 0 = CHAT, 1 = modellenlijst
+mdCount:  .byte 0
+mdLen:    .byte 0
+.align 2                         // jmp (outVec) mag niet op $xxFF staan
+outVec:   .word as_Chat
 ciLen:    .byte 0
 ciBuf:    .fill CI_MAX, 0
 chI:      .byte 0
@@ -1160,6 +1300,8 @@ aB2:    .text @"\",\"stream\":true,\"messages\":[{\"role\":\"system\",\"content\
         .byte 0
 aB3:    .text @"\"}]}"
         .byte 0
+aG1:    .text @"GET /v1/models HTTP/1.0\r\nHost: "
+        .byte 0
 aH1:    .text @"POST /v1/chat/completions HTTP/1.0\r\nHost: "
         .byte 0
 aH2:    .text @"\r\nContent-Type: application/json\r\nContent-Length: "
@@ -1176,7 +1318,7 @@ sChNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
           .byte $ff
 sChHost:  .text "HOST MUST BE AN IP ADDRESS"
           .byte $ff
-sChConn:  .text "NO CONNECTION (IS THE SERVER RUNNING?)"
+sChConn:  .text "NO CONNECTION TO THE SERVER"
           .byte $ff
 sChSend:  .text "SENDING FAILED"
           .byte $ff

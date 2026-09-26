@@ -457,12 +457,12 @@ showLoadName:
         pha
         lda r0+1
         pha
-        gfxDrawBoxM(8, 10, 24, 4, TH_text)     // rijen 10-13 (2 tekstregels)
+        gfxDrawBoxM(4, 10, 32, 4, TH_text)     // rijen 10-13 (2 tekstregels)
         lda #<sLoad
         sta r0
         lda #>sLoad
         sta r0+1
-        lda #10
+        lda #6
         sta a0
         lda #11
         sta a1
@@ -473,7 +473,7 @@ showLoadName:
         sta r0+1
         pla
         sta r0
-        lda #18
+        lda #14
         sta a0
         lda #11
         sta a1
@@ -484,7 +484,7 @@ showLoadName:
         sta r0
         lda #>sWait
         sta r0+1
-        lda #10
+        lda #6
         sta a0
         lda #12
         sta a1
@@ -720,7 +720,7 @@ menuBarClick:
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
-        ldx #6
+        ldx #8
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -872,8 +872,7 @@ openApp:
         cmp ovlLoaded            // staat hij al in $8000? (NETWORK <-> PING)
         beq !loaded+
         pha
-        tax
-        jsr showLoading
+        jsr showLoading          // X = app-id -> "LOADING <naam van de app>"
         pla
         tax
         jsr loadApp
@@ -956,8 +955,9 @@ nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >
 appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5
 
 dbI:       .byte 0
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >lTool
+// laadvenster-namen per app-id (8 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -998,9 +998,9 @@ lPaint: .text "PAINT"
         .byte $ff
 lCalc:  .text "CALC"
         .byte $ff
-lSet:   .text "SETUP"
+lSet:   .text "SETTINGS"
         .byte $ff
-lInet:  .text "INET"
+lInet:  .text "NETWORK SETTINGS"
         .byte $ff
 lTool:  .text "TOOLS"
         .byte $ff

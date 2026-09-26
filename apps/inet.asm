@@ -170,6 +170,19 @@ macEnd: jsr lb_Show
         sta a2
         lda TH_accent
         sta a3
+        jsr btn_Draw
+        lda #<sInModels
+        sta r0
+        lda #>sInModels
+        sta r0+1
+        lda #IN_COL+18
+        sta a0
+        lda #IN_BTN_ROW
+        sta a1
+        lda #8
+        sta a2
+        lda TH_accent
+        sta a3
         jmp btn_Draw
 }
 
@@ -194,23 +207,20 @@ inet_Click: {
         bcc msg
         ldx #<sNcSaveErr
         ldy #>sNcSaveErr
-msg:    stx r0
-        sty r0+1
-        lda #IN_COL+18
-        sta a0
-        lda #IN_BTN_ROW
-        sta a1
-        lda TH_text
-        sta a2
-        jmp gfx_DrawText
+msg:    jmp in_Msg
 resc:   lda #IN_COL+8            // RESCAN
         sta a0
         lda #6+2
         sta a2
         jsr btn_HitTest
-        bcc no
+        bcc mdl
         jsr net_Detect
         jmp shell_DrawAll
+mdl:    lda #IN_COL+18           // MODELS
+        sta a0
+        jsr btn_HitTest
+        bcc no
+        jmp mdl_Fetch
 fields: lda evtA
         cmp #IN_COL
         bcc no
@@ -224,6 +234,274 @@ nx:     inx
         bne fl
 no:     rts
 }
+
+// in_Msg - melding (X/Y) op de meldingsregel (rij 20), rest gewist.
+.const IN_MSG_ROW = 20
+in_Msg: {
+        stx inMsgP
+        sty inMsgP+1
+        lda #IN_COL
+        sta a0
+        lda #IN_MSG_ROW
+        sta a1
+        lda #IN_VCOL+IN_VW-IN_COL
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        lda inMsgP
+        sta r0
+        lda inMsgP+1
+        sta r0+1
+        lda #IN_COL
+        sta a0
+        lda #IN_MSG_ROW
+        sta a1
+        lda TH_text
+        sta a2
+        jmp gfx_DrawText
+}
+inMsgP: .word 0
+
+//--------------------------------------------------------
+// mdl_Fetch - GET /v1/models bij de chatserver, dan kiezen.
+//--------------------------------------------------------
+mdl_Fetch: {
+        ldx #<sMdGet
+        ldy #>sMdGet
+        jsr in_Msg
+        jsr rq_BuildGet
+        lda #1                   // modellen-modus: "id"-strings verzamelen
+        sta httpMode
+        ldx #<patId
+        ldy #>patId
+        jsr pat_Set
+        lda #<mdl_Char
+        sta outVec
+        lda #>mdl_Char
+        sta outVec+1
+        lda #0
+        sta mdCount
+        sta mdLen
+        lda #<MD_BUF
+        sta rqPtr
+        lda #>MD_BUF
+        sta rqPtr+1
+        jsr http_Do
+        lda #0
+        sta httpMode
+        bcc err
+        lda httpOk
+        bne ok
+        ldx #<sMdHttp
+        ldy #>sMdHttp
+        jmp err
+ok:     lda mdCount
+        bne pick
+        ldx #<sMdNone
+        ldy #>sMdNone
+err:    jmp in_Msg
+pick:   jsr mdl_Pick
+        jmp shell_DrawAll
+}
+
+//--------------------------------------------------------
+// mdl_Pick - keuzevenster met alle modellen (scrollbaar). Een klik op
+//            een naam zet MODEL; ESC of het kruisje = annuleren.
+//--------------------------------------------------------
+.const MP_TOP  = 4               // eerste lijstrij
+.const MP_ROWS = 16
+.const MP_COL  = 4
+.const MP_SCR  = 36              // scrollbalk-kolom
+mdl_Pick: {
+        lda #0
+        sta mpTop
+        lda #<sMdTitle
+        sta r0
+        lda #>sMdTitle
+        sta r0+1
+        lda #2
+        sta a0
+        lda #2
+        sta a1
+        lda #36
+        sta a2
+        lda #20
+        sta a3
+        jsr dlg_Draw             // rijen 2-21, kruisje op kol 37
+draw:   lda #0
+        sta mpI
+row:    lda #MP_COL              // regel wissen
+        sta a0
+        lda mpI
+        clc
+        adc #MP_TOP
+        sta a1
+        lda #MD_NAME
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        lda mpI
+        clc
+        adc mpTop
+        cmp mdCount
+        bcs next
+        jsr md_Addr
+        lda shPtr
+        sta r0
+        lda shPtr+1
+        sta r0+1
+        lda #MP_COL
+        sta a0
+        lda mpI
+        clc
+        adc #MP_TOP
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+next:   inc mpI
+        lda mpI
+        cmp #MP_ROWS
+        bne row
+        lda #MP_SCR              // scrollbalk
+        sta a0
+        lda #MP_TOP-1
+        sta a1
+        lda #MP_TOP+MP_ROWS
+        sta a2
+        lda mpTop
+        sta a3
+        jsr mp_Max
+        sta a4
+        jsr scr_Draw
+wait:   jsr evt_Poll
+        cmp #EVT_MOUSEDOWN
+        beq click
+        cmp #EVT_KEY
+        bne wait
+        lda evtA
+        cmp #$82                 // ESC
+        beq cancel
+        cmp #$20                 // spatie/RETURN = klik op de cursor
+        beq kc
+        cmp #$80
+        bne wait
+kc:     jsr cursorToCell
+click:  jsr dlg_HitClose
+        bcs cancel
+        lda evtA
+        cmp #MP_SCR
+        bne list
+        jsr scr_Hit
+        cmp #1
+        beq up
+        cmp #2
+        beq dn
+        cmp #3
+        beq pu
+        cmp #4
+        beq pd
+        jmp wait
+up:     lda mpTop
+        beq wait
+        dec mpTop
+        jmp draw
+dn:     jsr mp_Max
+        cmp mpTop
+        beq wJ
+        bcc wJ
+        inc mpTop
+        jmp draw
+pu:     lda mpTop
+        sec
+        sbc #MP_ROWS
+        bcs st
+        lda #0
+st:     sta mpTop
+        jmp draw
+pd:     lda mpTop
+        clc
+        adc #MP_ROWS
+        sta mpTop
+        jsr mp_Max
+        cmp mpTop
+        bcs dJ
+        sta mpTop
+dJ:     jmp draw
+wJ:     jmp wait
+cancel: rts
+list:   cmp #MP_COL-1            // op een naam geklikt?
+        bcc wJ
+        cmp #MP_SCR
+        bcs wJ
+        lda evtB
+        sec
+        sbc #MP_TOP
+        bcc wJ
+        cmp #MP_ROWS
+        bcs wJ
+        clc
+        adc mpTop
+        cmp mdCount
+        bcs wJ
+        jsr md_Addr              // naam -> MODEL
+        ldy #0
+cp:     lda (shPtr),y
+        sta NC_MODEL,y
+        cmp #$ff
+        beq done
+        iny
+        cpy #MD_NAME
+        bne cp
+        lda #$ff
+        sta NC_MODEL,y
+done:   rts
+}
+// mp_Max - A = hoogste mpTop (0 = alles past).
+mp_Max: {
+        lda mdCount
+        sec
+        sbc #MP_ROWS
+        bcs ok
+        lda #0
+ok:     rts
+}
+// md_Addr - shPtr = MD_BUF + A * MD_STRIDE (33 = 32 + 1).
+md_Addr: {
+        sta mpA
+        lda #0
+        sta shPtr+1
+        lda mpA
+        ldx #5
+sh:     asl
+        rol shPtr+1
+        dex
+        bne sh
+        clc
+        adc mpA
+        bcc nc
+        inc shPtr+1
+nc:     clc
+        adc #<MD_BUF
+        sta shPtr
+        lda shPtr+1
+        adc #>MD_BUF
+        sta shPtr+1
+        rts
+}
+mpTop:  .byte 0
+mpI:    .byte 0
+mpA:    .byte 0
 
 //--------------------------------------------------------
 // fld_Line - label + waarde van veld X op zijn rij (rij eerst gewist).
@@ -708,6 +986,16 @@ sHint:     .text "CLICK A VALUE TO CHANGE IT"
 sInSave:   .text "SAVE"
            .byte $ff
 sInRescan: .text "RESCAN"
+           .byte $ff
+sInModels: .text "MODELS"
+           .byte $ff
+sMdGet:    .text "ASKING THE SERVER FOR MODELS..."
+           .byte $ff
+sMdHttp:   .text "SERVER ANSWERED WITH AN ERROR"
+           .byte $ff
+sMdNone:   .text "NO MODELS FOUND"
+           .byte $ff
+sMdTitle:  .text "CHOOSE A MODEL"
            .byte $ff
 sNcSaved:    .text "SAVED      "
            .byte $ff
