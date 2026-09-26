@@ -280,7 +280,10 @@ di:     lda RX+30,x
         cmp #6                   // TCP -> tcp.asm
         bne icmp
         jmp tcp_Input
-icmp:   cmp #1
+icmp:   cmp #17                  // UDP -> DNS-antwoord?
+        bne ic2
+        jmp dns_Input
+ic2:    cmp #1
         bne out2
         lda RX+34                // ICMP-type
         beq reply

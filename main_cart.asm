@@ -78,6 +78,7 @@ osEnd:
 #import "net/netdrv.asm"
 #import "net/ip.asm"
 #import "net/tcp.asm"
+#import "net/dns.asm"
 #import "apps/inet.asm"
 #import "apps/ping.asm"
 #import "apps/chat.asm"

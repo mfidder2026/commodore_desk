@@ -237,11 +237,9 @@ hw:     lda csReady
         jmp fail
 ci:     lda #1
         sta csReady
-hwOk:   jsr host_Parse           // HOST moet (nog) een IP zijn
+hwOk:   jsr host_Parse           // IP-adres of naam (DNS)
         bcs hp
-        ldx #<sChHost
-        ldy #>sChHost
-        jmp fail
+        jmp fail                 // (X/Y = melding)
 hp:     jsr ip_NextHop
         jsr arp_Resolve
         bcs arp
@@ -448,12 +446,39 @@ cp:     lda NC_HOST,x
         bne cp
 pe:     stx feLen
         jsr ip_Parse
-        bcc bad
+        bcc name
         ldx #3
 ci:     lda ipTmp,x
         sta ipDst,x
         dex
         bpl ci
+        jmp port
+bhJ:    jmp badH
+name:   ldx feLen                // geen IP: een geldige hostnaam?
+        beq bhJ
+hc:     dex
+        lda feBuf,x
+        cmp #27                  // letters
+        bcc nok
+        cmp #$2d                 // - .
+        beq nok
+        cmp #$2e
+        beq nok
+        cmp #$30                 // cijfers
+        bcc bhJ
+        cmp #$3a
+        bcs bhJ
+nok:    cpx #0
+        bne hc
+        jsr dns_Resolve          // naam -> IP (X/Y = melding bij een fout)
+        bcs dok
+        rts
+dok:    ldx #3
+cd:     lda dnsIp,x
+        sta ipDst,x
+        dex
+        bpl cd
+port:
         lda #0                   // poort: decimaal -> 16 bit
         sta tcpRPort
         sta tcpRPort+1
@@ -494,7 +519,13 @@ pd:     lda tcpRPort
         beq bad
         sec
         rts
-bad:    clc
+bad:    ldx #<sChPort            // poort ongeldig
+        ldy #>sChPort
+        clc
+        rts
+badH:   ldx #<sChHost
+        ldy #>sChHost
+        clc
         rts
 }
 
@@ -1596,7 +1627,9 @@ sChNew:   .text "NEW CHAT"
           .byte $ff
 sChNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
           .byte $ff
-sChHost:  .text "HOST MUST BE AN IP ADDRESS"
+sChHost:  .text "INVALID HOST NAME"
+          .byte $ff
+sChPort:  .text "INVALID PORT"
           .byte $ff
 sChConn:  .text "NO CONNECTION TO THE SERVER"
           .byte $ff
