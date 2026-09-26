@@ -25,8 +25,13 @@
 .const CI_MAX = 160
 .label SH_CH  = $f000            // schaduw: tekens
 .label SH_COL = $f300            //          kleuren
-.label REQ    = $ec00            // HTTP-verzoek (max 1 KB)
-.label BODY   = $f600            // JSON-body (max 512)
+.label REQ    = $c500            // HTTP-verzoek: kop + body ($C500-$CFFF)
+.label BODY   = REQ + 512        // body wordt hier gebouwd en daarna
+                                 // direct achter de kop geschoven
+.label HIST   = $ec00            // gesprek (voor het geheugen van CHAT)
+.const HIST_MAX = 1024
+.label hPtr   = $06              // zeropage-pointer (r2, vrij)
+.const CN_COL = 27               // NEW CHAT-knop (hintregel)
 .label shPtr  = r6               // zeropage-pointers (vrij in de ABI)
 .label rqPtr  = r3
 
@@ -94,7 +99,20 @@ sh:     ldx lbX
         sta a1
         lda TH_accent
         sta a2
-        jmp gfx_DrawText
+        jsr gfx_DrawText
+        lda #<sChNew
+        sta r0
+        lda #>sChNew
+        sta r0+1
+        lda #CN_COL
+        sta a0
+        lda #CI_ROW+1
+        sta a1
+        lda #9
+        sta a2
+        lda TH_accent
+        sta a3
+        jmp btn_Draw
 }
 
 // lb_Cfg - NETCFG-tekstveld (offset X) achter de regelbuffer.
@@ -108,8 +126,18 @@ lp:     lda NETCFG,x
 done:   rts
 }
 
+// chat_Click - NEW CHAT: gesprek en scherm leegmaken.
 chat_Click:
-        rts
+        lda evtB
+        cmp #CI_ROW+1
+        bne !r+
+        lda evtA
+        cmp #CN_COL
+        bcc !r+
+        jsr hist_Clear
+        jsr co_Clear
+        jmp chat_Draw
+!r:     rts
 
 //--------------------------------------------------------
 // chat_Key - typen in de invoerregel; RETURN = vraag versturen.
@@ -324,7 +352,14 @@ q2:     jsr co_Flush
         jsr co_Nl
         lda TH_text
         sta coColor
-        jsr rq_Build             // (gebruikt ciBuf, dus eerst bouwen)
+        lda histLen              // terugzetpunt als het misgaat
+        sta histUndo
+        lda histLen+1
+        sta histUndo+1
+        jsr hist_AddQuestion
+        jsr rq_Build             // verzoek met het hele gesprek
+        lda #2                   // het antwoord wordt meteen opgenomen
+        jsr hist_Begin
         lda #0
         sta ciLen
         jsr ci_Draw
@@ -339,13 +374,21 @@ q2:     jsr co_Flush
         sta outVec+1
         jsr http_Do
         bcc err
-        jsr co_Flush
+        lda gotText              // leeg antwoord of HTTP-fout: niet onthouden
+        beq undo
+        lda httpOk
+        beq undo
+        jsr hist_End
+        jmp shown
+undo:   jsr hist_Undo
+shown:  jsr co_Flush
         lda coCol
         beq e3
         jsr co_Nl
 e3:     jmp co_Nl                // lege regel tussen de vragen
 err:    stx r0                   // foutregel in het gesprek (rood)
         sty r0+1
+        jsr hist_Undo            // mislukte vraag niet onthouden
         jsr co_Flush
         lda coCol
         beq e4
@@ -474,26 +517,37 @@ rq_Build: {
         jsr rq_Cfg
         ldx #<aB2
         ldy #>aB2
-        jsr rq_Str               // ","stream":true,"messages":[{..system..},{"role":"user","content":"
-        ldx #0
-q:      cpx ciLen
+        jsr rq_Str               // ","stream":true,"messages":[{..system..}
+        lda #<HIST               // alle berichten uit het gesprek
+        sta hPtr
+        lda #>HIST
+        sta hPtr+1
+        lda histLen
+        sta hLeft
+        lda histLen+1
+        sta hLeft+1
+msg:    lda hLeft
+        ora hLeft+1
         beq qe
-        lda ciBuf,x
-        jsr sc2ascii
-        cmp #$22                 // " en \ escapen
-        beq qx
-        cmp #$5c
-        bne qc
-qx:     pha
-        lda #$5c
+        jsr hGet                 // rol: 1 = user, 2 = assistant
+        ldx #<aRu
+        ldy #>aRu
+        cmp #1
+        beq rl
+        ldx #<aRa
+        ldy #>aRa
+rl:     jsr rq_Str               // ,{"role":"...","content":"
+txt:    jsr hGet                 // tekst (al JSON-veilig) tot de 0
+        beq te
         jsr rq_Chr
-        pla
-qc:     jsr rq_Chr
-        inx
-        bne q
+        jmp txt
+te:     ldx #<aRe
+        ldy #>aRe
+        jsr rq_Str               // "}
+        jmp msg
 qe:     ldx #<aB3
         ldy #>aB3
-        jsr rq_Str               // "}]}
+        jsr rq_Str               // ]}
         lda rqLen
         sta bodyLen
         lda rqLen+1
@@ -548,6 +602,216 @@ nokey:  ldx #<aH4
         lda rqLen+1
         adc bodyLen+1
         sta rqLen+1
+        rts
+}
+
+//--------------------------------------------------------
+// Gesprek (HIST): berichten achter elkaar: rol (1 = user, 2 = assistant),
+// tekst (al JSON-veilig geescaped, ASCII), 0. histLen = gebruikte bytes.
+// Past een nieuw bericht niet, dan verdwijnen de oudste eerst.
+//--------------------------------------------------------
+hist_Clear:
+        lda #0
+        sta histLen
+        sta histLen+1
+        rts
+
+hist_Undo:                       // terug naar het punt voor de laatste vraag
+        lda histUndo
+        sta histLen
+        lda histUndo+1
+        sta histLen+1
+        rts
+
+// hist_AddQuestion - ciBuf als user-bericht (maakt eerst ruimte).
+hist_AddQuestion: {
+        lda histLen              // alles tot hier mag wegvallen
+        sta histCur
+        lda histLen+1
+        sta histCur+1
+room:   lda histLen              // ruimte voor de vraag (2x ivm escapes)
+        clc                      // en een kort antwoord
+        adc #<[CI_MAX*2+64]
+        tax
+        lda histLen+1
+        adc #>[CI_MAX*2+64]
+        cmp #>HIST_MAX
+        bcc ok
+        jsr hist_DropOldest
+        bcs room
+ok:     lda histLen              // terugzetpunt = na het wegvallen
+        sta histUndo
+        lda histLen+1
+        sta histUndo+1
+        lda #1
+        jsr hist_Begin
+        ldx #0
+q:      cpx ciLen
+        beq e
+        stx chI
+        lda ciBuf,x
+        jsr sc2ascii
+        jsr hist_Esc
+        ldx chI
+        inx
+        bne q
+e:      jmp hist_End
+}
+
+hist_Begin:                      // A = rol
+        sta hB
+        lda histLen
+        sta histCur
+        lda histLen+1
+        sta histCur+1
+        lda hB
+        jmp hist_Put
+hist_End:                        // 0 erachter (de laatste byte is daarvoor
+        lda #<HIST               // altijd vrijgehouden)
+        clc
+        adc histLen
+        sta hPtr
+        lda #>HIST
+        adc histLen+1
+        sta hPtr+1
+        ldy #0
+        tya
+        sta (hPtr),y
+        inc histLen
+        bne !+
+        inc histLen+1
+!:      rts
+
+// hist_Esc - ASCII-teken JSON-veilig opnemen (" \ -> \" \\, LF -> \n).
+hist_Esc: {
+        cmp #$0a
+        bne n
+        lda #$5c
+        jsr hist_Put
+        lda #$6e
+        jmp hist_Put
+n:      cmp #$20
+        bcc out                  // overige stuurtekens weglaten
+        cmp #$22
+        beq e
+        cmp #$5c
+        bne p
+e:      pha
+        lda #$5c
+        jsr hist_Put
+        pla
+p:      jmp hist_Put
+out:    rts
+}
+
+// hist_Put - één byte achteraan (laat altijd 1 byte over voor de 0).
+hist_Put: {
+        sta hB
+        lda histLen+1
+        cmp #>[HIST_MAX-1]
+        bcc ok
+        lda histLen
+        cmp #<[HIST_MAX-1]
+        bcc ok
+        jsr hist_DropOldest      // vol: oudste bericht weg
+        bcs ok2
+        rts                      // kan niet: dit bericht wordt ingekort
+ok:
+ok2:    lda #<HIST
+        clc
+        adc histLen
+        sta hPtr
+        lda #>HIST
+        adc histLen+1
+        sta hPtr+1
+        ldy #0
+        lda hB
+        sta (hPtr),y
+        inc histLen
+        bne d
+        inc histLen+1
+d:      rts
+}
+
+// hist_DropOldest - eerste bericht verwijderen (niet het bericht dat nu
+//                   wordt geschreven). Carry=1 gelukt.
+hist_DropOldest: {
+        lda histCur              // lopend bericht is het eerste: niets te doen
+        ora histCur+1
+        bne go
+        clc
+        rts
+go:     lda #<HIST               // lengte van bericht 0 zoeken
+        sta hPtr
+        lda #>HIST
+        sta hPtr+1
+        ldy #1
+lp:     lda (hPtr),y
+        beq found
+        iny
+        bne lp
+        inc hPtr+1               // (bericht > 255 bytes)
+        jmp lp
+found:  iny                      // Y = lengte incl. rol en 0 (+ pagina's)
+        tya
+        clc
+        adc hPtr                 // bron = HIST + lengte
+        sta netPtr
+        lda hPtr+1
+        adc #0
+        sta netPtr+1
+        lda netPtr               // n = bron - HIST
+        sec
+        sbc #<HIST
+        sta hN
+        lda netPtr+1
+        sbc #>HIST
+        sta hN+1
+        lda #<HIST               // HIST[0..] = HIST[n..histLen)
+        sta ck2
+        lda #>HIST
+        sta ck2+1
+        lda histLen
+        sec
+        sbc hN
+        sta ckLen
+        lda histLen+1
+        sbc hN+1
+        sta ckLen+1
+        jsr copyBlk
+        ldx #0                   // histLen, histCur, histUndo -= n
+sb:     lda histLen,x
+        sec
+        sbc hN
+        sta histLen,x
+        lda histLen+1,x
+        sbc hN+1
+        sta histLen+1,x
+        bcs nx
+        lda #0                   // (histUndo kan niet onder 0)
+        sta histLen,x
+        sta histLen+1,x
+nx:     inx
+        inx
+        cpx #6
+        bne sb
+        sec
+        rts
+}
+
+// hGet - volgend byte uit HIST (hPtr++), hLeft--. Z = byte is 0.
+hGet: {
+        ldy #0
+        lda (hPtr),y
+        pha
+        inc hPtr
+        bne a
+        inc hPtr+1
+a:      lda hLeft
+        bne b
+        dec hLeft+1
+b:      dec hLeft
+        pla
         rts
 }
 
@@ -1003,6 +1267,9 @@ as_Out: jmp (outVec)            // CHAT: as_Chat, modellen: mdl_Char
 as_Chat: {
         ldx #1
         stx gotText
+        pha
+        jsr hist_Esc             // antwoord onthouden (JSON-veilig)
+        pla
         cmp #$0a
         bne n
         jmp co_NlText
@@ -1251,6 +1518,11 @@ lp:     lda #$20
 
 //--------------------------------------------------------
 chatInited: .byte 0
+histLen:  .word 0                // (volgorde: histLen, histCur, histUndo)
+histCur:  .word 0
+histUndo: .word 0
+hLeft:    .word 0
+hN:       .word 0
 httpMode: .byte 0                // 0 = CHAT, 1 = modellenlijst
 mdCount:  .byte 0
 mdLen:    .byte 0
@@ -1296,9 +1568,15 @@ gotText:  .byte 0
 .encoding "ascii"
 aB1:    .text @"{\"model\":\""
         .byte 0
-aB2:    .text @"\",\"stream\":true,\"messages\":[{\"role\":\"system\",\"content\":\"You run on a Commodore 64 with a 34 column screen. Answer briefly in plain text, no markdown.\"},{\"role\":\"user\",\"content\":\""
+aB2:    .text @"\",\"stream\":true,\"messages\":[{\"role\":\"system\",\"content\":\"You run on a Commodore 64 with a 34 column screen. Answer briefly in plain text, no markdown.\"}"
         .byte 0
-aB3:    .text @"\"}]}"
+aRu:    .text @",{\"role\":\"user\",\"content\":\""
+        .byte 0
+aRa:    .text @",{\"role\":\"assistant\",\"content\":\""
+        .byte 0
+aRe:    .text @"\"}"
+        .byte 0
+aB3:    .text @"]}"
         .byte 0
 aG1:    .text @"GET /v1/models HTTP/1.0\r\nHost: "
         .byte 0
@@ -1312,7 +1590,9 @@ aH4:    .text @"\r\n\r\n"
         .byte 0
 
 .encoding "screencode_upper"
-sChHint:  .text "RETURN = SEND   ESC = CLOSE"
+sChHint:  .text "RETURN=SEND  ESC=CLOSE"
+          .byte $ff
+sChNew:   .text "NEW CHAT"
           .byte $ff
 sChNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
           .byte $ff

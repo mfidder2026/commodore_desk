@@ -60,8 +60,8 @@ ci:     lda tcpIsn,x
         dex
         bpl ci
         lda #0
-        sta tcpDataLen
-        sta tcpDataLen+1
+        sta tcpOutLen
+        sta tcpOutLen+1
         lda #TCP_SYN
         jsr tcp_Out
         lda #0
@@ -85,10 +85,67 @@ ok:     sec
 }
 
 // -----------------------------------------------------
-// tcp_Send - tcpDataLen bytes vanaf tcpDataPtr zenden en wachten tot
-//            ze bevestigd zijn (5x 1 s). Uit: carry=1 bevestigd.
+// tcp_Send - tcpDataLen bytes vanaf tcpDataPtr zenden, in stukken van
+//            hoogstens TCP_CHUNK (elk bevestigd voor het volgende).
+//            Uit: carry=1 alles bevestigd.
 // -----------------------------------------------------
+.const TCP_CHUNK = 1024
 tcp_Send: {
+        lda tcpDataPtr
+        sta tsPtr
+        lda tcpDataPtr+1
+        sta tsPtr+1
+        lda tcpDataLen
+        sta tsLeft
+        lda tcpDataLen+1
+        sta tsLeft+1
+lp:     lda tsLeft
+        ora tsLeft+1
+        bne more
+        sec
+        rts
+more:   lda tsLeft+1             // stuk = min(rest, TCP_CHUNK)
+        cmp #>TCP_CHUNK
+        bcc small
+        lda #<TCP_CHUNK
+        sta tcpDataLen
+        lda #>TCP_CHUNK
+        sta tcpDataLen+1
+        jmp go
+small:  lda tsLeft
+        sta tcpDataLen
+        lda tsLeft+1
+        sta tcpDataLen+1
+go:     lda tsPtr
+        sta tcpDataPtr
+        lda tsPtr+1
+        sta tcpDataPtr+1
+        jsr tcp_SendSeg
+        bcc fail
+        clc                      // ptr += stuk, rest -= stuk
+        lda tsPtr
+        adc tcpDataLen
+        sta tsPtr
+        lda tsPtr+1
+        adc tcpDataLen+1
+        sta tsPtr+1
+        sec
+        lda tsLeft
+        sbc tcpDataLen
+        sta tsLeft
+        lda tsLeft+1
+        sbc tcpDataLen+1
+        sta tsLeft+1
+        jmp lp
+fail:   clc
+        rts
+}
+tsPtr:  .word 0
+tsLeft: .word 0
+
+// tcp_SendSeg - één segment (tcpDataLen bytes) met herhaling tot het
+//               bevestigd is (5x 1 s). Uit: carry=1 bevestigd.
+tcp_SendSeg: {
         ldx #3
 cp:     lda tcpSnd,x             // una = snd; snd += len
         sta tcpUna,x
@@ -114,6 +171,10 @@ cs:     lda tcpUna,x
         sta tcpSeqOut,x
         dex
         bpl cs
+        lda tcpDataLen           // (ACK's tussendoor zetten tcpOutLen op 0)
+        sta tcpOutLen
+        lda tcpDataLen+1
+        sta tcpOutLen+1
         lda #TCP_PSH|TCP_ACK
         jsr tcp_Out
         lda #0
@@ -142,8 +203,8 @@ tcp_Close:
         beq !r+
         jsr seqFromSnd
         lda #0
-        sta tcpDataLen
-        sta tcpDataLen+1
+        sta tcpOutLen
+        sta tcpOutLen+1
         lda #TCP_FIN|TCP_ACK
         jsr tcp_Out
         lda #TS_CLOSED
@@ -154,8 +215,8 @@ tcp_Close:
 tcp_SendAck:
         jsr seqFromSnd
         lda #0
-        sta tcpDataLen
-        sta tcpDataLen+1
+        sta tcpOutLen
+        sta tcpOutLen+1
         lda #TCP_ACK
         jmp tcp_Out
 
@@ -252,8 +313,8 @@ ak:     lda tcpHl
         sta TX+56
         lda #<1024
         sta TX+57
-data:   lda tcpDataLen           // payload kopiëren
-        ora tcpDataLen+1
+data:   lda tcpOutLen           // payload kopiëren
+        ora tcpOutLen+1
         beq nod
         lda tcpDataPtr
         sta netPtr
@@ -263,17 +324,17 @@ data:   lda tcpDataLen           // payload kopiëren
         sta ck2
         lda #>[TX+54]
         sta ck2+1
-        lda tcpDataLen
+        lda tcpOutLen
         sta ckLen
-        lda tcpDataLen+1
+        lda tcpOutLen+1
         sta ckLen+1
         jsr copyBlk
 nod:    // tcp-lengte = hl + data
         lda tcpHl
         clc
-        adc tcpDataLen
+        adc tcpOutLen
         sta tcpLen+1
-        lda tcpDataLen+1
+        lda tcpOutLen+1
         adc #0
         sta tcpLen
         // pseudokop op TX+22..33: src, dst, 0, 6, lengte
@@ -554,6 +615,7 @@ tcpRcv:     .fill 4, 0
 tcpSeqOut:  .fill 4, 0
 tcpDataPtr: .word 0
 tcpDataLen: .word 0
+tcpOutLen:  .word 0              // lengte van het segment dat tcp_Out bouwt
 .align 2                         // jmp (vector) mag niet op $xxFF staan
 tcpRxVec:   .word 0              // callback: A = ontvangen byte
 tcpRxPtr:   .word 0
