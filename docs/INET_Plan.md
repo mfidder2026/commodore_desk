@@ -9,8 +9,8 @@ In de menubalk komt het uitklapmenu **INET** met deze items:
 | Item | Status |
 |---|---|
 | **NETWORK** | klaar |
-| **PING** | nog niet beschikbaar (grijs) |
-| **CHAT** | nog niet beschikbaar (grijs) |
+| **PING** | klaar (RR-Net) |
+| **CHAT** | klaar (RR-Net, plain HTTP) |
 | **EMAIL** | nog niet beschikbaar (grijs) |
 
 - **NETWORK** toont de status van de netwerkhardware.

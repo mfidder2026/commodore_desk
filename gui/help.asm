@@ -70,10 +70,10 @@ help_Show: {
 }
 
 //--------------------------------------------------------
-help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1, <hi1
-help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1, >hi1
-help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2, <hi2
-help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2
+help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1, <hi1, <hg1, <ht1
+help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1, >hi1, >hg1, >ht1
+help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2, <hi2, <hg2, <ht2
+help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2, >hg2, >ht2
 
 .encoding "screencode_upper"
 hTitle: .text "HELP"
@@ -108,4 +108,12 @@ hs2: .text "SAVE WRITES CD64.CFG."
 hi1: .text "CLICK A VALUE TO CHANGE IT."
      .byte $ff
 hi2: .text "SAVE WRITES NET.CFG."
+     .byte $ff
+hg1: .text "CLICK TARGET TO CHANGE IT."
+     .byte $ff
+hg2: .text "START SENDS 4 PINGS."
+     .byte $ff
+ht1: .text "TYPE A QUESTION, PRESS RETURN."
+     .byte $ff
+ht2: .text "SERVER: SEE INET - NETWORK."
      .byte $ff

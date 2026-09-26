@@ -286,9 +286,13 @@ loadApp:
         jsr K_LOAD               // carry=1 bij fout (bestand niet gevonden)
         bcs !err+
         jsr cfg_io_end           // (zet interrupts weer aan via cli)
+        lda loadIdx
+        sta ovlLoaded            // deze overlay staat nu in $8000
         clc
         rts
 !err:   jsr cfg_io_end
+        lda #$ff
+        sta ovlLoaded            // half geladen: niets bruikbaars
         sec
         rts
 
@@ -348,6 +352,7 @@ anMono:   .text "MONO"
 anCasual: .text "CASUAL"
 anHeavy:  .text "HEAVY"
 loadIdx:  .byte 0
+ovlLoaded: .byte $ff             // welke app-overlay er in $8000 staat
 
 //--------------------------------------------------------
 dirCount:  .byte 0

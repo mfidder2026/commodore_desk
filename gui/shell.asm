@@ -48,11 +48,8 @@ shell_Run:
         jsr help_Show
         jmp !loop-
 !nothelp:
-        lda activeApp
-        cmp #1                   // editor gets the key (space types there)
-        bne !notEd+
-        jsr ed_Key
-        jmp !loop-
+        jsr appKey               // editor/chat typen zelf (ook spatie)
+        bcs !loop-
 !notEd: lda evtA                 // SPACE or RETURN elsewhere = click at cursor
         cmp #$20
         beq !click+
@@ -72,7 +69,9 @@ shell_Run:
 .const WIN_CLOSE_COL = 38
 // INET-uitklapmenu: globale itemnummers (zie miLo)
 .const MI_NETWORK   = 7
-.const MI_FIRST_OFF = 8              // vanaf hier: nog niet beschikbaar
+.const MI_PING      = 8
+.const MI_CHAT      = 9
+.const MI_FIRST_OFF = 10              // vanaf hier: nog niet beschikbaar
 
 shell_DrawAll:
         lda TH_deskbg
@@ -207,8 +206,14 @@ drawContent:
         bne !e2+
         jmp set_Draw
 !e2:    cmp #5
-        bne !f+
+        bne !e3+
         jmp inet_Draw
+!e3:    cmp #6
+        bne !e4+
+        jmp ping_Draw
+!e4:    cmp #7
+        bne !f+
+        jmp chat_Draw
 !f:     jmp drawStub
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
@@ -509,6 +514,22 @@ num2dec:
         sta (r4),y
         rts
 
+// appKey - toets naar de editor of CHAT. Carry=1 = afgehandeld.
+appKey:
+        lda activeApp
+        cmp #1
+        bne !c+
+        jsr ed_Key
+        sec
+        rts
+!c:     cmp #7
+        bne !n+
+        jsr chat_Key
+        sec
+        rts
+!n:     clc
+        rts
+
 //--------------------------------------------------------
 // exitToDesktop - active app sluiten, terug naar bureaublad.
 //--------------------------------------------------------
@@ -621,6 +642,10 @@ item:   ldx menuId
         beq doAbout
         cmp #MI_NETWORK
         beq doNet
+        cmp #MI_PING
+        beq doPing
+        cmp #MI_CHAT
+        beq doChat
         bcs doSoon               // PING/CHAT/EMAIL: nog niet klaar
         pha                      // 4-6: launcher-beheer op het bureaublad
         lda activeApp
@@ -634,6 +659,10 @@ item:   ldx menuId
         jmp tool_Run
 close:  jmp shell_DrawAll
 doNet:  lda #5                   // NETWORK = de INET-overlay
+        .byte $2c                // (bit abs: sla lda #6 over)
+doPing: lda #6
+        .byte $2c
+doChat: lda #7
         cmp activeApp
         beq close
         jmp openApp
@@ -824,8 +853,14 @@ onMouseDown:
         bne !w4+
         jmp set_Click
 !w4:    cmp #5
-        bne !done+
+        bne !w5+
         jmp inet_Click
+!w5:    cmp #6
+        bne !w6+
+        jmp ping_Click
+!w6:    cmp #7
+        bne !done+
+        jmp chat_Click
 !done:  rts
 
 //--------------------------------------------------------
@@ -834,9 +869,15 @@ onMouseDown:
 //--------------------------------------------------------
 openApp:
         sta activeApp
-        tax                      // overlay van disk laden
+        tax                      // overlay van deze app
+        lda appOvl,x
+        cmp ovlLoaded            // staat hij al in $8000? (NETWORK <-> PING)
+        beq !loaded+
+        pha
+        tax
         jsr showLoading
-        ldx activeApp
+        pla
+        tax
         jsr loadApp
         bcc !loaded+
         lda #$ff                 // laden mislukt -> terug naar desktop
@@ -863,7 +904,15 @@ openApp:
         bne !na4+
         jsr set_Init
         jmp !drawit+
-!na4:   jsr inet_Init            // #5 INET: netwerkhardware zoeken
+!na4:   cmp #5                   // NETWORK
+        bne !na5+
+        jsr inet_Init
+        jmp !drawit+
+!na5:   cmp #6                   // PING
+        bne !na6+
+        jsr ping_Init
+        jmp !drawit+
+!na6:   jsr chat_Init            // #7 CHAT
 !drawit:
         jmp shell_DrawAll
 
@@ -903,8 +952,10 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat
+// overlay (loadApp-index) per app-id: PING zit in de INET-overlay
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5
 
 dbI:       .byte 0
 labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <lTool

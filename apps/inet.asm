@@ -471,6 +471,10 @@ dig:    cpx feLen
         lda feBuf,x
         cmp #$2e
         beq endOct
+        cmp #$30                 // alleen cijfers
+        bcc bad
+        cmp #$3a
+        bcs bad
         and #$0f
         sta ipD
         lda ipVal                // val = val*10 + cijfer, max 255
@@ -627,18 +631,20 @@ ipDig:    .byte 0
 ipD:      .byte 0
 ipT:      .byte 0
 ipTmp:    .fill 4, 0
-lineBuf:  .fill 48, 0
+lineBuf:  .fill 80, 0
 feBuf:    .fill 48, 0
 decTab:   .byte 100, 10, 1
 
 // velden: rij, type, max. lengte, offset in NETCFG, label
-fRow:   .byte 7, 8, 9, 10, 14, 15, 16, 17
-fType:  .byte FT_IP, FT_IP, FT_IP, FT_IP, FT_TEXT, FT_NUM, FT_KEY, FT_TEXT
-fMax:   .byte 15, 15, 15, 15, 32, 5, 40, 32
+// (veld 8 = TARGET van PING, alleen in dat scherm)
+fRow:   .byte 7, 8, 9, 10, 14, 15, 16, 17, 3
+fType:  .byte FT_IP, FT_IP, FT_IP, FT_IP, FT_TEXT, FT_NUM, FT_KEY, FT_TEXT, FT_IP
+fMax:   .byte 15, 15, 15, 15, 32, 5, 40, 32, 15
 fOff:   .byte NC_IP-NETCFG, NC_MASK-NETCFG, NC_GW-NETCFG, NC_DNS-NETCFG
         .byte NC_HOST-NETCFG, NC_PORT-NETCFG, NC_KEY-NETCFG, NC_MODEL-NETCFG
-fLblLo: .byte <lIp, <lMask, <lGw, <lDns, <lHost, <lPort, <lKey, <lModel
-fLblHi: .byte >lIp, >lMask, >lGw, >lDns, >lHost, >lPort, >lKey, >lModel
+        .byte NC_PINGIP-NETCFG
+fLblLo: .byte <lIp, <lMask, <lGw, <lDns, <lHost, <lPort, <lKey, <lModel, <lTarget
+fLblHi: .byte >lIp, >lMask, >lGw, >lDns, >lHost, >lPort, >lKey, >lModel, >lTarget
 
 platLo: .byte <pNone, <pUlt, <pRr
 platHi: .byte >pNone, >pUlt, >pRr
@@ -670,6 +676,8 @@ lPort:     .text "PORT     : "
 lKey:      .text "API KEY  : "
            .byte $ff
 lModel:    .text "MODEL    : "
+           .byte $ff
+lTarget:   .text "TARGET   : "
            .byte $ff
 pNone:     .text "NONE"
            .byte $ff

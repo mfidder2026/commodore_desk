@@ -76,7 +76,11 @@ osEnd:
 #import "net/uci.asm"
 #import "net/cs8900.asm"
 #import "net/netdrv.asm"
+#import "net/ip.asm"
+#import "net/tcp.asm"
 #import "apps/inet.asm"
+#import "apps/ping.asm"
+#import "apps/chat.asm"
 
 //--------------------------------------------------------
 // 16 KB cartridge-image ($8000-$BFFF = ROML + ROMH bank 0).

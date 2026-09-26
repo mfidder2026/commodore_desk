@@ -63,10 +63,16 @@
 .label NC_KEY     = NETCFG + 57    // API-key (max 40)
 .label NC_MODEL   = NETCFG + 98    // model (max 32)
 .label NETCFG_END = NETCFG + 131
+// niet opgeslagen (buiten NETCFG_END), wel gedeeld tussen de schermen:
+.label NC_PINGIP  = NETCFG + $f0   // PING-doel (4 bytes)
+.label NC_PINGOK  = NETCFG + $f4   // 'P' = NC_PINGIP is gezet
 
 // Geheugen (§9): netwerkbuffers in het RAM onder de KERNAL ($E000+),
 // bruikbaar zolang de OS met $35 draait. $C000-$C3FF is bezet door de
 // launcher-stubs en DESK.APPS-records.
 .const NET_RXBUF   = $e000          // $E000-$E5FF RX-pakket
+.const NET_RXBUF_SIZE = $0600
+.label netPtr      = $fd            // zeropage-pointer van de stack
+.label ck2         = $fb            // tweede pointer (kopiëren)
 .const NET_TXBUF   = $e600          // $E600-$EBFF TX-pakket
 .const NET_WORK    = $ec00          // $EC00-$EFFF protocol/parser

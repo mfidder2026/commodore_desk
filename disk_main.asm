@@ -103,7 +103,11 @@ start:
         #import "net/uci.asm"
         #import "net/cs8900.asm"
         #import "net/netdrv.asm"
+        #import "net/ip.asm"
+        #import "net/tcp.asm"
         #import "apps/inet.asm"
+        #import "apps/ping.asm"
+        #import "apps/chat.asm"
 
 // LOWER- en TINY-font als complete charsets op disk: System-charset met
 // de kleine letters (a-z op code 1-26) resp. het 3x5-font (A-Z op 1-26,
