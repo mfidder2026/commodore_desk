@@ -3,9 +3,8 @@
 // gui/shell.asm - desktop-shell + widget-demo (Fase 5 + 6)
 // Commodore Desk 64
 //
-// Bureaublad met contextuele menubalk, statusbalk en dock. Het
-// werkgebied toont een widget-demo (knop-teller, checkbox, scrollbare
-// lijst, modale dialoog) om de herbruikbare widgets te tonen.
+// Bureaublad in Win95-stijl: vaste menubalk met uitklapmenu's en app-
+// knoppen, één groot venster en een statusbalk met datum en tijd.
 //========================================================
 
 .const LIST_COUNT   = 8
@@ -15,8 +14,6 @@
 shell_Init:
         lda #$ff
         sta activeApp
-        lda #0                   // menubalk begint verborgen (dock is statisch)
-        sta menuShown
         jsr shell_DrawAll
         rts
 
@@ -27,7 +24,7 @@ shell_Run:
         bne !bars+
         jsr paint_Live           // sleep-tekenen zolang de knop ingedrukt is
         jmp !ev+
-!bars:  jsr checkBars
+!bars:  jsr clk_Poll             // statusbalk: datum/tijd bijwerken
 !ev:    jsr evt_Poll
         cmp #EVT_MOUSEDOWN
         bne !k+
@@ -66,47 +63,32 @@ shell_Run:
         jmp !loop-
 
 //--------------------------------------------------------
-// Win95-layout (40x25):
-//   rij 0      menubalk (klapt uit) / anders grijze desktop
-//   rij 1      titelbalk van het venster, sluitknop op kol 37
-//   rij 2-18   vensterinhoud (kol 2-37), kader op kol 1 en 38
-//   rij 19     onderrand van het venster
-//   rij 20     grijze desktop (hier wisselt de raster-split de achtergrond)
-//   rij 21-24  dock-plank (kol DOCK_L..DOCK_R) op lichtgrijs
+// Win95-layout (40x25), zie WIN_* in layout.inc:
+//   rij 0      menubalk: CD64 en DESKTOP klappen uit, FILES/INET/SETUP
+//   rij 1      titelbalk van het venster, sluitknop op kol 38
+//   rij 2-22   vensterinhoud (kol 2-37), kader op kol 1 en 38
+//   rij 23     onderrand van het venster
+//   rij 24     statusbalk met datum en tijd
 .const WIN_CLOSE_COL = 38
-.const DOCK_L = 10
-.const DOCK_R = 30
 
 shell_DrawAll:
         lda TH_deskbg
         sta a2
         jsr gfx_Cls
-        jsr drawDesktopBg        // grijze desktop + dock-plank
+        jsr drawDesktopBg        // grijze desktop naast het venster
         jsr win_Main             // venster: titelbalk, sluitknop, kader
         jsr drawContent
-        jsr drawDock             // dock is statisch (macOS-stijl): altijd zichtbaar
-        lda menuShown            // alleen de bovenste menubalk klapt in/uit
-        beq !nm+
         jsr drawMenubar
-!nm:    lda #13
+        jsr drawStatus
+        lda #13
         sta $07f8                // sprite 0 pointer herstellen
         rts
 
 //--------------------------------------------------------
-// drawDesktopBg - grijze desktop rond het venster + de dock-plank.
+// drawDesktopBg - grijze kolommen 0 en 39 naast het venster.
 //--------------------------------------------------------
 drawDesktopBg:
-        lda #0                   // rij 0 en rij 20 volledig grijs
-        sta a0
-        lda TH_desktop
-        sta a2
-        jsr gfx_BarRow
-        lda #20
-        sta a0
-        lda TH_desktop
-        sta a2
-        jsr gfx_BarRow
-        ldx #1                   // kolom 0 en 39, rijen 1-19
+        ldx #1
 !lp:    stx dbI
         lda #0
         sta a0
@@ -118,61 +100,22 @@ drawDesktopBg:
         jsr gfx_PutChar
         lda #39
         sta a0
-        lda dbI
-        sta a1
-        lda #$a0
-        sta a2
-        lda TH_desktop
-        sta a3
-        jsr gfx_PutChar
+        jsr gfx_PutChar          // a1-a3 zijn nog intact
         ldx dbI
         inx
-        cpx #20
+        cpx #STATUS_ROW
         bne !lp-
-        ldx #21                  // dock-rijen: links/rechts van de plank grijs
-!dr:    stx dbI
-        lda #0
+        rts
+
+// drawStatus - statusbalk (rij 24) met datum en tijd rechts.
+drawStatus:
+        lda #STATUS_ROW
         sta a0
-        stx a1
-        lda #DOCK_L
+        lda TH_menubg
         sta a2
-        lda #1
-        sta a3
-        lda #$a0
-        sta a4
-        lda TH_desktop
-        sta a5
-        jsr gfx_FillRect
-        lda #DOCK_R+1
-        sta a0
-        lda dbI
-        sta a1
-        lda #[39-DOCK_R]
-        sta a2
-        lda #1
-        sta a3
-        lda #$a0
-        sta a4
-        lda TH_desktop
-        sta a5
-        jsr gfx_FillRect
-        ldx dbI
-        inx
-        cpx #25
-        bne !dr-
-        lda #DOCK_L              // witte bovenrand van de plank (rij 21)
-        sta a0
-        lda #21
-        sta a1
-        lda #[DOCK_R-DOCK_L+1]
-        sta a2
-        lda #1
-        sta a3
-        lda #GL_HILITE
-        sta a4
-        lda #WHITE
-        sta a5
-        jmp gfx_FillRect
+        jsr gfx_BarRow
+        jsr clk_Read
+        jmp clk_Draw
 
 //--------------------------------------------------------
 // win_Main - het hoofdvenster: titel = naam van de actieve app. Het
@@ -196,7 +139,7 @@ win_Main:
         sta a1
         lda #38
         sta a2
-        lda #19
+        lda #WIN_FRAME_BOT
         sta a3
         jsr dlg_Draw
         lda #0
@@ -204,60 +147,38 @@ win_Main:
         rts
 
 //--------------------------------------------------------
-// checkBars - alleen de bovenste menubalk klapt in/uit op basis van
-//             de cursorpositie. De dock staat statisch onderaan.
+// drawMenubar - vaste menubalk. De knop van het actieve venster staat
+//               "ingedrukt" (niet-reverse: vensterkleur achter de tekst).
 //--------------------------------------------------------
-checkBars:
-        lda crsY
-        sec
-        sbc #50
-        lsr
-        lsr
-        lsr
-        sta cbRow                // cursorrij 0-24
-        lda cbRow                // menubalk: rij 0
-        bne !topHide+
-        lda menuShown
-        bne !done+
-        lda #1
-        sta menuShown
-        jsr drawMenubar
-        rts
-!topHide:
-        lda menuShown
-        beq !done+
-        lda #0
-        sta menuShown
-        jsr clearRow0
-!done:  rts
-
-clearRow0:                       // verborgen menubalk = grijze desktop
-        lda #0
-        sta a0
-        lda TH_desktop
-        sta a2
-        jmp gfx_BarRow
-
-//--------------------------------------------------------
+.const MB_ITEMS = 5
 drawMenubar:
         lda #0
         sta a0
         lda TH_menubg
         sta a2
         jsr gfx_BarRow
-        ldx activeApp
-        inx
-        lda menuLo,x
+        ldx #0
+!lp:    stx menuI
+        lda mbStrLo,x
         sta r0
-        lda menuHi,x
+        lda mbStrHi,x
         sta r0+1
-        lda #1
+        lda mbCol,x
         sta a0
         lda #0
         sta a1
         lda TH_menubg
         sta a2
+        lda mbApp,x
+        cmp activeApp
+        beq !act+
         jsr gfx_DrawTextRev
+        jmp !nx+
+!act:   jsr gfx_DrawText
+!nx:    ldx menuI
+        inx
+        cpx #MB_ITEMS
+        bne !lp-
         rts
 
 //--------------------------------------------------------
@@ -543,94 +464,6 @@ showLoading:
         jmp gfx_DrawText
 
 //--------------------------------------------------------
-// drawDock - 3 statische iconen (FILES, INET, SETUP) op rij 22-24.
-//            dockApp[slot] = app-id; icon/label/kleur zijn per app-id.
-//--------------------------------------------------------
-.const DOCK_SLOTS = 3
-drawDock:
-        lda #0
-        sta dockI
-!lp:    lda dockI
-        cmp #DOCK_SLOTS
-        bcc !go+
-        jmp !done+
-!go:    ldx dockI
-        lda dockApp,x            // app-id voor dit slot
-        sta dApp
-        lda dockBase,x
-        sta dockTmp
-        clc                      // TL (base+2, 22)
-        adc #2
-        sta a0
-        lda #22
-        sta a1
-        ldx dApp
-        lda icon2TL,x
-        sta a2
-        lda iconColor,x
-        sta a3
-        jsr gfx_PutChar
-        lda dockTmp              // TR (base+3, 22)
-        clc
-        adc #3
-        sta a0
-        lda #22
-        sta a1
-        ldx dApp
-        lda icon2TR,x
-        sta a2
-        lda iconColor,x
-        sta a3
-        jsr gfx_PutChar
-        lda dockTmp              // BL (base+2, 23)
-        clc
-        adc #2
-        sta a0
-        lda #23
-        sta a1
-        ldx dApp
-        lda icon2BL,x
-        sta a2
-        lda iconColor,x
-        sta a3
-        jsr gfx_PutChar
-        lda dockTmp              // BR (base+3, 23)
-        clc
-        adc #3
-        sta a0
-        lda #23
-        sta a1
-        ldx dApp
-        lda icon2BR,x
-        sta a2
-        lda iconColor,x
-        sta a3
-        jsr gfx_PutChar
-        lda dockTmp              // label (base+1, 24) in balktekstkleur
-        clc
-        adc #1
-        sta a0
-        lda #24
-        sta a1
-        lda TH_bartext
-        sta a2
-        ldx dApp
-        lda labelLo,x
-        sta r0
-        lda labelHi,x
-        sta r0+1
-        lda dApp                 // actieve app: label gemarkeerd (reverse)
-        cmp activeApp
-        bne !notact+
-        jsr gfx_DrawTextRev
-        jmp !nx+
-!notact:
-        jsr gfx_DrawText
-!nx:    inc dockI
-        jmp !lp-
-!done:  rts
-
-//--------------------------------------------------------
 // num2dec - A (0-255) als 3 decimale schermcodes op (r4).
 //--------------------------------------------------------
 num2dec:
@@ -676,59 +509,53 @@ exitToDesktop:
         jmp shell_DrawAll
 
 //--------------------------------------------------------
-// menu_Open - uitklapmenu onder de menubalk (systeemmenu).
-//             Modale lus: klik een item, of klik ernaast om te
-//             sluiten. IRQ blijft de cursor pollen.
+// menu_Open - uitklapmenu X (0 = CD64, 1 = DESKTOP) onder de menubalk.
+//             Modale lus: klik een item, klik ernaast of ESC = sluiten.
+//             Een klik op een andere menubalkknop opent die meteen.
 //--------------------------------------------------------
-menu_Draw:
-        lda TH_text
+menu_Open: {
+        stx menuId
+        lda mnX,x
+        sta a0
+        clc
+        adc #2
         sta menuTxtCol
-        lda activeApp
-        cmp #$ff
-        bne !app+
-        // ---- bureaublad-menu: TOEVOEGEN/BEWERKEN/VERWIJDEREN + rest ----
         lda #1
-        sta menuDesk
-        gfxDrawBoxM(1, 1, 18, 8, TH_text)       // rijen 1-8, kol 1-18
-        lda #6
+        sta a1
+        lda mnW,x
+        sta a2
+        lda mnN,x
         sta menuN
-        jmp !draw+
-!app:   lda #0
-        sta menuDesk
-        gfxDrawBoxM(1, 1, 14, 6, TH_text)       // rijen 1-6, kol 1-14
-        lda #4
-        sta menuN
-!draw:  lda #0
+        clc
+        adc #2
+        sta a3
+        lda TH_text
+        sta a4
+        jsr gfx_DrawBox
+        lda #0
         sta menuI
-!lp:    ldx menuI
-        lda menuDesk
-        beq !ap+
-        lda dmLo,x
+dlp:    lda menuI
+        ldx menuId
+        clc
+        adc mnFirst,x
+        tax
+        lda miLo,x
         sta r0
-        lda dmHi,x
+        lda miHi,x
         sta r0+1
-        jmp !p+
-!ap:    lda amLo,x
-        sta r0
-        lda amHi,x
-        sta r0+1
-!p:     lda #3
+        lda menuTxtCol
         sta a0
         lda menuI
         clc
         adc #2
         sta a1
-        lda menuTxtCol
+        lda TH_text
         sta a2
         jsr gfx_DrawText
         inc menuI
         lda menuI
         cmp menuN
-        bne !lp-
-        rts
-
-menu_Open: {
-        jsr menu_Draw
+        bne dlp
 wait:   jsr evt_Poll
         cmp #EVT_MOUSEDOWN        // muis/joystick-klik
         beq doClick
@@ -745,57 +572,91 @@ wait:   jsr evt_Poll
 keyClick:
         jsr cursorToCell         // cursor -> evtA (kol), evtB (rij)
 doClick:
-        lda evtA                 // buiten de menukolommen -> sluiten
-        cmp #1
+        lda evtB
+        bne item
+        jsr mb_Zone              // menubalk: andere knop -> die openen
+        cpx menuId
+        beq close                // zelfde knop = dichtklappen
+        jsr shell_DrawAll
+        jmp menuBarClick
+item:   ldx menuId
+        lda evtA                 // binnen de menukolommen?
+        cmp mnX,x
         bcc close
-        cmp #19
+        sec
+        sbc mnX,x
+        cmp mnW,x
         bcs close
-        lda menuDesk
-        beq appDisp
-        // bureaublad: rij 2..7 -> item 0..5
         lda evtB
         sec
         sbc #2
         bcc close
-        cmp #0
-        beq mAdd
+        cmp menuN
+        bcs close
+        clc
+        adc mnFirst,x            // globaal itemnummer
+        beq doHelp
         cmp #1
-        beq mEdit
-        cmp #2
-        beq mDel
-        cmp #3
-        beq doHelp
-        cmp #4
-        beq doAbout
-        cmp #5
         beq doReset
-        jmp close
-appDisp:
-        lda evtB
         cmp #2
-        beq doHelp
+        beq doExit
         cmp #3
-        beq doDesk
-        cmp #4
         beq doAbout
-        cmp #5
-        beq doReset
+        pha                      // 4-6: launcher-beheer op het bureaublad
+        lda activeApp
+        cmp #$ff
+        beq !+
+        jsr exitToDesktop
+!:      pla
+        sec
+        sbc #4
+        tax
+        jmp tool_Run
 close:  jmp shell_DrawAll
-mAdd:   ldx #0
-        jmp tool_Run
-mEdit:  ldx #1
-        jmp tool_Run
-mDel:   ldx #2
-        jmp tool_Run
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
-doDesk: jmp exitToDesktop
 doAbout:jmp about_Show
 doReset:
         sei
         lda #$37                 // BASIC+KERNAL+I/O inbanken
         sta $01
-        jmp ($fffc)             // KERNAL-reset -> terug naar BASIC
+        jmp ($fffc)              // KERNAL-reset
+doExit: // CD64 netjes verlaten naar BASIC (zonder reset)
+        sei
+        lda #0
+        sta VIC_IRQ_EN           // raster-IRQ uit
+        sta $d015                // cursor-sprite uit
+        lda #$37
+        sta $01
+        jsr $fd15                // RESTOR: KERNAL-vectoren
+        jsr $fda3                // IOINIT: CIA's, IRQ-timer
+        jsr $ff5b                // CINT: VIC + scherm (ROM-charset)
+        cli
+        jmp ($a000)              // BASIC koude start
 }
+
+// mb_Zone - X = menubalkknop onder kolom evtA (0-4).
+mb_Zone:
+        lda evtA
+        ldx #0
+!lp:    cmp mbEnd,x
+        bcc !r+
+        inx
+        cpx #MB_ITEMS-1
+        bne !lp-
+!r:     rts
+
+// menuBarClick - klik op rij 0: uitklapmenu of app openen.
+menuBarClick:
+        jsr mb_Zone
+        cpx #2
+        bcs !app+
+        jmp menu_Open
+!app:   lda mbApp,x
+        cmp activeApp
+        beq !r+                  // staat al open
+        jmp openApp
+!r:     rts
+
 //--------------------------------------------------------
 // tool_Run - launcher-beheer (overlay DESKTOOL) laden en starten.
 //            X = 0 toevoegen, 1 bewerken, 2 verwijderen.
@@ -818,11 +679,19 @@ tool_Run:
 !edit:  jmp da_EditProgram
 toolFn: .byte 0
 
-// menukeuze-tabellen
-dmLo: .byte <oAdd, <oEditP, <oDel, <oHelp, <oAbout, <oReset
-dmHi: .byte >oAdd, >oEditP, >oDel, >oHelp, >oAbout, >oReset
-amLo: .byte <oHelp, <oDesk, <oAbout, <oReset
-amHi: .byte >oHelp, >oDesk, >oAbout, >oReset
+// menubalk: knoppen, kolommen, klikzones (einde, exclusief) en app-id
+mbStrLo: .byte <mbCd, <oDesk, <lFiles, <lInet, <lSet
+mbStrHi: .byte >mbCd, >oDesk, >lFiles, >lInet, >lSet
+mbCol:   .byte 1, 8, 18, 26, 33
+mbEnd:   .byte 7, 17, 25, 32
+mbApp:   .byte $fe, $ff, 0, 5, 4      // $fe = nooit "ingedrukt"
+// uitklapmenu's: 0 = CD64, 1 = DESKTOP
+mnX:     .byte 0, 7
+mnW:     .byte 10, 18
+mnN:     .byte 4, 3
+mnFirst: .byte 0, 4
+miLo:    .byte <oHelp, <oReset, <oExit, <oAbout, <oAdd, <oEditP, <oDel
+miHi:    .byte >oHelp, >oReset, >oExit, >oAbout, >oAdd, >oEditP, >oDel
 
 //--------------------------------------------------------
 // about_Show - "over deze OS"-dialoog (Win95-stijl: titelbalk, sluitknop,
@@ -882,10 +751,7 @@ onMouseDown:
         jmp paint_Click
 !np:    lda evtB
         bne !nomenu+
-        lda menuShown            // klik op rij 0 = menubalk -> uitklapmenu
-        beq !ret+
-        jmp menu_Open
-!ret:   rts
+        jmp menuBarClick         // rij 0 = menubalk
 !nomenu:
         cmp #1                   // titelbalk: alleen de sluitknop doet iets
         bne !nt+
@@ -896,26 +762,14 @@ onMouseDown:
         cmp #$ff
         beq !rt+                 // bureaublad heeft geen sluitknop
         jmp exitToDesktop
-!nt:    cmp #21
-        bcs !dock+
-        cmp #19                  // onderrand + grijze rij 20: niets
-        bcs !rt+
-        jmp !widget+
-!dock:  // dock-plank: 3 slots (kol 11-16, 17-22, 23-29) -> app via dockApp
-        lda evtA
-        cmp #11
-        bcc !rt+
-        cmp #30
-        bcs !rt+
-        ldx #0
-        cmp #17
-        bcc !hit+
-        inx
-        cmp #23
-        bcc !hit+
-        inx
-!hit:   lda dockApp,x
-        jmp openApp              // laadt/opent de app (tekent zelf)
+!nt:    cmp #STATUS_ROW          // klik op de statusbalk (klok) -> SETUP
+        bne !ns+
+        lda #4
+        cmp activeApp
+        beq !rt+
+        jmp openApp
+!ns:    cmp #WIN_FRAME_BOT       // onderrand: niets
+        bcc !widget+
 !rt:    rts
 !widget:
         // klik in het werkgebied
@@ -1005,53 +859,24 @@ biApp:      .byte 1, 2, 3              // overlay-app-id
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
         .byte 74, 75, 76, 77, 78, 79, 80, 81, 82, 83
-menuShown:   .byte 0
-cbRow:       .byte 0
 menuTxtCol:  .byte 0
 menuI:       .byte 0
 menuN:       .byte 0
-menuDesk:    .byte 0
+menuId:      .byte 0
 // gedeelde scratch-vars (o.a. File Manager-lijst)
 lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-menuLo: .byte <mDesk, <mFiles, <mEdit, <mPaint, <mCalc, <mSet, <mInet
-menuHi: .byte >mDesk, >mFiles, >mEdit, >mPaint, >mCalc, >mSet, >mInet
 nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet
 nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet
 
-// dock: 3 statische slots. dockApp = welke app-id per slot (FILES, INET, SETUP).
-// Mac-achtige dock-plank (kol DOCK_L..DOCK_R): iconen op base+2/+3,
-// label op base+1. Klikzones: kol 11-16, 17-22, 23-29.
-dockBase:  .byte 11, 17, 23
-dockApp:   .byte 0, 5, 4
-// per app-id (0=files 1=edit 2=paint 3=calc 4=setup 5=inet); goed
-// zichtbaar op de lichtgrijze plank:
-iconColor: .byte ORANGE, WHITE, LIGHT_RED, CYAN, DARK_GREY, BLUE
 dbI:       .byte 0
-// 2x2 dock-iconen: glyphcodes per kwadrant (TL/TR/BL/BR)
-icon2TL:   .byte 107, 111, 115, 119, 123, 102
-icon2TR:   .byte 108, 112, 116, 120, 124, 103
-icon2BL:   .byte 109, 113, 117, 121, 125, 104
-icon2BR:   .byte 110, 114, 118, 122, 126, 105
 labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <lTool
 labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >lTool
 
 .encoding "screencode_upper"
-mDesk:  .text "CD64   FILE   EDIT   VIEW   SYSTEM"
-        .byte $ff
-mFiles: .text "FILES   FILE   EDIT   DISK   VIEW"
-        .byte $ff
-mEdit:  .text "EDITOR   FILE   EDIT   SEARCH"
-        .byte $ff
-mPaint: .text "PAINT   FILE   EDIT   TOOLS   COLORS"
-        .byte $ff
-mCalc:  .text "CALC   FILE   EDIT"
-        .byte $ff
-mSet:   .text "SETTINGS   FILE   EDIT   VIEW"
-        .byte $ff
-mInet:  .text "INTERNET   MAIL   CHAT   RSS   FTP"
+mbCd:   .text "CD64"
         .byte $ff
 
 nDesk:  .text "COMMODORE DESK 64"
@@ -1110,6 +935,8 @@ oDesk:  .text "DESKTOP"
 oAbout: .text "ABOUT"
         .byte $ff
 oReset: .text "RESET"
+        .byte $ff
+oExit:  .text "EXIT"
         .byte $ff
 aLine1: .text "COMMODORE DESK 64"
         .byte $ff

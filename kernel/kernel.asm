@@ -26,6 +26,7 @@ kernel_Init:
         jsr da_Load              // DESK.APPS (gebruikersprogramma's) of defaults
         jsr font_Apply           // gekozen font toepassen (na cfg_Load)
         jsr sid_Init
+        jsr clk_Init             // klok (CIA-TOD) + datum
         // (bootscherm wordt door het aparte BOOT-laadprogramma getoond)
         jsr evt_Init
         jsr spr_CursorInit       // pijl-sprite (data + enable)
@@ -118,12 +119,10 @@ profile_Derive:
         sta TH_desktop
         lda profTitle,x
         sta TH_title
-        lda profBarText,x
-        sta TH_bartext
         rts
 
-// Venster = TH_deskbg (achtergrond $D021 boven), balken = TH_menubg
-// (menubalk + dock, achtergrond $D021 onder), desktop = grijs eromheen.
+// Venster = TH_deskbg ($D021), balken = TH_menubg (menubalk + statusbalk),
+// desktop = grijs eromheen.
 //          C64/Win95     Matrix       Paper
 profBorder:  .byte LIGHT_BLUE, BLACK,       GREY
 profDesk:    .byte BLUE,       BLACK,       WHITE
@@ -133,4 +132,3 @@ profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE
 profText:    .byte WHITE,      GREEN,       BLACK
 profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY
 profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE
-profBarText: .byte BLUE,       BLACK,       BLACK

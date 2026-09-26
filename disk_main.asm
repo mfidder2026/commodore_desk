@@ -75,6 +75,7 @@ start:
         #import "gui/help.asm"
         #import "gui/shell.asm"
         #import "gui/deskapps.asm"
+        #import "kernel/clock.asm"
         #import "kernel/kernel.asm"
 
 // System-charset (2 KB, hoofdletter/grafiek-set uit de C64 char-ROM),

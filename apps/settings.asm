@@ -9,6 +9,9 @@
 // de kleur en past hem meteen toe.
 //========================================================
 
+.const CLK_ROW = 17
+.const CLK_COL = 11
+
 // set_Init - beginrol.
 set_Init:
         lda #0
@@ -221,7 +224,7 @@ pdone:  lda #<sSave
         lda TH_accent
         sta a2
         jsr gfx_DrawText
-        rts
+        jmp clk_Row
 }
 
 //--------------------------------------------------------
@@ -345,7 +348,10 @@ chkProf: // THEME-regel (rij 3, kol 4-20) -> volgend profiel
         rts
 chkSound: // SOUND-regel (rij 4, kol 4-20) -> aan/uit
         lda evtB
-        cmp #4
+        cmp #CLK_ROW             // CLOCK-regel -> datum/tijd typen
+        bne !+
+        jmp clk_Edit
+!:      cmp #4
         bne done
         lda evtA
         cmp #4
@@ -426,9 +432,191 @@ done:   rts
 fpI:    .byte 0
 
 //--------------------------------------------------------
+// CLOCK-regel: "CLOCK: DD-MM-YYYY HH:MM". Klik -> cijfers typen
+// (DEL = terug), RETURN = instellen, ESC of klik = annuleren.
+//--------------------------------------------------------
+
+// clk_Row - label + huidige datum/tijd (cijfers uit ckDig).
+clk_Row:
+        jsr ck_Load
+        lda #$ff
+        sta ckPos                // geen cursor
+ck_Show: {
+        lda #<sClock
+        sta r0
+        lda #>sClock
+        sta r0+1
+        lda #4
+        sta a0
+        lda #CLK_ROW
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldx #0                   // sjabloon met cijfers vullen
+        ldy #0
+lp:     lda ckTpl,x
+        cmp #$ff
+        beq show
+        cmp #$23                 // '#' = cijferplek
+        bne put
+        lda ckDig,y
+        ora #$30
+        cpy ckPos
+        bne nrm
+        ora #$80                 // cursor = reverse
+nrm:    iny
+put:    sta ckLine,x
+        inx
+        bne lp
+show:   sta ckLine,x
+        lda #<ckLine
+        sta r0
+        lda #>ckLine
+        sta r0+1
+        lda #CLK_COL
+        sta a0
+        lda #CLK_ROW
+        sta a1
+        lda TH_accent
+        sta a2
+        jmp gfx_DrawText
+}
+
+// ck_Load - huidige datum/tijd -> 12 cijfers (DDMMYYYYHHMM).
+ck_Load: {
+        jsr clk_Read
+        ldx #0
+        lda clkDay
+        jsr two
+        lda clkMon
+        jsr two
+        lda clkYearHi
+        jsr two
+        lda clkYearLo
+        jsr two
+        lda clkHour
+        jsr two
+        lda clkMin
+two:    pha
+        lsr
+        lsr
+        lsr
+        lsr
+        sta ckDig,x
+        inx
+        pla
+        and #$0f
+        sta ckDig,x
+        inx
+        rts
+}
+
+// clk_Edit - modale invoer op de CLOCK-regel.
+clk_Edit: {
+        jsr ck_Load
+        lda #0
+        sta ckPos
+        beq draw
+cancel: jmp clk_Row
+draw:   jsr ck_Show
+wait:   jsr evt_Poll
+        cmp #EVT_MOUSEDOWN
+        beq cancel
+        cmp #EVT_KEY
+        bne wait
+        lda evtA
+        cmp #$82                 // ESC
+        beq cancel
+        cmp #$80                 // RETURN
+        beq ok
+        cmp #$81                 // DEL
+        beq back
+        cmp #$30
+        bcc wait
+        cmp #$3a
+        bcs wait
+        and #$0f
+        ldx ckPos
+        sta ckDig,x
+        cpx #11
+        beq draw                 // laatste cijfer: blijven staan
+        inc ckPos
+        jmp draw
+back:   lda ckPos
+        beq wait
+        dec ckPos
+        jmp draw
+ok:     // BCD samenstellen en controleren
+        ldx #0
+        jsr pair
+        sta ckDay
+        jsr pair
+        sta ckMon
+        jsr pair
+        sta ckYH
+        jsr pair
+        sta ckYL
+        jsr pair
+        sta ckHr
+        jsr pair
+        sta ckMn
+        lda ckDay
+        beq bad
+        cmp #$32
+        bcs bad
+        lda ckMon
+        beq bad
+        cmp #$13
+        bcs bad
+        lda ckHr
+        cmp #$24
+        bcs bad
+        lda ckMn
+        cmp #$60
+        bcs bad
+        lda ckDay
+        sta clkDay
+        lda ckMon
+        sta clkMon
+        lda ckYH
+        sta clkYearHi
+        lda ckYL
+        sta clkYearLo
+        jsr clk_DaysInMonth      // 31-02 e.d. -> laatste dag van de maand
+        cmp clkDay
+        bcs dOk
+        sta clkDay
+dOk:    lda ckHr
+        ldx ckMn
+        jsr clk_SetTime
+        jsr drawStatus           // statusbalk meteen bijwerken
+        jmp clk_Row
+bad:    jsr sid_Click            // ongeldig: blijven typen
+        jmp wait
+pair:   lda ckDig,x              // 2 cijfers -> BCD
+        asl
+        asl
+        asl
+        asl
+        inx
+        ora ckDig,x
+        inx
+        rts
+}
+
 selRole: .byte 0
 setI:    .byte 0
 setRow:  .byte 0
+ckPos:   .byte 0
+ckDig:   .fill 12, 0
+ckLine:  .fill 17, 0
+ckDay:   .byte 0
+ckMon:   .byte 0
+ckYH:    .byte 0
+ckYL:    .byte 0
+ckHr:    .byte 0
+ckMn:    .byte 0
 
 roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel
 roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
@@ -501,6 +689,10 @@ pMatrix: .text "MATRIX "
 pPaper:  .text "PAPER  "
          .byte $ff
 sSound:  .text "SOUND:"
+         .byte $ff
+sClock:  .text "CLOCK:"
+         .byte $ff
+ckTpl:   .text "##-##-#### ##:##"
          .byte $ff
 sNo:     .text "NO "
          .byte $ff

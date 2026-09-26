@@ -9,7 +9,7 @@
 //========================================================
 
 .const EDW = 32                  // tekstbreedte (kolommen)
-.const EDH = 16                  // tekstregels  (rijen 3..18; kader rij 2..19)
+.const EDH = 20                  // tekstregels  (rijen 3..22)
 .label edPtr = $3a               // zeropage-pointer
 
 // ed_Init - buffer met spaties vullen, cursor naar 0,0.
@@ -20,7 +20,8 @@ ed_Init:
         ldx #0
 !lp:    lda #$20
         sta edBuf,x
-        sta edBuf + 256,x        // edBuf[0..511] = 512 cellen (32x16)
+        sta edBuf + 256,x
+        sta edBuf + EDW*EDH-256,x // edBuf[0..639] = 640 cellen (32x20)
         inx
         bne !lp-
         rts

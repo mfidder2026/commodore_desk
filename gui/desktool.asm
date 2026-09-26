@@ -967,7 +967,7 @@ da_hintEdit:
         lda #>sEditHint
         sta r0+1
         jmp da_hintDraw
-// da_hintDraw - hint (r0) in de statusregel van het venster (rij 18).
+// da_hintDraw - hint (r0) in de statusregel van het venster (rij 22).
 //               Er staat geen dialoog open: sluitknop-positie vergeten.
 da_hintDraw:
         lda #$ff
@@ -978,7 +978,7 @@ da_hintDraw:
         sta daPr+1
         lda #2
         sta a0
-        lda #18
+        lda #WIN_BODY_BOT
         sta a1
         lda #34
         sta a2
@@ -995,7 +995,7 @@ da_hintDraw:
         sta r0+1
         lda #3
         sta a0
-        lda #18
+        lda #WIN_BODY_BOT
         sta a1
         lda TH_accent
         sta a2

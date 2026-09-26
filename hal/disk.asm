@@ -41,7 +41,6 @@ dir_Read: {
         lda #0
         sta VIC_IRQ_EN           // raster-IRQ uit tijdens KERNAL-I/O
         sta $9d                  // KERNAL-meldingen uit
-        jsr io_FixBg
         jsr mem_KernalIn         // $36: KERNAL + I/O
 
         lda #1
@@ -196,20 +195,9 @@ cfg_io_begin:
         sta savedIrqEn
         lda #0
         sta VIC_IRQ_EN
-        jsr io_FixBg
         sta $9d                  // KERNAL-meldingen uit (geen scherm-editor nodig)
         jsr mem_KernalIn
         rts
-// io_FixBg - tijdens disk-I/O draait de raster-split niet: zet de
-//            achtergrond op de vensterkleur (anders kan hij op de
-//            dockkleur blijven hangen). Niet in Paint (splitOn = 0).
-io_FixBg:
-        lda splitOn
-        beq !+
-        lda TH_deskbg
-        sta BG_COL0
-!:      rts
-
 cfg_io_end:
         jsr mem_AllRam
         lda #$01

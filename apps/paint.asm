@@ -33,8 +33,6 @@
 // paint_Enter - schakel naar multicolor-bitmap en teken canvas+palet.
 //--------------------------------------------------------
 paint_Enter:
-        lda #0                   // raster-split uit: Paint beheert $D021 zelf
-        sta splitOn
         // 1) bitmap wissen ($6000-$7FFF = 32 pagina's) -> alles achtergrond
         lda #<BITMAP
         sta pnPtr
@@ -124,8 +122,6 @@ paint_Exit:
         sta BG_COL0
         lda TH_border
         sta BORDER_COL
-        lda #1                   // raster-split weer aan (Win95-layout)
-        sta splitOn
         rts
 
 //--------------------------------------------------------

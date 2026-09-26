@@ -87,7 +87,15 @@
 //      liggen net buiten het CFG-blok $0200-$0210) ----
 .label TH_desktop   = $0211   // grijze desktop rond het venster
 .label TH_title     = $0212   // titelbalk van vensters/dialogen
-.label TH_bartext   = $0213   // tekst op menubalk/dock (op TH_menubg)
+
+// ---- Venster-layout (Win95-stijl, vast) ----
+//   rij 0      menubalk          rij 1      titelbalk
+//   rij 2-22   vensterinhoud     rij 23     onderrand
+//   rij 24     statusbalk met datum en tijd
+.const WIN_BODY_TOP = 2
+.const WIN_BODY_BOT = 22
+.const WIN_FRAME_BOT = 23
+.const STATUS_ROW   = 24
 .const DEFAULT_SOUND    = 1
 .const PROFILE_C64      = 0
 .const PROFILE_MATRIX   = 1

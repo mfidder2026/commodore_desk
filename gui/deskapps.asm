@@ -33,7 +33,7 @@
 .const REC_PLEN = 15
 .const REC_PRG  = 16
 
-.const DA_VISROWS = 5
+.const DA_VISROWS = 7            // entry-rijen 3,6,..,21 (2 hoog)
 .const DA_VIS     = DA_VISROWS*2
 
 //--------------------------------------------------------
@@ -209,10 +209,10 @@ da_drawLabel:
         sta a2
         jmp gfx_DrawText
 
-// Scrollbalk van het bureaubladvenster: kolom 37, pijlen op rij 2 en 18.
+// Scrollbalk van het bureaubladvenster: kolom 37, pijlen op rij 2 en 22.
 .const DA_SCR_COL = 37
 .const DA_SCR_TOP = 2
-.const DA_SCR_BOT = 18
+.const DA_SCR_BOT = WIN_BODY_BOT
 
 // da_maxRow - A = hoogste eerste zichtbare rij (0 = alles past).
 da_maxRow:
@@ -259,7 +259,7 @@ da_Redraw:
         sta a1
         lda #35
         sta a2
-        lda #17
+        lda #WIN_BODY_BOT-1
         sta a3
         lda #$20
         sta a4

@@ -9,7 +9,7 @@
 // De disk-header (directory-regel 0) is geen bestand en wordt overgeslagen.
 //========================================================
 
-.const FM_VISIBLE = 17           // lijstrijen 2..18
+.const FM_VISIBLE = WIN_BODY_BOT-1 // lijstrijen 2..22
 .const FM_TOP     = 2
 .const FM_COL     = 2            // lijst kol 2..35
 .const FM_W       = 34
@@ -185,7 +185,7 @@ fm_Click:
         bcs !d+
         sta fmTop
 !d:     jmp fm_Draw
-!list:  lda evtB                 // lijst-item (rijen 2..18, kol 2..35)
+!list:  lda evtB                 // lijst-item (rijen 2..22, kol 2..35)
         cmp #FM_TOP
         bcc !r+
         cmp #FM_TOP+FM_VISIBLE
