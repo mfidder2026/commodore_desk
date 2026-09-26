@@ -50,9 +50,90 @@ ok:     sta netPlatform
 netPlatform: .byte NET_PLAT_NONE
 netError:    .byte NET_ERR_NO_DEVICE
 
-// Statische config (nog geen DHCP). Later configureerbaar.
-netIp:   .byte 192, 168, 1, 64
-netMask: .byte 255, 255, 255, 0
-netGw:   .byte 192, 168, 1, 1
-netDns:  .byte 1, 1, 1, 1
+// MAC is (nog) vast: locally administered. IP/MASK/GW/DNS staan in NETCFG.
 netMac:  .byte $02, $64, $64, $00, $00, $01
+
+// -----------------------------------------------------
+// nc_Load - NET.CFG van disk naar NETCFG ($C400), tenzij hij daar al
+//           staat. Ontbreekt het bestand: standaardwaarden.
+// -----------------------------------------------------
+nc_Load: {
+        lda NC_MARK
+        cmp #'N'
+        bne load
+        lda NC_MARK+1
+        cmp #'C'
+        beq done
+load:   jsr cfg_io_begin
+        lda #[nEnd-nm]
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #1                   // laadadres uit het bestand ($C400)
+        jsr K_SETLFS
+        lda #0
+        jsr K_LOAD
+        jsr cfg_io_end
+        lda NC_MARK
+        cmp #'N'
+        bne dflt
+        lda NC_MARK+1
+        cmp #'C'
+        beq done
+dflt:   ldx #0
+cp:     lda ncDefault,x
+        sta NETCFG,x
+        inx
+        cpx #[NETCFG_END-NETCFG]
+        bne cp
+done:   rts
+nm:     .encoding "petscii_upper"
+        .text "NET.CFG"
+nEnd:   .encoding "screencode_upper"
+}
+
+// nc_Save - NETCFG -> "@0:NET.CFG". Carry=1 bij fout.
+nc_Save: {
+        jsr cfg_io_begin
+        lda #[nEnd-nm]
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #0
+        ldx #8
+        ldy #0
+        jsr K_SETLFS
+        lda #<NETCFG
+        sta $fb
+        lda #>NETCFG
+        sta $fc
+        lda #$fb
+        ldx #<NETCFG_END
+        ldy #>NETCFG_END
+        jsr K_SAVE
+        php
+        jsr cfg_io_end
+        plp
+        rts
+nm:     .encoding "petscii_upper"
+        .text "@0:NET.CFG"
+nEnd:   .encoding "screencode_upper"
+}
+
+// Standaardconfig (nog geen DHCP).
+ncDefault:
+        .text "NC"
+        .byte 192, 168, 1, 64
+        .byte 255, 255, 255, 0
+        .byte 192, 168, 1, 1
+        .byte 1, 1, 1, 1
+        .text "192.168.1.15"
+        .fill 33-12, $ff
+        .text "11434"
+        .fill 6-5, $ff
+        .fill 41, $ff
+        .text "LLAMA3.2:1B"
+        .fill 33-11, $ff
+.assert "ncDefault = NETCFG-lengte", * - ncDefault, NETCFG_END - NETCFG

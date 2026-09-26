@@ -70,6 +70,9 @@ shell_Run:
 //   rij 23     onderrand van het venster
 //   rij 24     statusbalk met datum en tijd
 .const WIN_CLOSE_COL = 38
+// INET-uitklapmenu: globale itemnummers (zie miLo)
+.const MI_NETWORK   = 7
+.const MI_FIRST_OFF = 8              // vanaf hier: nog niet beschikbaar
 
 shell_DrawAll:
         lda TH_deskbg
@@ -384,7 +387,17 @@ launchCommon:
 // shell_NotFound - melding als een PRG niet geladen kon worden.
 //--------------------------------------------------------
 shell_NotFound:
-        lda #<nDesk              // Win95-melding: titel, tekst, OK-knop
+        lda #<sNotFound
+        sta r0
+        lda #>sNotFound
+        sta r0+1
+// msg_Show - Win95-melding: titel, tekst (r0), OK-knop.
+msg_Show:
+        lda r0
+        sta msgPtr
+        lda r0+1
+        sta msgPtr+1
+        lda #<nDesk
         sta r0
         lda #>nDesk
         sta r0+1
@@ -397,9 +410,9 @@ shell_NotFound:
         lda #7
         sta a3
         jsr dlg_Draw             // rijen 8-14
-        lda #<sNotFound
+        lda msgPtr
         sta r0
-        lda #>sNotFound
+        lda msgPtr+1
         sta r0+1
         lda #11
         sta a0
@@ -550,7 +563,10 @@ dlp:    lda menuI
         adc #2
         sta a1
         lda TH_text
-        sta a2
+        cpx #MI_FIRST_OFF        // nog niet beschikbaar -> grijs
+        bcc !+
+        lda #GREY
+!:      sta a2
         jsr gfx_DrawText
         inc menuI
         lda menuI
@@ -575,7 +591,8 @@ doClick:
         lda evtB
         bne item
         jsr mb_Zone              // menubalk: andere knop -> die openen
-        cpx menuId
+        lda mbMenu,x
+        cmp menuId
         beq close                // zelfde knop = dichtklappen
         jsr shell_DrawAll
         jmp menuBarClick
@@ -602,6 +619,9 @@ item:   ldx menuId
         beq doExit
         cmp #3
         beq doAbout
+        cmp #MI_NETWORK
+        beq doNet
+        bcs doSoon               // PING/CHAT/EMAIL: nog niet klaar
         pha                      // 4-6: launcher-beheer op het bureaublad
         lda activeApp
         cmp #$ff
@@ -613,6 +633,16 @@ item:   ldx menuId
         tax
         jmp tool_Run
 close:  jmp shell_DrawAll
+doNet:  lda #5                   // NETWORK = de INET-overlay
+        cmp activeApp
+        beq close
+        jmp openApp
+doSoon: jsr shell_DrawAll
+        lda #<sSoon
+        sta r0
+        lda #>sSoon
+        sta r0+1
+        jmp msg_Show
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
 doAbout:jmp about_Show
 doReset:
@@ -648,8 +678,9 @@ mb_Zone:
 // menuBarClick - klik op rij 0: uitklapmenu of app openen.
 menuBarClick:
         jsr mb_Zone
-        cpx #2
-        bcs !app+
+        lda mbMenu,x
+        bmi !app+
+        tax
         jmp menu_Open
 !app:   lda mbApp,x
         cmp activeApp
@@ -685,13 +716,16 @@ mbStrHi: .byte >mbCd, >oDesk, >lFiles, >lInet, >lSet
 mbCol:   .byte 1, 8, 18, 26, 33
 mbEnd:   .byte 7, 17, 25, 32
 mbApp:   .byte $fe, $ff, 0, 5, 4      // $fe = nooit "ingedrukt"
-// uitklapmenu's: 0 = CD64, 1 = DESKTOP
-mnX:     .byte 0, 7
-mnW:     .byte 10, 18
-mnN:     .byte 4, 3
-mnFirst: .byte 0, 4
+mbMenu:  .byte 0, 1, $ff, 2, $ff      // uitklapmenu per knop ($ff = app)
+// uitklapmenu's: 0 = CD64, 1 = DESKTOP, 2 = INET
+mnX:     .byte 0, 7, 24
+mnW:     .byte 10, 18, 11
+mnN:     .byte 4, 3, 4
+mnFirst: .byte 0, 4, 7
 miLo:    .byte <oHelp, <oReset, <oExit, <oAbout, <oAdd, <oEditP, <oDel
+         .byte <oNet, <oPing, <oChat, <oMail
 miHi:    .byte >oHelp, >oReset, >oExit, >oAbout, >oAdd, >oEditP, >oDel
+         .byte >oNet, >oPing, >oChat, >oMail
 
 //--------------------------------------------------------
 // about_Show - "over deze OS"-dialoog (Win95-stijl: titelbalk, sluitknop,
@@ -863,6 +897,7 @@ menuTxtCol:  .byte 0
 menuI:       .byte 0
 menuN:       .byte 0
 menuId:      .byte 0
+msgPtr:      .word 0
 // gedeelde scratch-vars (o.a. File Manager-lijst)
 lvI:         .byte 0
 lvItem:      .byte 0
@@ -891,7 +926,7 @@ nCalc:  .text "CALCULATOR"
         .byte $ff
 nSet:   .text "SETTINGS"
         .byte $ff
-nInet:  .text "INTERNET"
+nInet:  .text "NETWORK"
         .byte $ff
 
 dnEdit:    .text "EDITOR"
@@ -937,6 +972,16 @@ oAbout: .text "ABOUT"
 oReset: .text "RESET"
         .byte $ff
 oExit:  .text "EXIT"
+        .byte $ff
+oNet:   .text "NETWORK"
+        .byte $ff
+oPing:  .text "PING"
+        .byte $ff
+oChat:  .text "CHAT"
+        .byte $ff
+oMail:  .text "EMAIL"
+        .byte $ff
+sSoon:  .text "NOT AVAILABLE YET"
         .byte $ff
 aLine1: .text "COMMODORE DESK 64"
         .byte $ff

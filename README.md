@@ -44,8 +44,11 @@ draggable windows. Boots as a **D71 disk** and as an
   space to close it.
 - **Drop-down menus** — `CD64` (HELP · RESET · EXIT · ABOUT) and `DESKTOP`
   (ADD / EDIT / DELETE PROGRAM); click an item or click away to close.
-- **INET** — network driver test: detects an RR-Net (CS8900) or an Ultimate
-  (UCI) and shows the network configuration. See *Networking in VICE* below.
+- **INET** menu — **NETWORK**: detects an RR-Net (CS8900) or an Ultimate (UCI)
+  and holds *all* network settings in one place: IP, mask, gateway, DNS and the
+  **chat server** (OpenAI-compatible: host, port, API key, model), saved to
+  `NET.CFG`. PING, CHAT and EMAIL are listed but not available yet. See
+  *Networking in VICE* below.
 - **Widgets**: buttons, checkbox, scrollable list, modal dialog.
 - **SID click sound**.
 - Strictly the **16-color VIC-II palette**.
@@ -171,13 +174,10 @@ Example (replace the GUID with your own):
 x64sc -drive8type 1541 +georam +reu -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -ethernetioif "\Device\NPF_{12345678-90AB-CDEF-1234-567890ABCDEF}" -autostart build/CD64.d64
 ```
 
-**4. Test.** Click **INET** in the menu bar. Expected:
+**4. Test.** Click **INET → NETWORK** in the menu bar. Expected:
 ```text
-C64 NETWORK DRIVER TEST
 PLATFORM : RR-NET
-BASE     : $DE00
-CS8900   : FOUND
-ID       : $630E REV $09
+DEVICE   : CS8900 $DE00 REV $09
 STATUS   : READY
 ```
 `NOT FOUND` means the cartridge is off, in TFE mode, at another base address,

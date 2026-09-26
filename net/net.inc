@@ -49,6 +49,21 @@
 .const UCI_ALT     = $de1c
 .const UCI_ID      = $c9            // identificatie op base+1
 
+// Netwerkconfig (NET.CFG), vast op $C400 zodat NETWORK, PING en CHAT
+// (elk een eigen overlay) dezelfde instellingen zien. Tekstvelden zijn
+// schermcodes, $ff-afgesloten. Marker "NC" = geldig.
+.label NETCFG     = $c400
+.label NC_MARK    = NETCFG + 0     // 2 bytes
+.label NC_IP      = NETCFG + 2     // 4 bytes
+.label NC_MASK    = NETCFG + 6
+.label NC_GW      = NETCFG + 10
+.label NC_DNS     = NETCFG + 14
+.label NC_HOST    = NETCFG + 18    // chat-server: host/IP (max 32)
+.label NC_PORT    = NETCFG + 51    // poort als tekst (max 5)
+.label NC_KEY     = NETCFG + 57    // API-key (max 40)
+.label NC_MODEL   = NETCFG + 98    // model (max 32)
+.label NETCFG_END = NETCFG + 131
+
 // Geheugen (§9): netwerkbuffers in het RAM onder de KERNAL ($E000+),
 // bruikbaar zolang de OS met $35 draait. $C000-$C3FF is bezet door de
 // launcher-stubs en DESK.APPS-records.

@@ -105,7 +105,7 @@ hs1: .text "CLICK A ROLE, THEN A COLOR."
      .byte $ff
 hs2: .text "SAVE WRITES CD64.CFG."
      .byte $ff
-hi1: .text "NETWORK DRIVER TEST."
+hi1: .text "CLICK A VALUE TO CHANGE IT."
      .byte $ff
-hi2: .text "RESCAN SEARCHES AGAIN."
+hi2: .text "SAVE WRITES NET.CFG."
      .byte $ff
