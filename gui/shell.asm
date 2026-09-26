@@ -365,6 +365,8 @@ rpStub: jsr cfg_io_begin
 launchCommon:
         lda #0
         sta $d015                // cursor-sprite uit (geen garbage over het PRG)
+        lda #$15                 // ROM-tekenset (standaard): het PRG overschrijft
+        sta $d018                // vaak onze RAM-set op $3800 tijdens het laden
         // RESTORE-terugkeerhandler naar $C000 kopiëren en NMI-vector erop wijzen
         ldx #0
 !rc:    lda retStubSrc,x

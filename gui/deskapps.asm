@@ -23,6 +23,7 @@
 .const REC_STRIDE    = 28
 .const DESK_MAXUSER  = 12
 .const NUM_USERICONS = 20
+.const NUM_SEED      = 3         // standaard-programma's (COWBOY, SCRSAVER, C64 CITY)
 .label DA_count = $c100
 .label DA_recs  = $c101
 .const DA_end   = DA_recs + DESK_MAXUSER*REC_STRIDE
@@ -124,7 +125,18 @@ da_drawOne:
         jsr da_recPtr
         ldy #REC_ICON
         lda ($fb),y
+        cmp #NUM_USERICONS       // groot icoon (2x2)?
+        bcc !small+
+        sbc #NUM_USERICONS
         tax
+        lda bigIcon,x
+        sta deIcon
+        ldy #REC_COL
+        lda ($fb),y
+        sta deIcoC
+        jsr da_draw2x2
+        jmp !lbl+
+!small: tax
         lda userIconGlyphs,x
         sta a2
         ldy #REC_COL
@@ -135,7 +147,7 @@ da_drawOne:
         lda deRow
         sta a1
         jsr gfx_PutChar
-        lda $fb
+!lbl:   lda $fb
         clc
         adc #REC_DISP
         sta r0
@@ -465,7 +477,7 @@ da_Seed:
         lda #0
         sta daU
 !lp:    lda daU
-        cmp #2
+        cmp #NUM_SEED
         bcs !done+
         lda daU
         jsr da_recPtr
@@ -491,7 +503,7 @@ da_Seed:
         jsr da_setPrg
         inc daU
         jmp !lp-
-!done:  lda #2
+!done:  lda #NUM_SEED
         sta DA_count
         rts
 
@@ -559,20 +571,26 @@ daColor: .byte 0
 
 .encoding "screencode_upper"
 
-seedIcon: .byte 3, 7
-seedCol:  .byte YELLOW, PURPLE
-seedDispLo: .byte <sdCow, <sdScr
-seedDispHi: .byte >sdCow, >sdScr
-seedPrgLo:  .byte <spCow, <spScr
-seedPrgHi:  .byte >spCow, >spScr
+seedIcon: .byte 3, 7, NUM_USERICONS+0     // C64 CITY: groot skyline-icoon
+seedCol:  .byte YELLOW, PURPLE, ORANGE
+seedDispLo: .byte <sdCow, <sdScr, <sdCity
+seedDispHi: .byte >sdCow, >sdScr, >sdCity
+seedPrgLo:  .byte <spCow, <spScr, <spCity
+seedPrgHi:  .byte >spCow, >spScr, >spCity
+// grote (2x2) iconen voor gebruikersprogramma's: TL-glyph per nummer
+bigIcon:  .byte 123                       // 0 = CITY
 .encoding "screencode_upper"
 sdCow:  .text "COWBOY"
         .byte $ff
 sdScr:  .text "SCRSAVER"
         .byte $ff
+sdCity: .text "C64 CITY"
+        .byte $ff
 .encoding "petscii_upper"
 spCow:  .text "COWBOY"
         .byte $ff
 spScr:  .text "SCRSAVER"
+        .byte $ff
+spCity: .text "C64CITY"
         .byte $ff
 .encoding "screencode_upper"
