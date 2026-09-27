@@ -9,10 +9,10 @@
 // De ROM-charset wordt gebruikt (PETSCII-graphics, hoofd/kleine letters);
 // bij het verlaten zet tm_Leave de VIC terug en tekent de shell alles.
 //
-// Ontvangen bytes gaan direct naar het scherm (tcpRxVec = tm_Rx), in
-// PETSCII-modus met kleuren, RVS en cursorbesturing; in ASCII-modus
-// met CR/LF/BS/TAB en ANSI-reeksen die worden overgeslagen. Telnet-
-// onderhandeling volgt in Increment 3.
+// Ontvangen bytes gaan via de Telnet-parser (bbs_telnet.asm) naar het
+// scherm (tcpRxVec = tm_Rx): in PETSCII-modus met kleuren, RVS en
+// cursorbesturing; in ASCII-modus met CR/LF/BS/TAB en ANSI-reeksen die
+// worden overgeslagen.
 //
 // Toetsen: gewone toetsen gaan naar de BBS (lokale echo als BC_ECHO);
 // RUN/STOP opent het sessiemenu op de statusregel (wordt nooit verstuurd).
@@ -22,7 +22,7 @@
 .const TM_STAT   = 24
 .const TM_FG     = LIGHT_GREY    // standaard tekstkleur
 .const TM_STATFG = LIGHT_BLUE
-.const TM_TXMAX  = 16
+.const TM_TXMAX  = 64            // toetsen + Telnet-antwoorden
 .const PC_N      = 16            // PETSCII-kleurcodes
 .label tmScr = r3                // zeropage: scherm- en kleurpointer
 .label tmClr = r6
@@ -66,6 +66,9 @@ md:     sty tmAscii
         lda #0
         sta netAbort
         sta netNoKeys
+        jsr tn_Reset             // Telnet: alle opties uit
+        lda #0
+        sta tmTxLen
         jsr tm_Enter
         jsr tm_Intro             // "CONNECTING TO" / naam / host:poort
         lda netPlatform
@@ -162,8 +165,7 @@ ok:     lda #<tm_Rx
 bb_Term: {
         lda #1
         sta netNoKeys
-        lda #0
-        sta tmTxLen
+        lda #0                   // (tmTx kan al Telnet-antwoorden bevatten)
         sta tmMenu
         jsr tm_StatOnline
         jsr tm_CurOn
@@ -257,13 +259,20 @@ tm_Close:
 !:      jmp tcp_Close
 
 // tm_Flush - tmTx (tmTxLen bytes) versturen. Carry=1 gelukt.
+//            Eerst naar tmSend gekopieerd: tijdens het wachten op de ACK
+//            kunnen er nieuwe Telnet-antwoorden in tmTx komen.
 tm_Flush: {
-        lda #<tmTx
+        ldx #0
+cp:     lda tmTx,x
+        sta tmSend,x
+        inx
+        cpx tmTxLen
+        bne cp
+        stx tcpDataLen
+        lda #<tmSend
         sta tcpDataPtr
-        lda #>tmTx
+        lda #>tmSend
         sta tcpDataPtr+1
-        lda tmTxLen
-        sta tcpDataLen
         lda #0
         sta tcpDataLen+1
         sta tmTxLen
@@ -316,16 +325,25 @@ k5:     cmp #$20                 // spatie, cijfers, leestekens
         ldx tmAscii
         bne put                  // ASCII: hoofdletter
         ora #$80                 // PETSCII: SHIFT-letter $C1-$DA
-put:    ldx tmTxLen
-        cpx #TM_TXMAX
-        bcs no
-        sta tmTx,x
-        inc tmTxLen
-        ldx BC_ECHO              // lokale echo
+put:    jsr tm_TxPut
+        ldx BC_ECHO              // lokale echo (niet als de server echoot)
         beq no
-        jmp tm_Rx
+        ldx tnHim+TO_ECHO
+        bne no
+        jmp tm_Show              // (buiten de Telnet-parser om)
 no:     rts
 }
+
+// tm_TxPut - byte A achter in de zendrij (vol: weggooien). X/Y blijven.
+tm_TxPut:
+        stx tmXs
+        ldx tmTxLen
+        cpx #TM_TXMAX
+        bcs !+
+        sta tmTx,x
+        inc tmTxLen
+!:      ldx tmXs
+        rts
 
 //--------------------------------------------------------
 // Scherm: in- en uitgaan.
@@ -531,6 +549,11 @@ done:   rts
 // tm_Rx - één ontvangen byte (callback van TCP/UCI) naar het scherm.
 //--------------------------------------------------------
 tm_Rx:
+        jsr tn_Byte              // Telnet-commando's eruit
+        bcs tm_Show
+        rts
+// tm_Show - databyte A tonen (PETSCII of ASCII).
+tm_Show:
         pha
         jsr tm_CurOff
         pla
@@ -883,6 +906,8 @@ tmP:      .word 0
 tmSave:   .fill 3, 0
 tmTxLen:  .byte 0
 tmTx:     .fill TM_TXMAX, 0
+tmSend:   .fill TM_TXMAX, 0
+tmXs:     .byte 0
 
 .encoding "screencode_upper"
 sTmConnTo:  .text "CONNECTING TO"
