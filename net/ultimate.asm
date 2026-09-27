@@ -179,10 +179,12 @@ code:   lda #$ff                 // code = eerste twee cijfers
         clc
         adc ucCode
         sta ucCode
-done:   sec
+done:   jsr lg_Uci
+        sec
         rts
 fail:   lda #UC_ABORT
         sta UC_CTRL
+        jsr lg_UciFail
         clc
         rts
 }

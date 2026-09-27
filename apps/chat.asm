@@ -1113,6 +1113,7 @@ cr:     inc hCrlf
         bne out
         lda #2
         sta hState
+        jsr lg_Http
         lda hCode                // "200"?
         cmp #$32
         bne notOk

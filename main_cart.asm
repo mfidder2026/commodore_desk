@@ -58,7 +58,7 @@ osEnd:
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
 .segmentdef DeskTool [start=$8000]
-.segmentdef Inet   [start=$8000]
+.segmentdef Inet   [start=$8000, max=$bfff]
 .segment Files
 #import "apps/filemanager.asm"
 .segment Editor
@@ -73,6 +73,7 @@ osEnd:
 #import "gui/desktool.asm"
 .segment Inet
 #import "net/net.inc"
+#import "net/log.asm"
 #import "net/uci.asm"
 #import "net/cs8900.asm"
 #import "net/netdrv.asm"
@@ -84,6 +85,7 @@ osEnd:
 #import "apps/inet.asm"
 #import "apps/ping.asm"
 #import "apps/chat.asm"
+#import "net/logpoints.asm"
 
 //--------------------------------------------------------
 // 16 KB cartridge-image ($8000-$BFFF = ROML + ROMH bank 0).

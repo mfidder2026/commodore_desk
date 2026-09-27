@@ -40,7 +40,8 @@ arp:    lda frameLo              // lokale poort en vraag-id
         sta dnsLPort
         lda #3
         sta dnsTry
-again:  jsr dns_Query
+again:  jsr lg_DnsAsk
+        jsr dns_Query
         lda #0
         sta netFlag
         sta dnsDone
@@ -63,11 +64,13 @@ stop:   ldx #<sPgStop
         ldy #>sPgStop
         clc
         rts
-nf:     ldx #<sDnsNf
+nf:     jsr lg_DnsNf
+        ldx #<sDnsNf
         ldy #>sDnsNf
         clc
         rts
-ok:     sec
+ok:     jsr lg_DnsGot
+        sec
         rts
 }
 

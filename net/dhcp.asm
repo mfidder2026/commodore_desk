@@ -109,6 +109,7 @@ cp:     lda dhIp,x
 // -----------------------------------------------------
 dh_Send: {
         sta dhType
+        jsr lg_DhSend
         ldy #1                   // Ethernet-broadcast
         lda #>ETH_IP
         ldx #<ETH_IP
@@ -333,7 +334,8 @@ skip:   tya                      // y += lengte
         jmp op
 pad:    iny
         bne op
-done:   lda dhMsg
+done:   jsr lg_DhIn
+        lda dhMsg
         cmp #2
         bne nOf
         lda dhState              // OFFER

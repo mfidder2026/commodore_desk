@@ -111,6 +111,7 @@ sv:     lda arpIp,x
 
 // arp_Request - broadcast "wie heeft arpIp?".
 arp_Request: {
+        jsr lg_ArpAsk
         ldy #1                   // broadcast
         lda #>ETH_ARP
         ldx #<ETH_ARP
@@ -231,10 +232,12 @@ cm:     lda RX+22,x
         sta arpMac,x
         dex
         bpl cm
+        jsr lg_ArpGot
         lda #1
         sta netFlag
 out:    rts
-arpReq: ldx #5                   // ARP-antwoord: wij zijn het
+arpReq: jsr lg_ArpFrom
+        ldx #5                   // ARP-antwoord: wij zijn het
 rm:     lda RX+22,x
         sta TX,x                 // dst = vrager
         sta TX+32,x              // tha
@@ -316,10 +319,12 @@ rs:     lda RX+26,x
         bpl rs
         lda RX+22                // TTL bewaren voor de weergave
         sta pingTtl
+        jsr lg_PingIn
         lda #1
         sta netFlag
         rts
 echoReq:                         // iemand pingt ons: antwoord met dezelfde data
+        jsr lg_PingedBy
         lda RX+16                // lengte = IP-totlen + 14
         sta netTxLen+1
         lda RX+17
@@ -398,6 +403,7 @@ done:   rts
 // ping_Send - ICMP echo request (seq = pingSeq) naar ipDst via arpMac.
 // -----------------------------------------------------
 ping_Send: {
+        jsr lg_PingOut
         ldy #0
         lda #>ETH_IP
         ldx #<ETH_IP

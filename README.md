@@ -52,6 +52,9 @@ draggable windows. Boots as a **D71 disk** and as an
   and lets you pick one; **DHCP** gets IP/mask/gateway/DNS from the network
   (RR-Net). HOST may be an IP address or a name (DNS). On an **Ultimate** the
   Ultimate itself does TCP/IP and DNS (UCI network target).
+  **DEBUG LOG** (click to switch on) records ARP, PING, DNS, DHCP, TCP
+  (flags, SEQ, lengths), HTTP status and UCI commands; **VIEW** shows the
+  last 15 lines — handy when something does not connect.
   **PING** (desktop icon) — ARP + 4 ICMP echo requests with round-trip time; while it waits
   the C64 also answers pings. **CHAT** (desktop icon) — talk to an OpenAI-compatible AI server
   (e.g. Ollama on your Mac, which can also relay Ollama Cloud models) over plain

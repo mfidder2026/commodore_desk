@@ -74,6 +74,7 @@ ci:     lda tcpIsn,x
         lda tcpRst
         ora netAbort
         bne fail
+        jsr lg_TcpRetry
         dec tcpTry
         bne again
 fail:   lda #TS_CLOSED
@@ -189,6 +190,7 @@ cs:     lda tcpUna,x
         lda tcpState
         cmp #TS_EST
         bne fail
+        jsr lg_TcpRetry
         dec tcpTry
         bne again
 fail:   clc
@@ -254,6 +256,7 @@ inc32Rcv:
 // -----------------------------------------------------
 tcp_Out: {
         sta tcpFlOut
+        jsr lg_TcpOut
         ldy #0
         lda #>ETH_IP
         ldx #<ETH_IP
@@ -455,6 +458,7 @@ ip:     lda RX+26,x
         bne out
         dex
         bpl ip
+        jsr lg_TcpIn
         lda RX+47
         sta tcpFlIn
         and #TCP_RST
@@ -464,7 +468,7 @@ ip:     lda RX+26,x
         lda #1
         sta tcpRst
         sta netFlag
-        rts
+        jmp lg_TcpRst
 noRst:  lda tcpState
         cmp #TS_SYNSENT
         bne est

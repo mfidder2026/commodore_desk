@@ -14,6 +14,8 @@
 .const IN_VCOL = 15              // kolom van de waarden
 .const IN_VW   = 22              // zichtbare breedte van een waarde (kol 15-36)
 .const IN_BTN_ROW = 21
+.const IN_LOG_ROW = 18
+.const IN_VIEW_COL = IN_COL+19
 .const NUM_FLD = 8
 
 // veldtypes
@@ -130,6 +132,7 @@ mac:    ldx inI
         jsr lb_Chr
         jmp mac
 macEnd: jsr lb_Show
+        jsr in_LogLine           // DEBUG LOG : AAN/UIT + VIEW
         // kopje CHAT-server
         lda #<sChatHdr
         sta r0
@@ -251,7 +254,11 @@ dh:     lda #IN_COL+28           // DHCP
         jsr btn_HitTest
         bcc no
         jmp in_Dhcp
-fields: lda evtA
+fields: lda evtB
+        cmp #IN_LOG_ROW
+        bne fl0
+        jmp in_LogClick
+fl0:    lda evtA
         cmp #IN_COL
         bcc no
         ldx #0
@@ -264,6 +271,157 @@ nx:     inx
         bne fl
 no:     rts
 }
+
+//--------------------------------------------------------
+// Netwerklog: regel 18 "DEBUG LOG : ON/OFF" (klik = aan/uit, aanzetten
+// wist de log) en VIEW (log bekijken).
+//--------------------------------------------------------
+in_LogLine:
+        lda #IN_LOG_ROW
+        sta inRow
+        ldx #<lDbg
+        ldy #>lDbg
+        jsr lb_Label
+        ldx #<sOff
+        ldy #>sOff
+        lda netDebug
+        beq !+
+        ldx #<sOn
+        ldy #>sOn
+!:      jsr lb_Str
+        jsr lb_Show
+        lda #<sView
+        sta r0
+        lda #>sView
+        sta r0+1
+        lda #IN_VIEW_COL
+        sta a0
+        lda #IN_LOG_ROW
+        sta a1
+        lda #6
+        sta a2
+        lda TH_accent
+        sta a3
+        jmp btn_Draw
+
+in_LogClick:
+        lda #IN_VIEW_COL         // VIEW?
+        sta a0
+        lda #IN_LOG_ROW
+        sta a1
+        lda #6
+        sta a2
+        jsr btn_HitTest
+        bcc tog
+        jmp log_View
+tog:    lda evtA                 // op de tekst: aan/uit
+        cmp #IN_COL
+        bcc out
+        cmp #IN_VIEW_COL
+        bcs out
+        lda netDebug
+        eor #1
+        sta netDebug
+        beq ln
+        jsr log_Clear            // aanzetten: schone log
+ln:     lda #IN_COL              // regel opnieuw tekenen
+        sta a0
+        lda #IN_LOG_ROW
+        sta a1
+        lda #IN_VIEW_COL-IN_COL
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        jmp in_LogLine
+out:    rts
+
+// log_View - venster met de laatste LOG_LINES regels (oudste boven).
+log_View: {
+        lda #<sLogTitle
+        sta r0
+        lda #>sLogTitle
+        sta r0+1
+        lda #2
+        sta a0
+        lda #2
+        sta a1
+        lda #36
+        sta a2
+        lda #20
+        sta a3
+        jsr dlg_Draw
+        lda logCount
+        bne some
+        lda #<sLogEmpty
+        sta r0
+        lda #>sLogEmpty
+        sta r0+1
+        lda #4
+        sta a0
+        lda #4
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        jmp ok
+some:   lda logHead              // oudste regel = head - count (mod LOG_LINES)
+        sec
+        sbc logCount
+        bcs st
+        adc #LOG_LINES
+st:     sta lgvLine
+        lda #0
+        sta lgvI
+row:    ldx lgvLine               // regel -> lineBuf + $ff
+        lda logRowLo,x
+        sta logPtr
+        lda logRowHi,x
+        sta logPtr+1
+        ldy #LOG_W-1
+cp:     lda (logPtr),y
+        sta lineBuf,y
+        dey
+        bpl cp
+        lda #$ff
+        sta lineBuf+LOG_W
+        lda #<lineBuf
+        sta r0
+        lda #>lineBuf
+        sta r0+1
+        lda #3
+        sta a0
+        lda lgvI
+        clc
+        adc #4
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        inc lgvLine
+        lda lgvLine
+        cmp #LOG_LINES
+        bcc nx
+        lda #0
+        sta lgvLine
+nx:     inc lgvI
+        lda lgvI
+        cmp logCount
+        bne row
+ok:     lda #18
+        sta a0
+        lda #20
+        sta a1
+        jsr dlg_OkButton
+        jsr dlg_WaitClose
+        jmp shell_DrawAll
+}
+lgvLine: .byte 0
+lgvI:    .byte 0
 
 // in_Dhcp - DHCP op de RR-Net; bij succes de velden opnieuw tekenen.
 in_Dhcp: {
@@ -1057,6 +1215,18 @@ sInRescan: .text "RESCAN"
 sInModels: .text "MODELS"
            .byte $ff
 sInDhcp:   .text "DHCP"
+           .byte $ff
+lDbg:      .text "DEBUG LOG: "
+           .byte $ff
+sOn:       .text "ON"
+           .byte $ff
+sOff:      .text "OFF"
+           .byte $ff
+sView:     .text "VIEW"
+           .byte $ff
+sLogTitle: .text "NETWORK LOG"
+           .byte $ff
+sLogEmpty: .text "(EMPTY - TURN THE LOG ON FIRST)"
            .byte $ff
 sDhAsk:    .text "ASKING FOR AN ADDRESS (DHCP)..."
            .byte $ff
