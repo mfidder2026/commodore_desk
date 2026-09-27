@@ -64,8 +64,8 @@
 .label NC_MODEL   = NETCFG + 98    // model (max 32)
 .label NETCFG_END = NETCFG + 131
 // niet opgeslagen (buiten NETCFG_END), wel gedeeld tussen de schermen:
-.label NC_PINGIP  = NETCFG + $f0   // PING-doel (4 bytes)
-.label NC_PINGOK  = NETCFG + $f4   // 'P' = NC_PINGIP is gezet
+.label NC_PINGHOST = NETCFG + $b0  // PING-doel: IP of naam (tekst, max 32)
+.label NC_PINGOK  = NETCFG + $f4   // 'Q' = NC_PINGHOST is gezet
 
 // Geheugen (§9): netwerkbuffers in het RAM onder de KERNAL ($E000+),
 // bruikbaar zolang de OS met $35 draait. $C000-$C3FF is bezet door de

@@ -538,23 +538,7 @@ ci:     lda ipTmp,x
         bpl ci
         jmp port
 bhJ:    jmp badH
-name:   ldx feLen                // geen IP: een geldige hostnaam?
-        beq bhJ
-hc:     dex
-        lda feBuf,x
-        cmp #27                  // letters
-        bcc nok
-        cmp #$2d                 // - .
-        beq nok
-        cmp #$2e
-        beq nok
-        cmp #$30                 // cijfers
-        bcc bhJ
-        cmp #$3a
-        bcs bhJ
-nok:    cpx #0
-        bne hc
-        jsr dns_Resolve          // naam -> IP (X/Y = melding bij een fout)
+name:   jsr name_Resolve         // geen IP: naam via DNS (X/Y = melding)
         bcs dok
         rts
 dok:    ldx #3

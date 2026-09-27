@@ -4,7 +4,7 @@
 // Commodore Desk 64
 //
 // Zit in dezelfde overlay als NETWORK (inet.prg) en gebruikt diens
-// regelbuffer en veld-editor. TARGET staat op NC_PINGIP (niet opgeslagen,
+// regelbuffer en veld-editor. TARGET (IP of naam) staat op NC_PINGHOST (niet opgeslagen,
 // start op de gateway). START: ARP (MAC van doel of gateway), daarna 4
 // echo requests van 1 s. Tijdens het wachten beantwoordt de C64 zelf
 // ARP en ping, dus je kunt hem dan ook vanaf de PC pingen.
@@ -18,15 +18,23 @@
 
 ping_Init:
         jsr nc_Load
-        lda NC_PINGOK            // eerste keer: doel = gateway
-        cmp #'P'
+        lda NC_PINGOK            // eerste keer: doel = gateway (als tekst)
+        cmp #'Q'
         beq ok
-        ldx #3
-cp:     lda NC_GW,x
-        sta NC_PINGIP,x
-        dex
-        bpl cp
-        lda #'P'
+        lda #0
+        sta lbX
+        ldx #<NC_GW
+        ldy #>NC_GW
+        jsr lb_IpAt
+        ldx #0
+cp:     lda lineBuf,x
+        sta NC_PINGHOST,x
+        inx
+        cpx lbX
+        bne cp
+        lda #$ff
+        sta NC_PINGHOST,x
+        lda #'Q'                 // ('Q': TARGET is tekst sinds deze versie)
         sta NC_PINGOK
 ok:     jmp net_Detect
 
@@ -119,12 +127,39 @@ rr:     lda csReady
         jmp say
 inOk:   lda #1
         sta csReady
-init:   ldx #3
-td:     lda NC_PINGIP,x
+init:   ldx #0                   // doel: IP-adres of naam
+tt:     lda NC_PINGHOST,x
+        cmp #$ff
+        beq te
+        sta feBuf,x
+        inx
+        cpx #32
+        bne tt
+te:     stx feLen
+        jsr ip_Parse
+        bcc byName
+        ldx #3
+td:     lda ipTmp,x
         sta ipDst,x
         dex
         bpl td
-        jsr ip_NextHop
+        jmp gotIp
+byName: jsr name_Resolve         // naam: eerst DNS
+        bcs rsv
+        jmp say                  // (X/Y = melding)
+rsv:    ldx #<sPgIp              // "IP   a.b.c.d"
+        ldy #>sPgIp
+        jsr lb_Label
+        ldx #<dnsIp
+        ldy #>dnsIp
+        jsr lb_IpAt
+        jsr lb_Show
+        ldx #3
+tn:     lda dnsIp,x
+        sta ipDst,x
+        dex
+        bpl tn
+gotIp:  jsr ip_NextHop
         // "ARP a.b.c.d"
         ldx #<sPgArp
         ldy #>sPgArp
@@ -349,6 +384,8 @@ sPgNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
 sPgUlt:   .text "NO ICMP PING ON THE ULTIMATE"
           .byte $ff
 sPgChip:  .text "CS8900 INIT FAILED"
+          .byte $ff
+sPgIp:    .text "IP   "
           .byte $ff
 sPgArp:   .text "ARP  "
           .byte $ff

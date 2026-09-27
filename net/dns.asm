@@ -72,6 +72,42 @@ ok:     sec
 }
 
 // -----------------------------------------------------
+// name_Resolve - feBuf/feLen (schermcodes) is een hostnaam? Dan via DNS
+//                opzoeken. Uit: carry=1 -> dnsIp, carry=0 -> X/Y melding.
+// -----------------------------------------------------
+name_Resolve: {
+        ldx feLen
+        beq bad
+        lda #$ff
+        sta dnsName,x
+chk:    dex
+        lda feBuf,x
+        sta dnsName,x
+        beq bad                  // (@ hoort niet in een naam)
+        cmp #27                  // letters
+        bcc ok
+        cmp #$2d                 // - .
+        beq ok
+        cmp #$2e
+        beq ok
+        cmp #$30                 // cijfers
+        bcc bad
+        cmp #$3a
+        bcc ok
+        cmp #$41                 // hoofdletters (SHIFT)
+        bcc bad
+        cmp #$5b
+        bcs bad
+ok:     cpx #0
+        bne chk
+        jmp dns_Resolve
+bad:    ldx #<sChHost
+        ldy #>sChHost
+        clc
+        rts
+}
+
+// -----------------------------------------------------
 // dns_Query - UDP-vraag (A-record voor NC_HOST) naar ipDst:53.
 // -----------------------------------------------------
 dns_Query: {
@@ -96,7 +132,7 @@ hz:     lda dnsHdr,x
         iny
         lda #0
         sta dnsCnt
-nm:     lda NC_HOST,x
+nm:     lda dnsName,x
         cmp #$ff
         beq nEnd
         cmp #$2e                 // punt: labellengte invullen
@@ -296,6 +332,7 @@ ptrAddHi:                        // A = aantal pagina's erbij (na ptrAdd)
         sta ck2+1
         rts
 
+dnsName:   .fill 33, $ff         // de op te zoeken naam (schermcodes)
 dnsId:     .word 0
 dnsLPort:  .word 0               // big-endian
 dnsIp:     .fill 4, 0

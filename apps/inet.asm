@@ -983,11 +983,11 @@ decTab:   .byte 100, 10, 1
 // velden: rij, type, max. lengte, offset in NETCFG, label
 // (veld 8 = TARGET van PING, alleen in dat scherm)
 fRow:   .byte 7, 8, 9, 10, 14, 15, 16, 17, 3
-fType:  .byte FT_IP, FT_IP, FT_IP, FT_IP, FT_TEXT, FT_NUM, FT_KEY, FT_TEXT, FT_IP
-fMax:   .byte 15, 15, 15, 15, 32, 5, 40, 32, 15
+fType:  .byte FT_IP, FT_IP, FT_IP, FT_IP, FT_TEXT, FT_NUM, FT_KEY, FT_TEXT, FT_TEXT
+fMax:   .byte 15, 15, 15, 15, 32, 5, 40, 32, 32
 fOff:   .byte NC_IP-NETCFG, NC_MASK-NETCFG, NC_GW-NETCFG, NC_DNS-NETCFG
         .byte NC_HOST-NETCFG, NC_PORT-NETCFG, NC_KEY-NETCFG, NC_MODEL-NETCFG
-        .byte NC_PINGIP-NETCFG
+        .byte NC_PINGHOST-NETCFG
 fLblLo: .byte <lIp, <lMask, <lGw, <lDns, <lHost, <lPort, <lKey, <lModel, <lTarget
 fLblHi: .byte >lIp, >lMask, >lGw, >lDns, >lHost, >lPort, >lKey, >lModel, >lTarget
 
