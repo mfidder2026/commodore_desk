@@ -22,6 +22,7 @@ kernel_Init:
         jsr font_Init            // System-font naar RAM + UI-glyphs
         jsr osvars_Init          // runtime-defaults
         jsr drv_Init             // 1571: dubbelzijdig (kant 2 van de D71)
+        jsr help_Load            // F1-teksten naar $D000
         jsr cfg_Load             // CD64.CFG (indien aanwezig) overschrijft ze
         jsr profile_Derive       // Win95-structuurkleuren bij het profiel
         jsr da_Load              // DESK.APPS (gebruikersprogramma's) of defaults

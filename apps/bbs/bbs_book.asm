@@ -149,6 +149,8 @@ nEnd:   .encoding "screencode_upper"
 // bb_Book - adresboek: klik = nieuwe default; ADD / EDIT / DELETE.
 //--------------------------------------------------------
 bb_Book: {
+        lda #13                  // F1: hulp bij het adresboek
+        sta helpCtx
         lda #<sBbBook
         sta r0
         lda #>sBbBook
@@ -280,7 +282,9 @@ bh:     stx bbI
         ldy #>sBbSaveErr
 sv:     stx bbMsg
         sty bbMsg+1
-back:   jmp shell_DrawAll
+back:   lda #0
+        sta helpCtx
+        jmp shell_DrawAll
 btn:    lda bbI
         bne b1
         lda bbCount              // ADD
@@ -349,6 +353,8 @@ done:   dec bookBuf+3
 // bb_Form - ADD BBS (fmNew=1) of EDIT BBS (de default).
 //--------------------------------------------------------
 bb_Form: {
+        lda #14                  // F1: hulp bij het formulier
+        sta helpCtx
         lda fmNew
         beq ed
         lda #$ff                 // leeg; poort 23, PETSCII

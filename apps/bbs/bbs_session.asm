@@ -466,6 +466,7 @@ tm_Enter: {
         sta SPR_ENABLE
         lda #1                   // toetsenbord: ruwe modus
         sta kbRaw
+        sta helpOff              // F1 gaat naar de BBS
         lda #BLACK
         sta BORDER_COL
         sta BG_COL0
@@ -493,6 +494,7 @@ tm_Leave: {
         lda #0
         sta netNoKeys
         sta kbRaw
+        sta helpOff
         lda SPR_ENABLE
         ora #$01
         sta SPR_ENABLE

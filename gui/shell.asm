@@ -38,16 +38,7 @@ shell_Run:
         bne !notExit+
         jsr exitToDesktop
         jmp !loop-
-!notExit:
-        lda evtA
-        cmp #$83                 // F1 = context help (space closes it)
-        bne !nothelp+
-        lda activeApp            // geen F1-help in Paint (bitmap-modus)
-        cmp #2
-        beq !loop-
-        jsr help_Show
-        jmp !loop-
-!nothelp:
+!notExit:                        // (F1 = hulp: al in evt_Poll afgehandeld)
         jsr appKey               // editor/chat typen zelf (ook spatie)
         bcs !loop-
 !notEd: lda evtA                 // SPACE or RETURN elsewhere = click at cursor
@@ -125,6 +116,20 @@ drawStatus:
         lda TH_menubg
         sta a2
         jsr gfx_BarRow
+        lda helpOk               // "F1=HELP" links als er hulp is
+        beq !+
+        lda #<sF1Help
+        sta r0
+        lda #>sF1Help
+        sta r0+1
+        lda #1
+        sta a0
+        lda #STATUS_ROW
+        sta a1
+        lda TH_menubg
+        sta a2
+        jsr gfx_DrawTextRev
+!:
         jsr clk_Read
         jmp clk_Draw
 
@@ -660,7 +665,9 @@ exitToDesktop:
         cmp #2
         bne !np+
         jsr paint_Exit
-!np:    lda #$ff
+!np:    lda #0
+        sta helpCtx
+        lda #$ff
         sta activeApp
         jmp shell_DrawAll
 
@@ -987,6 +994,8 @@ onMouseDown:
 //--------------------------------------------------------
 openApp:
         sta activeApp
+        ldx #0                   // hulpcontext: die van de app
+        stx helpCtx
         tax                      // overlay van deze app
         lda appOvl,x
         cmp ovlLoaded            // staat hij al in $8000? (NETWORK <-> PING)
@@ -1169,6 +1178,8 @@ oMail:  .text "EMAIL"
 nMailS: .text "EMAIL SETTINGS"
         .byte $ff
 nSid:   .text "SID PLAYER"
+        .byte $ff
+sF1Help: .text "F1=HELP"
         .byte $ff
 mbSys:  .text "SYSTEM"
         .byte $ff

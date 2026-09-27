@@ -45,6 +45,9 @@ evt_Poll:
         bne !have+
         lda #EVT_NONE
         rts
+!f1:    jsr help_Show            // F1: hulp (bewaart en herstelt het scherm)
+        lda #EVT_NONE
+        rts
 !have:
         ldx evtHead
         lda evtColB,x
@@ -59,7 +62,19 @@ evt_Poll:
         and #[EVT_QSIZE-1]
         sta evtHead
         pla
-        rts
+        cmp #EVT_KEY             // F1 overal opvangen (behalve als dat
+        bne !r+                  // niet kan, zie help_Show)
+        ldx evtA
+        cpx #$83
+        bne !r+
+        ldx helpBusy
+        bne !r+
+        ldx helpOff
+        bne !r+
+        ldx activeApp
+        cpx #2                   // Paint: bitmapmodus
+        bne !f1-
+!r:     rts
 
 //--------------------------------------------------------
 evtHead:  .byte 0

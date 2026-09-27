@@ -67,9 +67,9 @@
 //             schone kopie in RAM onder I/O ($D000) voor latere
 //             fontwissels, overlay de UI-glyphs en richt de VIC op $3800.
 // Klobbert: A,X
-.label CS_SAVE = $d000              // schone System-charset (RAM onder I/O)
+// (De System-charset = de karakter-ROM: font_Base kopieert hem uit de ROM;
+//  het RAM onder de I/O op $D000 is voor de F1-teksten, zie gui/help.asm.)
 font_Init:
-        jsr font_SaveBase
         jsr font_OverlayUI
         // VIC: scherm $0400 (bits 4-7=1), charset $3800 (bits 1-3=7) -> $1E.
         lda #$1e
@@ -121,43 +121,21 @@ font_Apply:
         jmp font_OverlayUI
 
 //--------------------------------------------------------
-// font_Base     - schone System-charset (2 KB) terugzetten: $D000 -> $3800.
-// font_SaveBase - schone kopie maken bij het opstarten:   $3800 -> $D000.
-// $D000-$D7FF is RAM onder de I/O; tijdens het kopiëren staat $01 op
-// $34 (alles RAM) met interrupts uit.
+// font_Base - schone System-charset (2 KB) uit de karakter-ROM ($D000,
+//             met $01 = $33) naar $3800; interrupts uit tijdens het kopieren.
 //--------------------------------------------------------
 font_Base:
         php
         sei
         lda $01
         pha
-        lda #$34
+        lda #$33                 // karakter-ROM zichtbaar op $D000 (geen I/O)
         sta $01
         ldx #0
 !lp:
     .for (var p=0; p<8; p++) {
-        lda CS_SAVE + p*$100,x
+        lda $d000 + p*$100,x
         sta CHARSET_BASE + p*$100,x
-    }
-        inx
-        bne !lp-
-        pla
-        sta $01
-        plp
-        rts
-
-font_SaveBase:
-        php
-        sei
-        lda $01
-        pha
-        lda #$34
-        sta $01
-        ldx #0
-!lp:
-    .for (var p=0; p<8; p++) {
-        lda CHARSET_BASE + p*$100,x
-        sta CS_SAVE + p*$100,x
     }
         inx
         bne !lp-

@@ -93,7 +93,11 @@ Ultimate-II+**.
   `LOADING <name> please wait` while it loads. When the program ends (it
   returns to BASIC), or when you press RESTORE, you come back to the desktop.
 - **Status bar** (bottom): date and time from the C64's own clock (CIA TOD).
-- **F1** shows help for the program you are in.
+- **F1** shows help for what you are doing, everywhere: on the desktop, in
+  every program, and also inside menus and dialogs (the screen underneath
+  comes back when you close it). The status bar shows `F1=HELP`. The help
+  texts are in [`gui/help.txt`](gui/help.txt). In the BBS terminal F1 goes to
+  the BBS, as on a real C64 terminal.
 - **ESC** (RUN/STOP) closes the program and returns to the desktop.
 
 ---

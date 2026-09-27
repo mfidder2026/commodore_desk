@@ -1,135 +1,259 @@
 #importonce
 //========================================================
-// gui/help.asm - F1 contextgevoelig HELP-scherm
+// gui/help.asm - F1: contextgevoelige hulp, overal
 // Commodore Desk 64
 //
-// F1 opent een help-paneel met tekst die afhangt van de actieve app.
-// De spatiebalk sluit het weer (modale lus, IRQ blijft input pollen).
+// F1 wordt centraal in evt_Poll opgevangen (kernel/events.asm), dus in de
+// hoofdlus en in elke dialoog- of menulus. Het scherm eronder wordt bewaard
+// en daarna precies teruggezet: een open dialoog blijft gewoon staan.
+//
+// De teksten staan in HELPTEXT (gui/help.txt -> tools/make_help.py), die
+// bij het opstarten naar $D000 gaat (RAM onder de I/O, zie help_Load).
+// Context = helpCtx als een scherm die zet (bv. het BBS-adresboek), anders
+// activeApp + 1 (0 = bureaublad).
+// Geen hulp in Paint (bitmapmodus) en waar helpOff aan staat (BBS-terminal:
+// daar gaat F1 naar de BBS).
 //========================================================
 
+.label HELP_BASE = $d000         // HELPTEXT (max 4 KB, RAM onder de I/O)
+.label HELP_BUF  = $7000         // tekst van de context (werkkopie)
+.label HELP_SCR  = $7800         // bewaard scherm (1000) + kleuren (1000)
+.const HELP_MAXB = 600           // hoogstens zoveel bytes per context
+
+// help_Load - HELPTEXT laden (bij het opstarten): via $4000 naar $D000.
+help_Load: {
+        lda #0
+        sta helpOk
+        jsr cfg_io_begin
+        lda #[nEnd-nm]
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #0
+        jsr K_SETLFS
+        lda #0
+        ldx #<$4000
+        ldy #>$4000
+        jsr K_LOAD
+        php
+        jsr cfg_io_end
+        plp
+        bcs r
+        sei                      // 4 KB naar $D000 (I/O uit)
+        lda $01
+        pha
+        lda #$34
+        sta $01
+        ldx #0
+lp:
+    .for (var p=0; p<16; p++) {
+        lda $4000 + p*$100,x
+        sta HELP_BASE + p*$100,x
+    }
+        inx
+        bne lp
+        pla
+        sta $01
+        cli
+        inc helpOk
+r:      rts
+nm:     .encoding "petscii_upper"
+        .text "HELPTEXT"
+nEnd:   .encoding "screencode_upper"
+}
+
+// help_Show - hulp voor de huidige context (scherm wordt bewaard).
 help_Show: {
-        // Win95-dialoog met titelbalk + sluitknop (rijen 7-15)
-        lda #<hTitle
+        lda helpOk
+        bne ok
+        rts
+ok:     inc helpBusy
+        lda helpCtx              // context kiezen
+        bne c1
+        ldx activeApp
+        inx
+        txa
+c1:     sta hCtx
+        // tekst van de context naar HELP_BUF (I/O even uit)
+        sei
+        lda $01
+        pha
+        lda #$34
+        sta $01
+        lda hCtx
+        cmp HELP_BASE            // bestaat de context?
+        bcc c2
+        lda #0
+c2:     asl
+        tax
+        lda HELP_BASE+1,x
+        sta r4
+        lda HELP_BASE+2,x
+        sta r4+1
+        ora r4
+        bne c3
+        lda HELP_BASE+1          // geen tekst: die van het bureaublad
+        sta r4
+        lda HELP_BASE+2
+        sta r4+1
+c3:     lda r4                   // r4 = HELP_BASE + offset
+        clc
+        adc #<HELP_BASE
+        sta r4
+        lda r4+1
+        adc #>HELP_BASE
+        sta r4+1
+        lda #<HELP_BUF
+        sta r5
+        lda #>HELP_BUF
+        sta r5+1
+        ldy #0
+        ldx #>HELP_MAXB+1
+cp:     lda (r4),y
+        sta (r5),y
+        cmp #$ff
+        beq cd
+        iny
+        bne cp
+        inc r4+1
+        inc r5+1
+        dex
+        bne cp
+cd:     pla
+        sta $01
+        cli
+        jsr hs_Save              // scherm bewaren
+        // titel = eerste regel
+        lda #<HELP_BUF
+        sta hP
+        lda #>HELP_BUF
+        sta hP+1
+        jsr hLine                // -> hTxt, hP naar de volgende regel
+        lda #<hTxt
         sta r0
-        lda #>hTitle
+        lda #>hTxt
         sta r0+1
+        lda #2
+        sta a0
         lda #3
-        sta a0
-        lda #7
         sta a1
-        lda #34
+        lda #36
         sta a2
-        lda #9
+        lda #19
         sta a3
-        jsr dlg_Draw
-        // contextregels op basis van de actieve app (+1: 0=bureaublad)
-        ldx activeApp
-        inx
-        lda help1Lo,x
-        sta r0
-        lda help1Hi,x
-        sta r0+1
+        jsr dlg_Draw             // rijen 3-21
         lda #5
+        sta hRow
+ln:     lda hEnd                 // regels tot $ff
+        bne okb
+        jsr hLine
+        lda #<hTxt
+        sta r0
+        lda #>hTxt
+        sta r0+1
+        lda #4
         sta a0
-        lda #9
+        lda hRow
         sta a1
         lda TH_text
         sta a2
         jsr gfx_DrawText
-        ldx activeApp
-        inx
-        lda help2Lo,x
-        sta r0
-        lda help2Hi,x
-        sta r0+1
-        lda #5
+        inc hRow
+        lda hRow
+        cmp #19
+        bcc ln
+okb:    lda #18                  // OK-knop
         sta a0
-        lda #10
-        sta a1
-        lda TH_text
-        sta a2
-        jsr gfx_DrawText
-        lda #<hClose             // hoe sluiten
-        sta r0
-        lda #>hClose
-        sta r0+1
-        lda #5
-        sta a0
-        lda #11                  // (rij 13 = OK-knop)
-        sta a1
-        lda TH_title
-        sta a2
-        jsr gfx_DrawText
-        lda #18                  // OK-knop
-        sta a0
-        lda #13
+        lda #20
         sta a1
         jsr dlg_OkButton
         jsr dlg_WaitClose
-        jmp shell_DrawAll        // sluiten + scherm herstellen
+        jsr hs_Restore
+        dec helpBusy
+        rts
+// hLine - regel vanaf hP naar hTxt ($ff); hEnd = 1 als het de laatste was.
+hLine:  lda hP
+        sta r4
+        lda hP+1
+        sta r4+1
+        ldy #0
+        sty hEnd
+hl:     lda (r4),y
+        cmp #$fe
+        beq he
+        cmp #$ff
+        beq hx
+        sta hTxt,y
+        iny
+        cpy #34
+        bne hl
+he:     lda #$ff
+        sta hTxt,y
+        iny                      // hP achter de $FE
+        tya
+        clc
+        adc hP
+        sta hP
+        bcc hr
+        inc hP+1
+hr:     rts
+hx:     inc hEnd
+        jmp he
 }
 
+// hs_Save / hs_Restore - scherm + kleuren-RAM naar/van HELP_SCR.
+hs_Save:
+        ldx #0
+!:      lda SCREEN_RAM,x
+        sta HELP_SCR,x
+        lda SCREEN_RAM+$100,x
+        sta HELP_SCR+$100,x
+        lda SCREEN_RAM+$200,x
+        sta HELP_SCR+$200,x
+        lda SCREEN_RAM+$2e8,x
+        sta HELP_SCR+$2e8,x
+        lda COLOR_RAM,x
+        sta HELP_SCR+1000,x
+        lda COLOR_RAM+$100,x
+        sta HELP_SCR+1000+$100,x
+        lda COLOR_RAM+$200,x
+        sta HELP_SCR+1000+$200,x
+        lda COLOR_RAM+$2e8,x
+        sta HELP_SCR+1000+$2e8,x
+        inx
+        bne !-
+        rts
+hs_Restore:
+        ldx #0
+!:      lda HELP_SCR,x
+        sta SCREEN_RAM,x
+        lda HELP_SCR+$100,x
+        sta SCREEN_RAM+$100,x
+        lda HELP_SCR+$200,x
+        sta SCREEN_RAM+$200,x
+        lda HELP_SCR+$2e8,x
+        sta SCREEN_RAM+$2e8,x
+        lda HELP_SCR+1000,x
+        sta COLOR_RAM,x
+        lda HELP_SCR+1000+$100,x
+        sta COLOR_RAM+$100,x
+        lda HELP_SCR+1000+$200,x
+        sta COLOR_RAM+$200,x
+        lda HELP_SCR+1000+$2e8,x
+        sta COLOR_RAM+$2e8,x
+        inx
+        bne !-
+        rts
+
 //--------------------------------------------------------
-help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1, <hi1, <hg1, <ht1, <hb1, <hm1, <hn1, <hq1
-help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1, >hi1, >hg1, >ht1, >hb1, >hm1, >hn1, >hq1
-help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2, <hi2, <hg2, <ht2, <hb2, <hm2, <hn2, <hq2
-help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2, >hg2, >ht2, >hb2, >hm2, >hn2, >hq2
-
-.encoding "screencode_upper"
-hTitle: .text "HELP"
-        .byte $ff
-hClose: .text "ESC OR THE X BUTTON CLOSES"
-        .byte $ff
-
-hd1: .text "CLICK AN ICON TO START IT."
-     .byte $ff
-hd2: .text "MENU: ADD/EDIT/DELETE PRG."
-     .byte $ff
-hf1: .text "CLICK A FILE TO SELECT."
-     .byte $ff
-hf2: .text "SCROLL WITH THE RIGHT BAR."
-     .byte $ff
-he1: .text "TYPE TO EDIT TEXT."
-     .byte $ff
-he2: .text "ESC OR X CLOSES THE WINDOW."
-     .byte $ff
-hp1: .text "PICK A COLOR, CLICK CANVAS."
-     .byte $ff
-hp2: .text "ESC EXITS."
-     .byte $ff
-hc1: .text "CLICK KEYS TO CALCULATE."
-     .byte $ff
-hc2: .text "C CLEARS. ESC EXITS."
-     .byte $ff
-hs1: .text "CLICK A ROLE, THEN A COLOR."
-     .byte $ff
-hs2: .text "SAVE WRITES CD64.CFG."
-     .byte $ff
-hi1: .text "CLICK A VALUE TO CHANGE IT."
-     .byte $ff
-hi2: .text "SAVE WRITES NET.CFG."
-     .byte $ff
-hg1: .text "CLICK TARGET TO CHANGE IT."
-     .byte $ff
-hg2: .text "START SENDS 4 PINGS."
-     .byte $ff
-ht1: .text "TYPE A QUESTION, PRESS RETURN."
-     .byte $ff
-ht2: .text "SERVER: SEE INET - NETWORK."
-     .byte $ff
-hb1: .text "ADDRESS BOOK: PICK A BBS."
-     .byte $ff
-hb2: .text "IN A SESSION: F7 = MENU."
-     .byte $ff
-hm1: .text "F = FETCH MAIL, N = NEW MAIL."
-     .byte $ff
-hm2: .text "CLICK A MESSAGE TO READ IT."
-     .byte $ff
-hn1: .text "CLICK A FIELD TO CHANGE IT."
-     .byte $ff
-hn2: .text "SAVE WRITES MAIL.CFG."
-     .byte $ff
-hq1: .text "CLICK A TUNE TO PLAY IT."
-     .byte $ff
-hq2: .text "+/- = SONG, SPACE = STOP."
-     .byte $ff
+helpOk:   .byte 0                // HELPTEXT geladen
+helpBusy: .byte 0                // hulp staat open (geen tweede)
+helpOff:  .byte 0                // 1 = F1 niet opvangen (BBS-terminal)
+helpCtx:  .byte 0                // 0 = activeApp + 1, anders deze context
+hCtx:     .byte 0
+hRow:     .byte 0
+hEnd:     .byte 0
+hP:       .word 0
+hTxt:     .fill 35, $ff

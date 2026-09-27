@@ -25,6 +25,9 @@ echo [2/3] Assembleren (core + app-overlays + bootscherm)...
 if errorlevel 1 ( echo Build failed. & exit /b 1 )
 python tools\export_core_syms.py
 if errorlevel 1 ( echo Core-symbolen mislukt. & exit /b 1 )
+python tools\make_help.py
+if errorlevel 1 ( echo Helpteksten mislukt. & exit /b 1 )
+if errorlevel 1 ( echo Core-symbolen mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" bbs_main.asm -odir build
 if errorlevel 1 ( echo BBS build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" email_main.asm -odir build
@@ -52,6 +55,7 @@ if exist build\CD64.d71 del build\CD64.d71
 "%C1541%" -format "commodore desk,cd" d71 build\CD64.d71 ^
   -write build\boot.prg boot ^
   -write build\cd64.prg cd64 ^
+  -write build\helptext.prg helptext ^
   -write build\files.prg files ^
   -write build\editor.prg editor ^
   -write build\paint.prg paint ^
@@ -80,6 +84,7 @@ if exist build\CD64.d64 del build\CD64.d64
 "%C1541%" -format "commodore desk,cd" d64 build\CD64.d64 ^
   -write build\boot.prg boot ^
   -write build\cd64.prg cd64 ^
+  -write build\helptext.prg helptext ^
   -write build\files.prg files ^
   -write build\editor.prg editor ^
   -write build\paint.prg paint ^

@@ -33,6 +33,13 @@ em_Init:
         rts
 
 em_Draw: {
+        ldx emScreen             // F1-context: lezen 15, opstellen 16
+        lda emHelp,x
+        ldx activeApp
+        cpx #EM_APP_SET
+        bne !+
+        lda #0
+!:      sta helpCtx
         lda activeApp
         cmp #EM_APP_SET
         bne m
@@ -1272,6 +1279,7 @@ em_MsgChr:
 
 //--------------------------------------------------------
 emScreen: .byte SC_INBOX
+emHelp:   .byte 0, 15, 16        // hulpcontext per scherm (0 = die van de app)
 emMsg:    .word 0
 emNum:    .word 0
 emI:      .byte 0
