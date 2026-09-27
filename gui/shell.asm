@@ -638,7 +638,11 @@ num2dec:
 // appKey - toets naar de editor of CHAT. Carry=1 = afgehandeld.
 appKey:
         lda activeApp
-        cmp #1
+        bne !e+                  // FILE MANAGER: eigen toetsen
+        jsr fm_Key
+        sec
+        rts
+!e:     cmp #1
         bne !c+
         jsr ed_Key
         sec

@@ -26,10 +26,45 @@
 .label spPtr  = r3               // zeropage (alleen buiten het afspelen)
 .label spPtr2 = r6
 
-sp_Init:
+sp_Init: {
         lda #0
         sta spMsg+1
+        lda #8
+        sta spDev
+        lda fileReq              // tune uit de File Manager: meteen spelen
+        bne fm
         jmp sp_Dir
+fm:     lda #0
+        sta fileReq
+        lda fileDev
+        sta spDev
+        jsr sp_Dir               // (lijst van die drive)
+        ldx #0                   // het bestand in de lijst zoeken
+en:     cpx spCount
+        bcs nf
+        stx spSel
+        lda spNLen,x
+        cmp fileLen
+        bne nx
+        jsr sp_NamePtr
+        ldy #0
+cm:     cpy fileLen
+        beq hit
+        lda (spPtr),y
+        cmp fileName,y
+        bne nx0
+        iny
+        bne cm
+nx0:    ldx spSel
+nx:     inx
+        bne en
+nf:     rts
+hit:    jsr sp_Play              // speelt en komt terug in de lijst
+        bcs r
+        stx spMsg
+        sty spMsg+1
+r:      rts
+}
 
 //--------------------------------------------------------
 // sp_Dir - directory lezen, .SID-bestanden onthouden (ruwe PETSCII-naam
@@ -44,7 +79,7 @@ sp_Dir: {
         ldy #>dl
         jsr K_SETNAM
         lda #2
-        ldx #8
+        ldx spDev
         ldy #0
         jsr K_SETLFS
         jsr K_OPEN
@@ -294,7 +329,7 @@ sz:     jsr sp_NamePtr
         ldy spPtr+1
         jsr K_SETNAM
         lda #1
-        ldx #8
+        ldx spDev
         ldy #0                   // sa=0: naar $4000, waar het bestand ook heen wil
         jsr K_SETLFS
         lda #0
@@ -975,6 +1010,7 @@ spSong:   .byte 0
 spKeys:   .byte 0
 spCount:  .byte 0
 spSel:    .byte 0
+spDev:    .byte 8
 spI:      .byte 0
 spT:      .byte 0
 spQ:      .byte 0
