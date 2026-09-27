@@ -47,8 +47,10 @@ draggable windows. Boots as a **D71 disk** and as an
   item or click away to close.
 - **BBS client** (desktop icon, own overlay `BBS`) — address book with ten
   Commodore/retro BBSes, a default BBS saved in `BBS.CFG`, local-echo setting.
-  Connecting (Telnet + PETSCII terminal) follows in the next increments
-  (see `docs/Commodore_Desk_BBS_Client_Technisch_Bouwplan.md`).
+  **CONNECT** opens a full-screen PETSCII terminal (colours, reverse, cursor
+  control, upper/lower charset); **RUN/STOP** opens the session menu
+  (D = disconnect, Q = back to the desktop). Telnet option handling follows
+  in the next increment (see `docs/Commodore_Desk_BBS_Client_Technisch_Bouwplan.md`).
 - **Network** — **SYSTEM → NETWORK**: detects an RR-Net (CS8900) or an Ultimate (UCI)
   and holds *all* network settings in one place: IP, mask, gateway, DNS and the
   **chat server** (OpenAI-compatible: host, port, API key, model), saved to
