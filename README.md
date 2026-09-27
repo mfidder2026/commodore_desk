@@ -5,7 +5,8 @@ A graphical desktop for the **Commodore 64**, written in 6502/6510 assembly
 bar with date and time, and a desktop of programs you start with a click.
 There are built-in programs (editor, paint, calculator, file manager) and
 network programs: a **BBS terminal**, **e-mail**, an **AI chat** and **ping**,
-all running on the C64 itself over its own TCP/IP stack.
+all running on the C64 itself over its own TCP/IP stack. A **SID player**
+plays the music files on the disk.
 
 It runs from a **D71/D64 disk** or an **EasyFlash cartridge** (instant boot),
 in VICE or on real hardware with an **RR-Net** or an **Ultimate 64 / 1541
@@ -48,6 +49,8 @@ Ultimate-II+**.
 | File Manager | Text editor | Paint (multicolour bitmap) |
 | ![Calculator](docs/screenshots/calc.png) | ![Help](docs/screenshots/help.png) | ![About](docs/screenshots/about.png) |
 | Calculator | F1: context help | About |
+| ![SID Player](docs/screenshots/sidplayer.png) | ![Playing a tune](docs/screenshots/sidplayer_play.png) | ![Loading screen](docs/screenshots/loading.png) |
+| SID Player: the tunes on the disk | Playing a tune | Starting a game |
 
 | Network programs | | |
 |---|---|---|
@@ -55,8 +58,8 @@ Ultimate-II+**.
 | BBS client | BBS address book | Connected to The Oasis BBS |
 | ![E-mail](docs/screenshots/email_inbox.png) | ![Reading mail](docs/screenshots/email_read.png) | ![Reply](docs/screenshots/email_reply.png) |
 | E-mail: mailbox | Reading a message | Writing a reply |
-| ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | ![Loading screen](docs/screenshots/loading.png) |
-| AI chat | Ping | Starting a game |
+| ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | |
+| AI chat | Ping | |
 
 | Settings | | |
 |---|---|---|
@@ -83,7 +86,7 @@ Ultimate-II+**.
   - **SYSTEM**: SETTINGS, NETWORK and EMAIL. These are the only way to reach
     settings, the same everywhere.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
-  BBS, EMAIL) and your own programs, for example games. Click one to start it.
+  BBS, EMAIL, SID PLAYER) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
 - **Starting a program from disk** (a game such as *C64 City* or *Pokémon
   Red*) shows a calm screen in the theme colours with
@@ -102,6 +105,20 @@ Ultimate-II+**.
 - **Paint**: a full-screen **multicolour bitmap** (160×200) with all 16
   colours and an eraser. Hold the fire button or space to draw, ESC to leave.
 - **Calculator**: a 16-bit calculator (+ − × ÷).
+- **SID Player**: lists every `.SID` music file on the disk; click one to
+  play it.
+  - The player screen shows the title, composer and year from the SID file,
+    and which song is playing.
+  - **+** / **−** switch to the next or previous song of the tune.
+  - **SPACE** or **RUN/STOP** stops the music and returns to the list.
+  - Most tunes load at `$1000`, exactly where the desktop's core lives. The
+    player saves that memory, plays the tune with its own interrupt, and
+    puts everything back when you stop.
+  - Tunes in `$0800-$3FFF`, `$4000-$7FFF`, `$C000-$CFFF` or `$E000-$FFF9`
+    play. Tunes without a play address (RSID tunes that install their own
+    interrupt) are not supported.
+  - Put your `.sid` files in the `sid\` folder; `build_disk.bat` writes them
+    to the disks.
 
 ---
 
@@ -282,12 +299,20 @@ python tools/make_fremenfont.py
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
-DESKTOOL, INET, BBS, EMAIL) and the fonts, and writes everything to
+DESKTOOL, SIDPLAY, INET, BBS, EMAIL) and the fonts, and writes everything to
 `build\CD64.d71` and `build\CD64.d64`.
 
 Games and other programs you want on the desktop go into `build\` as well
-(for example `c64cdesk.prg` and `c64rdesk.prg`) and are written to the disks
-by `build_disk.bat`. Third-party programs are not part of this repository.
+(for example `c64cdesk.prg` and `c64rdesk.prg`), and SID music files go into
+`sid\`. `build_disk.bat` writes them to the disks. Third-party programs and
+music are not part of this repository.
+
+- **D71** (1571, double-sided): everything fits. At start-up CD64 switches
+  the 1571 to double-sided mode (`U0>M1`), because a 1571 on a C64 starts
+  as a 1541 and cannot read the second side.
+- **D64** (1541): the system and all programs always go on it. The extras
+  (games, SID files) are added by `tools/disk_add.py` only while they fit,
+  keeping 10 blocks free for your settings. What does not fit is reported.
 
 **Cartridge (EasyFlash .CRT):**
 ```bat
@@ -361,7 +386,7 @@ gui/      shell (menu bar, windows, status bar) · desktop launcher · widgets �
 gfx/      drawing primitives · fonts and icons · mouse pointer sprite
 kernel/   start-up · events · raster IRQ (50 Hz) · clock · memory
 hal/      VIC · input (mouse, joystick, keyboard) · disk (IEC) · sound (SID)
-apps/     files · editor · paint · calc · settings · network/ping/chat
+apps/     files · editor · paint · calc · settings · network/ping/chat · SID player
 apps/bbs/ BBS client: directory, session, terminal, Telnet
 apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
 net/      network stack: CS8900, Ultimate UCI, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
@@ -395,6 +420,7 @@ include/  palette · layout · memory map · ABI · hardware
 | `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
 | `tools/export_core_syms.py` | core addresses for the separately built overlays |
 | `tools/mailtest_server.py` | POP3/SMTP test server |
+| `tools/disk_add.py` | writes optional files to a disk image only when they fit |
 | `tools/make_fonts.py`, `tools/make_fremenfont.py` | font generators |
 | `tools/make_bootscreen.py` | boot screen bitmap |
 | `docs/` | development plans (Dutch) and screenshots |
