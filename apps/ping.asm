@@ -103,9 +103,13 @@ ping_Run: {
         lda netPlatform
         cmp #NET_PLAT_RRNET
         beq rr
-        ldx #<sPgNoHw            // (Ultimate: TCP/IP via UCI volgt later)
+        ldx #<sPgNoHw
         ldy #>sPgNoHw
-        jmp say
+        cmp #NET_PLAT_ULTIMATE   // de Ultimate kent geen ICMP-opdracht:
+        bne sayN                 // geen nep-ping (zie het bouwplan)
+        ldx #<sPgUlt
+        ldy #>sPgUlt
+sayN:   jmp say
 rr:     lda csReady
         bne init
         jsr cs_Init
@@ -341,6 +345,8 @@ sPgStart: .text "START"
 sPgHint:  .text "ESC STOPS"
           .byte $ff
 sPgNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
+          .byte $ff
+sPgUlt:   .text "NO ICMP PING ON THE ULTIMATE"
           .byte $ff
 sPgChip:  .text "CS8900 INIT FAILED"
           .byte $ff

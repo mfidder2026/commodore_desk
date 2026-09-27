@@ -91,7 +91,17 @@ devEnd: jsr lb_Show
         ldy errHi,x
         tax
         jsr lb_Str
-        jsr lb_Show
+        lda netPlatform          // Ultimate: zijn eigen IP-adres erbij
+        cmp #NET_PLAT_ULTIMATE
+        bne stS
+        jsr ut_GetIp
+        bcc stS
+        lda #$20
+        jsr lb_Chr
+        ldx #<utIp
+        ldy #>utIp
+        jsr lb_IpAt
+stS:    jsr lb_Show
 
         // alle instelvelden
         ldx #0

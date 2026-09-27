@@ -223,7 +223,10 @@ http_Do: {
         sta netAbort
         // hardware + server
         lda netPlatform
-        cmp #NET_PLAT_RRNET
+        cmp #NET_PLAT_ULTIMATE   // Ultimate: TCP via de firmware (UCI)
+        bne rr
+        jmp ut_HttpDo
+rr:     cmp #NET_PLAT_RRNET
         beq hw
         ldx #<sChNoHw
         ldy #>sChNoHw
@@ -246,22 +249,7 @@ hp:     jsr ip_NextHop
         ldx #<sPgNoArp
         ldy #>sPgNoArp
         jmp fail
-arp:    lda #<chat_RxByte
-        sta tcpRxVec
-        lda #>chat_RxByte
-        sta tcpRxVec+1
-        lda #0                   // parser-toestand
-        sta hState
-        sta hCrlf
-        sta hSp
-        sta hDig
-        sta pm
-        sta afterKey
-        sta inStr
-        sta esc
-        sta uni
-        sta u8need
-        sta gotText
+arp:    jsr http_Reset
         jsr tcp_Connect
         bcs con
         ldx #<sChConn
@@ -322,6 +310,102 @@ end:    lda hState               // geen HTTP-antwoord gezien?
         ldx #<sChNoAns
         ldy #>sChNoAns
 fail:   clc
+        rts
+ok:     sec
+        rts
+}
+
+// http_Reset - antwoord-parser en callback klaarzetten.
+http_Reset:
+        lda #<chat_RxByte
+        sta tcpRxVec
+        lda #>chat_RxByte
+        sta tcpRxVec+1
+        lda #0
+        sta hState
+        sta hCrlf
+        sta hSp
+        sta hDig
+        sta pm
+        sta afterKey
+        sta inStr
+        sta esc
+        sta uni
+        sta u8need
+        sta gotText
+        rts
+
+//--------------------------------------------------------
+// ut_HttpDo - http_Do op een Ultimate: de firmware doet TCP en DNS.
+//             Zelfde contract: carry=1 klaar, carry=0 -> X/Y melding.
+//--------------------------------------------------------
+ut_HttpDo: {
+        jsr port_Parse
+        bcs pp
+        rts                      // (X/Y = melding)
+pp:     jsr http_Reset
+        jsr ut_Connect
+        bcs con
+        ldx #<sChConn
+        ldy #>sChConn
+        clc
+        rts
+con:    lda #<REQ
+        sta tcpDataPtr
+        lda #>REQ
+        sta tcpDataPtr+1
+        lda rqLen
+        sta tcpDataLen
+        lda rqLen+1
+        sta tcpDataLen+1
+        jsr ut_Write
+        bcs sent
+        jsr ut_Close
+        ldx #<sChSend
+        ldy #>sChSend
+        clc
+        rts
+sent:   jsr idleReset
+rx:     jsr evt_Poll             // ESC = stoppen
+        cmp #EVT_KEY
+        bne rd
+        lda evtA
+        cmp #$82
+        bne rd
+        jsr ut_Close
+        ldx #<sPgStop
+        ldy #>sPgStop
+        clc
+        rts
+rd:     jsr ut_Read
+        cmp #1
+        beq end                  // de server heeft gesloten: klaar
+        cmp #0
+        bne idle
+        jsr idleReset            // data ontvangen
+        jmp rx
+idle:   cmp #$ff
+        beq err
+        lda frameLo              // niets: een beeld wachten (UCI niet
+w1:     cmp frameLo              // onnodig bestoken)
+        beq w1
+        jsr idleCheck
+        bcc rx
+        jsr ut_Close
+        ldx #<sChTime
+        ldy #>sChTime
+        clc
+        rts
+err:    ldx #<sChConn
+        ldy #>sChConn
+        clc
+        rts
+end:    lda hState               // HTTP-antwoord gezien?
+        cmp #2
+        beq ok
+        ldx #<sChNoAns
+        ldy #>sChNoAns
+        clc
         rts
 ok:     sec
         rts
@@ -478,7 +562,16 @@ cd:     lda dnsIp,x
         sta ipDst,x
         dex
         bpl cd
-port:
+port:   jmp port_Parse
+badH:   ldx #<sChHost
+        ldy #>sChHost
+        clc
+        rts
+}
+
+// port_Parse - NC_PORT (decimaal) -> tcpRPort (big-endian). Carry=1 ok,
+//              carry=0 -> X/Y = melding.
+port_Parse: {
         lda #0                   // poort: decimaal -> 16 bit
         sta tcpRPort
         sta tcpRPort+1
@@ -521,10 +614,6 @@ pd:     lda tcpRPort
         rts
 bad:    ldx #<sChPort            // poort ongeldig
         ldy #>sChPort
-        clc
-        rts
-badH:   ldx #<sChHost
-        ldy #>sChHost
         clc
         rts
 }

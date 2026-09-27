@@ -56,3 +56,42 @@ Zie het bouwplan.
 7. **CHAT**.
 
 Op een Ultimate doet de Ultimate zelf TCP (via UCI-sockets). Daar kan CHAT dus eerder werken dan op de RR-Net.
+
+## Ultimate (UCI) – stand
+
+Op een Ultimate 64 of een 1541 Ultimate-II+ doet de Ultimate zelf TCP/IP en DNS. Dat gaat via de network target (`$03`) van het Command Interface; de code staat in `net/ultimate.asm`.
+
+**Opdrachten:**
+
+| Code | Opdracht | Parameters | Antwoord |
+|---|---|---|---|
+| `$07` | open TCP | `<poort LSB,MSB> <host> 0` | handle |
+| `$10` | lezen | `<handle> <len LSB,MSB>` (max. 512) | `<aantal LE> <data>` |
+| `$11` | schrijven | `<handle> <data>` | |
+| `$09` | sluiten | `<handle>` | |
+| `$05` | IP-config | `<interface>` | ip, mask, gw |
+
+**Statuscodes:**
+
+| Code | Betekenis |
+|---|---|
+| `00` | goed / data |
+| `01` | de andere kant heeft gesloten (daarna de handle niet meer sluiten) |
+| `02` | nog geen data |
+
+**Wat er werkt:**
+
+- **CHAT en de modellenlijst** kiezen automatisch het Ultimate-pad.
+- **HOST** mag een naam zijn, want de Ultimate lost namen zelf op.
+- **NETWORK** toont het IP-adres van de Ultimate op de STATUS-regel. De velden IP/MASK/GATEWAY gelden alleen voor de RR-Net; de Ultimate gebruikt zijn eigen netwerkinstellingen (F2 → Network Settings).
+- **PING** zegt eerlijk dat er op de Ultimate geen ICMP is. Er wordt geen nep-ping getoond.
+
+**Grenzen:**
+
+- Lees hoogstens 512 bytes per keer. Reads van 769 tot 1023 bytes laten het netwerk vastlopen.
+- Een opdracht is hoogstens 895 bytes.
+- Het control-register mag nooit gelezen-gewijzigd-geschreven worden.
+
+Deze grenzen komen uit de op echte hardware gemeten ultimate-uci-sdk (github.com/barryw/ultimate-uci-sdk).
+
+**Niet getest in VICE:** VICE emuleert geen UCI. Dit moet op een echte Ultimate getest worden, met het Command Interface aan: F2 → C64 and Cartridge Settings → Command Interface → Enabled.
