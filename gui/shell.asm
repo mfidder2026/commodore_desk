@@ -230,8 +230,10 @@ drawContent:
         bne !e6+
         jmp BBS_DRAW
 !e6:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
-        bcc !f+
-        jmp EMAIL_DRAW
+        beq !em+
+        cmp #10
+        bne !f+
+!em:    jmp EMAIL_DRAW
 !f:     jmp drawStub
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
@@ -557,9 +559,11 @@ appKey:
         jsr chat_Key
         sec
         rts
-!m:     cmp #9                   // EMAIL: eigen sneltoetsen
-        bcc !n+
-        lda evtA
+!m:     cmp #9                   // EMAIL (9/10): eigen sneltoetsen
+        beq !em+                 // (precies vergelijken: het bureaublad
+        cmp #10                  //  is $ff en heeft geen overlay)
+        bne !n+
+!em:    lda evtA
         jmp EMAIL_KEY
 !n:     clc
         rts
@@ -889,9 +893,11 @@ onMouseDown:
 !w7:    cmp #8
         bne !w8+
         jmp BBS_CLICK
-!w8:    cmp #9
-        bcc !done+
-        jmp EMAIL_CLICK
+!w8:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
+        beq !em+
+        cmp #10
+        bne !done+
+!em:    jmp EMAIL_CLICK
 !done:  rts
 
 //--------------------------------------------------------
