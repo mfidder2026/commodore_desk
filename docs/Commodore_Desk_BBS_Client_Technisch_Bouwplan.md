@@ -310,27 +310,31 @@ Terminal: PETSCII
 Enabled: YES
 ```
 
-## 8. Reflections BBS
+## 8. Dead Zone BBS
 
 ```text
-Naam: Reflections BBS
-Host: reflections.hopto.org
+Naam: Dead Zone BBS
+Host: dzbbs.hopto.org
 Port: 64128
 Terminal: PETSCII
 Enabled: YES
 ```
 
-Gebruik niet meer `reflections.servebbs.com`.
+Vervangt Reflections BBS (directoryversie 2): `reflections.hopto.org` en
+`reflections.servebbs.com` bestaan niet meer in DNS (september 2026).
 
-## 9. Afterlife BBS
+## 9. C64 Ultimate Club
 
 ```text
-Naam: Afterlife BBS
-Host: afterlife.dynu.com
+Naam: C64 Ultimate Club
+Host: c64u.club
 Port: 6400
 Terminal: PETSCII
 Enabled: YES
 ```
+
+Vervangt Afterlife BBS (directoryversie 2): `afterlife.dynu.com` bestaat
+niet meer in DNS (september 2026).
 
 ## 10. Mutiny Community
 
@@ -402,8 +406,8 @@ Voorbeeld:
 |   CENTRONIAN BBS                     |
 |   PARTICLES! BBS                     |
 |   RAPIDFIRE                          |
-|   REFLECTIONS BBS                    |
-|   AFTERLIFE BBS                      |
+|   DEAD ZONE BBS                      |
+|   C64 ULTIMATE CLUB                  |
 |   MUTINY COMMUNITY                   |
 |   COMMODORE BBS OUTPOST              |
 |                                      |
@@ -1525,8 +1529,8 @@ ID  NAME                    HOST                           PORT   MODE       CON
 05  Centronian BBS          bbs.centronian.ca              6400   PETSCII    YES
 06  Particles! BBS          particlesbbs.dyndns.org        6400   PETSCII    YES
 07  RapidFire               rapidfire.hopto.org            64128  PETSCII    YES
-08  Reflections BBS         reflections.hopto.org          64128  PETSCII    YES
-09  Afterlife BBS           afterlife.dynu.com             6400   PETSCII    YES
+08  Dead Zone BBS           dzbbs.hopto.org                64128  PETSCII    YES
+09  C64 Ultimate Club       c64u.club                      6400   PETSCII    YES
 10  Mutiny Community        mutinybbs.com                  2300   AUTO       YES
 ```
 

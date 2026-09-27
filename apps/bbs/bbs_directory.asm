@@ -8,7 +8,7 @@
 // Een DIRECTORY-entry is alleen informatie: CONNECT staat uit.
 //========================================================
 
-.const BBS_DIRECTORY_VERSION = 1
+.const BBS_DIRECTORY_VERSION = 2   // v2: Reflections/Afterlife (weg) -> Dead Zone/C64U Club
 .const BBS_COUNT = 10
 
 .const BM_DIRECTORY = 0
@@ -51,9 +51,9 @@ bn06: .text "PARTICLES! BBS"
       .byte $ff
 bn07: .text "RAPIDFIRE"
       .byte $ff
-bn08: .text "REFLECTIONS BBS"
+bn08: .text "DEAD ZONE BBS"
       .byte $ff
-bn09: .text "AFTERLIFE BBS"
+bn09: .text "C64 ULTIMATE CLUB"
       .byte $ff
 bn10: .text "MUTINY COMMUNITY"
       .byte $ff
@@ -71,9 +71,9 @@ bh06: .text "PARTICLESBBS.DYNDNS.ORG"
       .byte $ff
 bh07: .text "RAPIDFIRE.HOPTO.ORG"
       .byte $ff
-bh08: .text "REFLECTIONS.HOPTO.ORG"
+bh08: .text "DZBBS.HOPTO.ORG"
       .byte $ff
-bh09: .text "AFTERLIFE.DYNU.COM"
+bh09: .text "C64U.CLUB"
       .byte $ff
 bh10: .text "MUTINYBBS.COM"
       .byte $ff
