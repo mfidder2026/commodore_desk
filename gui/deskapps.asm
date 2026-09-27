@@ -145,6 +145,7 @@ da_drawOne:
         sta a2
         ldy #REC_COL
         lda ($fb),y
+        jsr da_icoCol
         sta a3
         lda deCol
         sta a0
@@ -160,58 +161,46 @@ da_drawOne:
         sta r0+1
         jmp da_drawLabel
 
-// da_draw2x2 - 2x2-icoon deIcon/deIcoC op (deCol,deRow).
+// da_icoCol - icoonkleur A; gelijk aan de vensterachtergrond -> tekstkleur.
+da_icoCol:
+        cmp TH_deskbg
+        bne !+
+        lda TH_text
+!:      rts
+
+// da_draw2x2 - groot icoon deIcon/deIcoC: 2 breed, 3 hoog (rijen deRow-1
+//              .. deRow+1, zie icon_Build): het label op deRow staat zo
+//              naast het midden van het icoon.
 da_draw2x2:
-        lda deCol
+        lda deIcoC               // zelfde kleur als de achtergrond (bv. een
+        jsr da_icoCol            // lichtgrijs icoon op FREMEN): tekstkleur
+        sta deIcoC
+        ldx #0
+!lp:    stx daIc
+        txa
+        and #1
+        clc
+        adc deCol
         sta a0
-        lda deRow
+        txa
+        lsr
+        clc
+        adc deRow
+        sec
+        sbc #1
         sta a1
-        lda deIcon
+        txa
+        clc
+        adc deIcon
         sta a2
         lda deIcoC
         sta a3
         jsr gfx_PutChar
-        lda deCol
-        clc
-        adc #1
-        sta a0
-        lda deRow
-        sta a1
-        lda deIcon
-        clc
-        adc #1
-        sta a2
-        lda deIcoC
-        sta a3
-        jsr gfx_PutChar
-        lda deCol
-        sta a0
-        lda deRow
-        clc
-        adc #1
-        sta a1
-        lda deIcon
-        clc
-        adc #2
-        sta a2
-        lda deIcoC
-        sta a3
-        jsr gfx_PutChar
-        lda deCol
-        clc
-        adc #1
-        sta a0
-        lda deRow
-        clc
-        adc #1
-        sta a1
-        lda deIcon
-        clc
-        adc #3
-        sta a2
-        lda deIcoC
-        sta a3
-        jmp gfx_PutChar
+        ldx daIc
+        inx
+        cpx #6
+        bne !lp-
+        rts
 
 // da_drawLabel - label (r0) op (deCol+3, deRow) in TH_text.
 da_drawLabel:
@@ -356,9 +345,9 @@ da_hitEntry:
         jmp !cp+
 !lc:    lda #0
 !cp:    sta deCol
-        lda evtB
+        lda evtB                 // entry k: rijen 3k+2..3k+4
         sec
-        sbc #3
+        sbc #2
         bcc !no+
         sta deRow
         ldx #0
@@ -370,10 +359,7 @@ da_hitEntry:
         sta deRow
         inx
         jmp !dl-
-!rem:   lda deRow
-        cmp #2
-        beq !no+
-        txa
+!rem:   txa
         asl
         clc
         adc deCol
@@ -409,14 +395,14 @@ da_Launch:
         inx
         cpx $03bf
         bne !cp-
-        lda $fb                  // "LOADING <naam> / PLEASE WAIT": laden
-        clc                      // duurt op een echte drive lang
-        adc #REC_DISP
+        lda $fb                  // "LOADING <naam> please wait" op een
+        clc                      // leeg scherm in de ROM-letters: het
+        adc #REC_DISP            // PRG overschrijft onze charset ($3800)
         sta r0
         lda $fc
         adc #0
         sta r0+1
-        jsr showLoadName
+        jsr launch_Screen
         jmp launchCommon
 !bad:   jmp shell_NotFound
 
@@ -572,6 +558,7 @@ daOff:   .byte 0
 daLen:   .byte 0
 daIcon:  .byte 0
 daColor: .byte 0
+daIc:    .byte 0
 
 .encoding "screencode_upper"
 
@@ -582,7 +569,7 @@ seedDispHi: .byte >sdCow, >sdScr, >sdCity, >sdPoke
 seedPrgLo:  .byte <spCow, <spScr, <spCity, <spPoke
 seedPrgHi:  .byte >spCow, >spScr, >spCity, >spPoke
 // grote (2x2) iconen voor gebruikersprogramma's: TL-glyph per nummer
-bigIcon:  .byte 123, POKE_GLYPH           // 0 = CITY, 1 = Pokéball
+bigIcon:  .byte ICO_CITY, POKE_GLYPH     // 0 = CITY, 1 = Pokéball (2x3)
 .encoding "screencode_upper"
 sdCow:  .text "COWBOY"
         .byte $ff

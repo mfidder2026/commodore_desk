@@ -80,7 +80,7 @@
 .const DEFAULT_MENUFILL = MENU_FILLED
 
 // ---- Kleurprofiel (basis-thema, instelbaar via Settings) ----
-.label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=Paper
+.label CFG_profile  = $020f   // 0=C64, 1=Matrix, 2=Paper, 3=Fremen
 .label CFG_sound    = $0210   // 0=uit, 1=aan (klik-piepje)
 
 // ---- Win95-structuurkleuren (afgeleid van het profiel, NIET opgeslagen;
@@ -100,7 +100,7 @@
 .const PROFILE_C64      = 0
 .const PROFILE_MATRIX   = 1
 .const PROFILE_PAPER    = 2
-.const NUM_PROFILES     = 3
+.const NUM_PROFILES     = 4
 .const DEFAULT_PROFILE  = PROFILE_C64
 
 // Vast UI-glyphblok binnen elke charset (identiek in alle fonts).

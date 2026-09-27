@@ -375,6 +375,87 @@ rpStub: jsr cfg_io_begin
 .const rpStubLen = * - rpStubSrc
 
 //--------------------------------------------------------
+// launch_Screen - leeg scherm in de achtergrondkleur van het thema met in
+//   het midden "LOADING <naam> please wait" (naam in r0) in de gewone
+//   Commodore-letters (ROM-set, hoofd/kleine letters). Het PRG dat daarna
+//   laadt, overschrijft onze charset op $3800: zo blijft het scherm rustig.
+//--------------------------------------------------------
+launch_Screen: {
+        lda #0
+        sta $d015                // muispijl uit
+        ldx #0
+cl:     lda #$20
+        sta SCREEN_RAM,x
+        sta SCREEN_RAM+$100,x
+        sta SCREEN_RAM+$200,x
+        sta SCREEN_RAM+$2e8,x
+        lda TH_text
+        sta COLOR_RAM,x
+        sta COLOR_RAM+$100,x
+        sta COLOR_RAM+$200,x
+        sta COLOR_RAM+$2e8,x
+        inx
+        bne cl
+        lda TH_border
+        sta BORDER_COL
+        lda TH_deskbg
+        sta BG_COL0
+        lda #$17                 // ROM-tekenset met kleine letters
+        sta VIC_MEM
+        ldx #0                   // regel opbouwen: LOADING + naam + please wait
+        ldy #0
+l1:     lda lsLoad,y
+        beq nm
+        sta lsBuf,x
+        inx
+        iny
+        bne l1
+nm:     ldy #0
+n1:     lda (r0),y
+        cmp #$ff
+        beq pw
+        cmp #$01                 // letters -> hoofdletters in de kleine-letterset
+        bcc n2
+        cmp #$1b
+        bcs n2
+        ora #$40
+n2:     sta lsBuf,x
+        inx
+        iny
+        cpy #12
+        bne n1
+pw:     ldy #0
+p1:     lda lsWait,y
+        beq ce
+        sta lsBuf,x
+        inx
+        iny
+        bne p1
+ce:     stx lsLen                // gecentreerd op rij 12
+        lda #40
+        sec
+        sbc lsLen
+        lsr
+        tay
+        ldx #0
+wr:     lda lsBuf,x
+        sta SCREEN_RAM+12*40,y
+        iny
+        inx
+        cpx lsLen
+        bne wr
+        rts
+.encoding "screencode_mixed"
+lsLoad: .text "LOADING "
+        .byte 0
+lsWait: .text " please wait"
+        .byte 0
+.encoding "screencode_upper"
+}
+lsLen:  .byte 0
+lsBuf:  .fill 40, 0
+
+//--------------------------------------------------------
 // launchCommon - start het PRG waarvan de naam al op $03C0 (petscii) en
 //                de lengte op $03BF staat. Installeert de RESTORE-
 //                terugkeerhandler ($C000) + SYS-parser ($C040), kopieert
@@ -384,8 +465,8 @@ rpStub: jsr cfg_io_begin
 launchCommon:
         lda #0
         sta $d015                // cursor-sprite uit (geen garbage over het PRG)
-        lda #$15                 // ROM-tekenset (standaard): het PRG overschrijft
-        sta $d018                // vaak onze RAM-set op $3800 tijdens het laden
+        lda #$17                 // ROM-tekenset (hoofd/kleine letters): het PRG
+        sta $d018                // overschrijft vaak onze RAM-set op $3800
         // RESTORE-terugkeerhandler naar $C000 kopiëren en NMI-vector erop wijzen
         ldx #0
 !rc:    lda retStubSrc,x
@@ -975,7 +1056,7 @@ deIcoC:      .byte 0
 biCount:    .byte 7
 biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail
 biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail
-biIcon:     .byte 111, 115, 119, 107, 102, 80, MAIL_GLYPH   // 2x2 TL-glyph
+biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH  // 2x3
 biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE
 biApp:      .byte 1, 2, 3, 6, 7, 8, 9  // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)

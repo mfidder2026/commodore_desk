@@ -44,8 +44,21 @@
 .const W_BR = 95         // hoek rechtsonder
 // Pokéball (groot 2x2-icoon, POKEMON RED): in de reverse-helft, op de
 // codes van de omgekeerde iconen 120-123 (die worden nooit reverse getoond).
-.const POKE_GLYPH = 248
-.const MAIL_GLYPH = 244          // envelop (EMAIL), codes 244-247
+// Bureaublad-iconen (16x16) worden 2 breed x 3 hoog getekend, 4 pixels
+// omlaag geschoven: zo staat het label (1 rij) precies naast het midden.
+// icon_Build maakt die 6 glyphs per icoon uit de 2x2-tekeningen, in de
+// reverse-helft (codes 192-245: de omgekeerde UI-glyphs zijn nooit nodig).
+.const ICON3_BASE = 192
+.const ICON3_N    = 9
+.const ICO_EDIT   = ICON3_BASE + 0*6
+.const ICO_PAINT  = ICON3_BASE + 1*6
+.const ICO_CALC   = ICON3_BASE + 2*6
+.const ICO_PING   = ICON3_BASE + 3*6
+.const ICO_CHAT   = ICON3_BASE + 4*6
+.const ICO_BBS    = ICON3_BASE + 5*6
+.const MAIL_GLYPH = ICON3_BASE + 6*6   // envelop (EMAIL)
+.const ICO_CITY   = ICON3_BASE + 7*6
+.const POKE_GLYPH = ICON3_BASE + 8*6   // Pokéball
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
@@ -157,6 +170,19 @@ font_SaveBase:
 //                  code 96 e.v. (identiek in alle fonts).
 //--------------------------------------------------------
 font_OverlayUI:
+        // Reverse-helft (codes 128-255) = de omgekeerde normale helft, voor
+        // elk font opnieuw: menubalk, titels en statusbalk (reverse tekst)
+        // volgen zo altijd het gekozen font (Tiny/Lower hadden daar nog
+        // de System-letters).
+        ldx #0
+!rv:
+    .for (var p=0; p<4; p++) {
+        lda CHARSET_BASE + p*$100,x
+        eor #$ff
+        sta CHARSET_BASE + $400 + p*$100,x
+    }
+        inx
+        bne !rv-
         ldx #0
 !lp:    lda frameGlyphs,x
         sta CHARSET_BASE + [96*8],x
@@ -169,13 +195,65 @@ font_OverlayUI:
         sta CHARSET_BASE + [64*8],x
         inx
         bne !ic-
-        ldx #63                  // envelop + Pokéball: codes 244-251
-!pk:    lda mailGlyphs,x
-        sta CHARSET_BASE + [MAIL_GLYPH*8],x
-        dex
-        bpl !pk-
-        rts
+        jmp icon_Build
 .assert "userIcons moet 256 bytes zijn", OVL_GLYPHS*8, 256
+
+//--------------------------------------------------------
+// icon_Build - bureaublad-iconen 2x2 -> 2x3 (4 pixels omlaag), zie
+//              ICON3_BASE. Bron: TL, TR, BL, BR (32 bytes) per icoon.
+//--------------------------------------------------------
+icon_Build: {
+        lda #<[CHARSET_BASE + ICON3_BASE*8]
+        sta r5
+        lda #>[CHARSET_BASE + ICON3_BASE*8]
+        sta r5+1
+        ldx #0
+ic:     stx ibI
+        lda ibSrcLo,x
+        sta r4
+        lda ibSrcHi,x
+        sta r4+1
+        ldx #0
+by:     ldy ibMap,x              // bronbyte (of $ff = leeg)
+        lda #0
+        cpy #$ff
+        beq st
+        lda (r4),y
+st:     pha
+        txa
+        tay
+        pla
+        sta (r5),y
+        inx
+        cpx #48
+        bne by
+        lda r5                   // volgende 6 glyphs
+        clc
+        adc #48
+        sta r5
+        bcc nc
+        inc r5+1
+nc:     ldx ibI
+        inx
+        cpx #ICON3_N
+        bne ic
+        rts
+// 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
+ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
+        .byte $ff,$ff,$ff,$ff, 8, 9,10,11        // TR'
+        .byte  4, 5, 6, 7, 16,17,18,19           // ML: TL 4-7 + BL 0-3
+        .byte 12,13,14,15, 24,25,26,27           // MR: TR 4-7 + BR 0-3
+        .byte 20,21,22,23, $ff,$ff,$ff,$ff       // BL': BL 4-7 + 4 leeg
+        .byte 28,29,30,31, $ff,$ff,$ff,$ff       // BR'
+// bron per icoon (volgorde = ICO_*): charset-glyphs of eigen tabellen
+ibSrcLo: .byte <[CHARSET_BASE+111*8], <[CHARSET_BASE+115*8], <[CHARSET_BASE+119*8]
+         .byte <[CHARSET_BASE+107*8], <[CHARSET_BASE+102*8], <[CHARSET_BASE+80*8]
+         .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs
+ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*8]
+         .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
+         .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs
+}
+ibI:    .byte 0
 
 //--------------------------------------------------------
 // font_Bold - verzwaar de streken: b = b | (b>>1). Alleen de normale

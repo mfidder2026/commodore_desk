@@ -44,6 +44,8 @@ theme_Apply:
         sta BORDER_COL
         lda TH_deskbg
         sta BG_COL0
+        lda TH_text              // muispijl in de tekstkleur: altijd zichtbaar
+        sta SPR0_COL             // op de vensterachtergrond (ook bij PAPER)
         rts
 
 //--------------------------------------------------------
@@ -123,12 +125,14 @@ profile_Derive:
 
 // Venster = TH_deskbg ($D021), balken = TH_menubg (menubalk + statusbalk),
 // desktop = grijs eromheen.
-//          C64/Win95     Matrix       Paper
-profBorder:  .byte LIGHT_BLUE, BLACK,       GREY
-profDesk:    .byte BLUE,       BLACK,       WHITE
-profMenu:    .byte LIGHT_GREY, GREEN,       GREY
-profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE
-profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE
-profText:    .byte WHITE,      GREEN,       BLACK
-profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY
-profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE
+// Fremen = de kleuren van GEOS: donkergrijs op lichtgrijs, grijze tinten
+// (balktekst = achtergrondkleur, dus donkere balken voor het contrast).
+//          C64/Win95     Matrix       Paper        Fremen
+profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY
+profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY
+profMenu:    .byte LIGHT_GREY, GREEN,       GREY,        DARK_GREY
+profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE,        BLACK
+profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE,  GREY
+profText:    .byte WHITE,      GREEN,       BLACK,       DARK_GREY
+profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY
+profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY
