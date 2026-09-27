@@ -87,6 +87,9 @@
 //      liggen net buiten het CFG-blok $0200-$0210) ----
 .label TH_desktop   = $0211   // grijze desktop rond het venster
 .label TH_title     = $0212   // titelbalk van vensters/dialogen
+// ---- Muispijl (instelbaar via Settings, WEL opgeslagen: CFG-blok t/m $0213).
+//      $FF = nog niet gezet (oude CD64.CFG): dan de kleur van het profiel.
+.label TH_mouse     = $0213
 
 // ---- Venster-layout (Win95-stijl, vast) ----
 //   rij 0      menubalk          rij 1      titelbalk

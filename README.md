@@ -186,7 +186,9 @@ waits, the C64 answers pings itself.
 
 - **THEME**: C64, MATRIX, PAPER or FREMEN (see below). Click to switch.
 - **Colours**: pick your own colour for each part (border, window, bars,
-  accent, selection) from the 16 C64 colours.
+  accent, selection) and for the **mouse pointer** from the 16 C64 colours.
+  Each theme comes with a pointer colour that shows up well on it (white on
+  C64 and FREMEN, light green on MATRIX, black on PAPER).
 - **FONT**: ten fonts, see below.
 - **MENU**: drop-down menus filled or clear.
 - **SOUND**: a click sound on or off.
@@ -218,8 +220,9 @@ waits, the C64 answers pings itself.
 
 ## Themes and fonts
 
-Four colour themes. On every theme the mouse pointer takes the text colour,
-and desktop icons that would be hard to see get a darker or lighter variant.
+Four colour themes. Each has its own mouse pointer colour (you can change it
+under SETTINGS → MOUSE), and desktop icons that would be hard to see get a
+darker or lighter variant.
 
 ![The four themes](docs/screenshots/themes.png)
 
@@ -263,7 +266,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 
 | File | What it holds |
 |---|---|
-| `CD64.CFG` | theme, colours, font, menu style, sound |
+| `CD64.CFG` | theme, colours, mouse pointer colour, font, menu style, sound |
 | `NET.CFG` | network and chat server settings |
 | `MAIL.CFG` | e-mail settings, **including your password** |
 | `BBS.CFG` | default BBS, local echo |

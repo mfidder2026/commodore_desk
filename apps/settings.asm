@@ -8,6 +8,7 @@
 // naar een TH_*-runtime-variabele; een klik op een kleurstaal zet
 // de kleur en past hem meteen toe.
 //========================================================
+.const NUM_ROLES = 6            // BORDER..SELECT + MOUSE
 
 .const CLK_ROW = 17
 .const CLK_COL = 11
@@ -25,7 +26,7 @@ set_Draw: {
         lda #0
         sta setI
 rloop:  lda setI
-        cmp #5
+        cmp #NUM_ROLES
         bcc rgo
         jmp rpalette
 rgo:    lda setI
@@ -62,7 +63,8 @@ setCol: sta a2
         lda #$a0
         sta a4
         ldx setI
-        lda TH_border,x
+        ldy roleOff,x            // kleurvariabele van de rol ($02xx)
+        lda $0200,y
         sta a5
         jsr gfx_FillRect
         inc setI
@@ -231,11 +233,11 @@ pdone:  lda #<sSave
 // set_Click - rol kiezen / kleur zetten / opslaan.
 //--------------------------------------------------------
 set_Click: {
-        // rollen (rijen 5-9, kol 4-20)
+        // rollen (rijen 5-10, kol 4-20)
         lda evtB
         cmp #5
         bcc chkPal
-        cmp #10
+        cmp #5+NUM_ROLES
         bcs chkPal
         lda evtA
         cmp #4
@@ -263,7 +265,8 @@ chkPal: // kleurenkiezer (rij 12, kol 4-35)
         sbc #4
         lsr
         ldx selRole
-        sta TH_border,x
+        ldy roleOff,x
+        sta $0200,y
         jsr theme_Apply
         jsr shell_DrawAll
         rts
@@ -618,8 +621,10 @@ ckYL:    .byte 0
 ckHr:    .byte 0
 ckMn:    .byte 0
 
-roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel
-roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel
+roleLo: .byte <rRand, <rDesk, <rMenu, <rAcc, <rSel, <rMouse
+roleHi: .byte >rRand, >rDesk, >rMenu, >rAcc, >rSel, >rMouse
+// kleurvariabele per rol (offset in pagina 2)
+roleOff: .byte <TH_border, <TH_deskbg, <TH_menubg, <TH_accent, <TH_select, <TH_mouse
 
 fontNameLo: .byte <fSystem, <fClassic, <fBold, <fLower, <fTiny, <fFremen, <fSerif, <fMono, <fCasual, <fHeavy
 fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny, >fFremen, >fSerif, >fMono, >fCasual, >fHeavy
@@ -642,6 +647,8 @@ rMenu: .text "BARS"
        .byte $ff
 rAcc:  .text "ACCENT"
        .byte $ff
+rMouse: .text "MOUSE"
+        .byte $ff
 rSel:  .text "SELECT"
        .byte $ff
 sKies: .text "PICK A COLOR:"

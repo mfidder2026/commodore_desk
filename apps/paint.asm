@@ -122,7 +122,7 @@ paint_Exit:
         sta VIC_MEM
         lda #13                  // cursor-pointer terug (bank 0)
         sta $07f8
-        lda TH_text              // cursor weer in de themakleur
+        lda TH_mouse             // cursor weer in de ingestelde kleur
         sta SPR0_COL
         lda TH_deskbg
         sta BG_COL0

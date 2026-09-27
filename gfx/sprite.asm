@@ -21,7 +21,7 @@ spr_CursorInit:
         bne !lp-
         lda #13                  // $0340 / 64 = 13
         sta $07f8                // sprite 0 pointer
-        lda TH_text              // zelfde kleur als theme_Apply
+        lda TH_mouse             // zelfde kleur als theme_Apply
         sta SPR0_COL
         lda SPR_MC
         and #$fe                 // sprite 0 = hi-res

@@ -45,8 +45,8 @@ theme_Apply:
         sta BORDER_COL
         lda TH_deskbg
         sta BG_COL0
-        lda TH_text              // muispijl in de tekstkleur: altijd zichtbaar
-        sta SPR0_COL             // op de vensterachtergrond (ook bij PAPER)
+        lda TH_mouse             // muispijl (Settings: MOUSE)
+        sta SPR0_COL
         rts
 
 //--------------------------------------------------------
@@ -88,6 +88,8 @@ osvars_Init:
         sta TH_select
         lda #THEME_TEXT
         sta TH_text
+        lda #$ff                 // muiskleur: nog niet gezet (zie profile_Derive)
+        sta TH_mouse
         rts
 
 //--------------------------------------------------------
@@ -108,6 +110,8 @@ profile_Apply:
         sta TH_select
         lda profText,x
         sta TH_text
+        lda profMouse,x
+        sta TH_mouse
         jsr profile_Derive
         jmp theme_Apply
 
@@ -122,7 +126,12 @@ profile_Derive:
         sta TH_desktop
         lda profTitle,x
         sta TH_title
-        rts
+        lda TH_mouse             // geen (geldige) muiskleur opgeslagen:
+        cmp #16                  // die van het profiel
+        bcc !r+
+        lda profMouse,x
+        sta TH_mouse
+!r:     rts
 
 // Venster = TH_deskbg ($D021), balken = TH_menubg (menubalk + statusbalk),
 // desktop = grijs eromheen.
@@ -137,3 +146,4 @@ profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE,  GREY
 profText:    .byte WHITE,      GREEN,       BLACK,       DARK_GREY
 profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY
 profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY
+profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE

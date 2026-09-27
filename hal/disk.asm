@@ -30,7 +30,8 @@
 // Config-blok = OS-vars $0200-$020F (LAY 0-6, font 7, thema 8-12,
 // menuFill 13, text 14, profile 15).
 .label CFG_START = $0200
-.label CFG_END   = $0211
+.label CFG_END   = $0214          // (t/m TH_mouse; $0211-$0212 worden na het
+                                 //  laden opnieuw afgeleid)
 
 //--------------------------------------------------------
 // dir_Read - lees de directory in dirBuf + dirPtr-tabel.
