@@ -822,7 +822,12 @@ lp:     lda (r0),y
 done:   rts
 }
 lb_Chr: {                        // A -> buffer (bewaart X, Y)
-        stx lbSaveX
+        cmp #$41                 // hoofdletter -> omgekeerd weergeven
+        bcc nm
+        cmp #$5b
+        bcs nm
+        eor #$c0                 // $41-$5A -> $81-$9A
+nm:     stx lbSaveX
         ldx lbX
         sta lineBuf,x
         inc lbX

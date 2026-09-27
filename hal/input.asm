@@ -20,6 +20,13 @@
 .const CRS_YMAX = 246             // tot onderin (dock-labels rij 24)
 .const MOUSE_SEL = $40           // CIA1 PRA bits 6-7 -> poort 1 POT
 
+// Modificatietoetsen (keycode = kol*8 + rij)
+.const KC_LSHIFT = 1*8+7
+.const KC_RSHIFT = 6*8+4
+.const KC_CTRL   = 7*8+2
+.const KC_CBM    = 7*8+5
+.const KS_N      = 14            // aantal SHIFT-symbolen (shFrom/shTo)
+
 //--------------------------------------------------------
 input_Init:
         lda #160
@@ -69,18 +76,25 @@ kbd_Scan:
 !col:   lda colMask,x
         sta CIA1_PRA
         lda CIA1_PRB
+        sta kbBits
         ldy #0
-!row:   lsr
+!row:   lsr kbBits
         bcs !nextrow+
         // ingedrukt: keycode = kol*8 + rij
-        stx kbTmp
+        sty kbTmp
         txa
         asl
         asl
         asl
-        sta kbCode
-        tya
-        ora kbCode
+        ora kbTmp
+        cmp #KC_LSHIFT           // modificatietoetsen overslaan, anders
+        beq !nextrow+            // "vindt" de scan SHIFT en niet de letter
+        cmp #KC_RSHIFT
+        beq !nextrow+
+        cmp #KC_CTRL
+        beq !nextrow+
+        cmp #KC_CBM
+        beq !nextrow+
         sta kbFound
         jmp !scandone+
 !nextrow:
@@ -101,12 +115,35 @@ kbd_Scan:
         tax
         lda keyTab,x
         beq !done+               // 0 = negeren
-        sta pushCol
+        ldy kbShift              // SHIFT (0 = ingedrukt)?
+        bne !push+
+        cmp #27
+        bcs !sym+
+        ora #$40                 // letter + SHIFT = hoofdletter ($41-$5A)
+        jmp !push+
+!sym:   ldy #KS_N-1              // 1 -> !, / -> ? enz.
+!sl:    cmp shFrom,y
+        beq !sf+
+        dey
+        bpl !sl-
+        jmp !push+
+!sf:    lda shTo,y
+!push:  sta pushCol
         lda #0
         sta pushRow
         lda #EVT_KEY
         jsr evt_Push
 !done:  rts
+
+// key_Plain - hoofdletter-toets ($41-$5A) -> gewone letter (1-26), voor
+//             invoer die geen hoofdletters kent (editor, programmanamen).
+key_Plain:
+        cmp #$41
+        bcc !r+
+        cmp #$5b
+        bcs !r+
+        and #$1f
+!r:     rts
 
 //--------------------------------------------------------
 // cursorToCell - reken de cursorpositie om naar cel (evtA,evtB).
@@ -444,6 +481,11 @@ kbTmp:   .byte 0
 
 // Kolom-selectiemaskers (bit X = 0 selecteert kolom X).
 colMask: .byte $fe, $fd, $fb, $f7, $ef, $df, $bf, $7f
+
+// SHIFT + cijfer/leesteken (zoals op het C64-toetsenbord)
+shFrom: .byte $31,$32,$33,$34,$35,$36,$37,$38,$39,$2c,$2e,$2f,$3a,$3b
+shTo:   .byte $21,$22,$23,$24,$25,$26,$27,$28,$29,$3c,$3e,$3f,$1b,$1d
+kbBits: .byte 0
 
 // Keycode (kol*8+rij) -> schermcode. 0 = negeren, $80 = RETURN, $81 = DEL.
 keyTab:

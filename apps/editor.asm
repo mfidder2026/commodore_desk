@@ -138,6 +138,7 @@ ed_Key:
         jsr edSetPtr
         ldy edCol
         lda evtA
+        jsr key_Plain            // (de editor kent geen hoofdletters)
         sta (edPtr),y
         inc edCol
         lda edCol

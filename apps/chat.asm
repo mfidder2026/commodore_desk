@@ -1491,7 +1491,12 @@ out:    rts
 
 // co_Put - één teken op de cursor (schaduw + scherm), cursor verder.
 co_Put: {
-        sta coC
+        cmp #$41                 // hoofdletter -> omgekeerd weergeven
+        bcc nm
+        cmp #$5b
+        bcs nm
+        eor #$c0                 // $41-$5A -> $81-$9A
+nm:     sta coC
         jsr shAddr
         ldy coCol
         lda coC

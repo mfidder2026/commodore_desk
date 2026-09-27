@@ -34,6 +34,7 @@ da_TextInput:
         beq !cancel+
         cmp #$81                 // DEL
         beq !del+
+        jsr key_Plain            // namen: geen hoofdletters
         jsr da_tiPrintable
         bcc !wait-
         ldx daLen
