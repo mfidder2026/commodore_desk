@@ -315,10 +315,11 @@ userIcons:
         .byte $18,$18,$3c,$3c,$7e,$ff,$ff,$7e   // 13 paint drop
         .byte $18,$18,$18,$ff,$ff,$18,$18,$18   // 14 cross
         .byte $40,$60,$70,$78,$78,$70,$60,$40   // 15 play arrow
-        .byte $3c,$42,$a5,$81,$a5,$99,$42,$3c   // 16 smiley
-        .byte $38,$44,$44,$38,$10,$10,$18,$14   // 17 key
-        .byte $c0,$fc,$cc,$fc,$c0,$c0,$c0,$c0   // 18 flag
-        .byte $00,$ff,$81,$b1,$8d,$b1,$9f,$ff   // 19 terminal
+// BBS-icoon (2x2: CRT met >_ en netwerkindicator), codes 80-83
+        .byte $7f,$40,$5f,$50,$54,$52,$55,$50   // 80 TL
+        .byte $fe,$02,$fa,$0a,$0a,$0a,$ca,$0a   // 81 TR
+        .byte $5f,$40,$7f,$03,$0f,$00,$00,$00   // 82 BL
+        .byte $fa,$02,$fe,$c4,$f5,$05,$09,$00   // 83 BR
 // Win95-glyphs (codes 84-89)
 // knoppen: 7x7 vlak + 1 pixel schaduw rechts/onder (= achtergrond) -> 3D
         .byte $fe,$ba,$d6,$ee,$d6,$ba,$fe,$00   // 84 sluitknop (kruisje uitgespaard)

@@ -22,7 +22,8 @@
 
 .const REC_STRIDE    = 28
 .const DESK_MAXUSER  = 12
-.const NUM_USERICONS = 20
+.const NUM_USERICONS = 16        // kiesbare 1-cel-iconen (codes 64-79)
+.const BIG_ICON_BASE = 20        // icoon >= 20 = groot 2x2-icoon (bigIcon)
 .const NUM_SEED      = 3         // standaard-programma's (COWBOY, SCRSAVER, C64 CITY)
 .label DA_count = $c100
 .label DA_recs  = $c101
@@ -125,9 +126,9 @@ da_drawOne:
         jsr da_recPtr
         ldy #REC_ICON
         lda ($fb),y
-        cmp #NUM_USERICONS       // groot icoon (2x2)?
+        cmp #BIG_ICON_BASE       // groot icoon (2x2)?
         bcc !small+
-        sbc #NUM_USERICONS
+        sbc #BIG_ICON_BASE
         tax
         lda bigIcon,x
         sta deIcon
@@ -136,7 +137,10 @@ da_drawOne:
         sta deIcoC
         jsr da_draw2x2
         jmp !lbl+
-!small: tax
+!small: cmp #NUM_USERICONS       // (vroegere iconen 16-19: diskette)
+        bcc !sm+
+        lda #0
+!sm:    tax
         lda userIconGlyphs,x
         sta a2
         ldy #REC_COL
@@ -571,7 +575,7 @@ daColor: .byte 0
 
 .encoding "screencode_upper"
 
-seedIcon: .byte 3, 7, NUM_USERICONS+0     // C64 CITY: groot skyline-icoon
+seedIcon: .byte 3, 7, BIG_ICON_BASE+0     // C64 CITY: groot skyline-icoon
 seedCol:  .byte YELLOW, PURPLE, ORANGE
 seedDispLo: .byte <sdCow, <sdScr, <sdCity
 seedDispHi: .byte >sdCow, >sdScr, >sdCity

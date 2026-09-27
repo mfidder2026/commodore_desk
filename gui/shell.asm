@@ -213,8 +213,11 @@ drawContent:
         bne !e4+
         jmp ping_Draw
 !e4:    cmp #7
-        bne !f+
+        bne !e5+
         jmp chat_Draw
+!e5:    cmp #8
+        bne !f+
+        jmp bbs_Draw
 !f:     jmp drawStub
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
@@ -722,7 +725,7 @@ menuBarClick:
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
-        ldx #8
+        ldx #9
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -859,8 +862,11 @@ onMouseDown:
         bne !w6+
         jmp ping_Click
 !w6:    cmp #7
-        bne !done+
+        bne !w7+
         jmp chat_Click
+!w7:    cmp #8
+        bne !done+
+        jmp bbs_Click
 !done:  rts
 
 //--------------------------------------------------------
@@ -911,7 +917,11 @@ openApp:
         bne !na6+
         jsr ping_Init
         jmp !drawit+
-!na6:   jsr chat_Init            // #7 CHAT
+!na6:   cmp #7                   // CHAT
+        bne !na7+
+        jsr chat_Init
+        jmp !drawit+
+!na7:   jsr bbs_Init             // #8 BBS
 !drawit:
         jmp shell_DrawAll
 
@@ -931,12 +941,12 @@ deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
 // De gebruikersprogramma's staan als records in deskapps.asm.
-biCount:    .byte 5
-biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat
-biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat
-biIcon:     .byte 111, 115, 119, 107, 102   // 2x2 TL-glyph
-biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW
-biApp:      .byte 1, 2, 3, 6, 7        // app-id
+biCount:    .byte 6
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs
+biIcon:     .byte 111, 115, 119, 107, 102, 80   // 2x2 TL-glyph
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY
+biApp:      .byte 1, 2, 3, 6, 7, 8     // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
@@ -951,15 +961,15 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs
 // overlay (loadApp-index) per app-id: PING zit in de INET-overlay
-appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7
 
 dbI:       .byte 0
-// laadvenster-namen per app-id (8 = launcher-beheer)
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >lTool
+// laadvenster-namen per app-id (9 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -985,6 +995,10 @@ dnEdit:    .text "EDITOR"
 dnPaint:   .text "PAINT"
            .byte $ff
 dnCalc:    .text "CALC"
+           .byte $ff
+dnBbs:     .text "BBS"
+           .byte $ff
+nBbs:      .text "BBS CLIENT"
            .byte $ff
 sNotFound: .text "PROGRAM NOT FOUND"
            .byte $ff
