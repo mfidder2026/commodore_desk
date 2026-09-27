@@ -5,7 +5,7 @@
 //
 //   byte 0-1  magic "BB"
 //   byte 2    config-versie
-//   byte 3    default BBS (0..BBS_COUNT-1)
+//   byte 3    default BBS (0..BBS_MAX-1; eigen BBS'en vanaf BBS_COUNT)
 //   byte 4    local echo (0 uit, 1 aan)
 //   byte 5    terminal (0 = zoals de BBS-entry)
 //   byte 6    gereserveerd
@@ -95,7 +95,7 @@ bb_CfgValid: {
         cmp #BBS_CFG_VERSION
         bne no
         lda BC_DEFAULT
-        cmp #BBS_COUNT
+        cmp #BBS_MAX
         bcs no
         jsr sum
         cmp BC_SUM

@@ -24,6 +24,7 @@ bbs_Init:
         jsr nc_Load              // netwerkinstellingen + hardware
         jsr net_Detect
         jsr bb_CfgLoad
+        jsr bb_BookLoad          // eigen BBS'en (BBS.BOOK)
         lda #<sBbNotConn
         sta bbStatus
         lda #>sBbNotConn
@@ -302,105 +303,6 @@ echo:   lda BC_ECHO              // LOCAL ECHO aan/uit (en bewaren)
         jsr bb_CfgSave
         jmp shell_DrawAll
 book:   jmp bb_Book
-}
-
-//--------------------------------------------------------
-// bb_Book - adresboek: klik een BBS = nieuwe default (BBS.CFG).
-//--------------------------------------------------------
-.const BK_TOP = 4                // eerste regel
-bb_Book: {
-        lda #<sBbBook
-        sta r0
-        lda #>sBbBook
-        sta r0+1
-        lda #2
-        sta a0
-        lda #2
-        sta a1
-        lda #36
-        sta a2
-        lda #20
-        sta a3
-        jsr dlg_Draw
-        ldx #0
-row:    stx bbI
-        lda #$20                 // markering voor de default
-        cpx BC_DEFAULT
-        bne nm
-        lda #$3e                 // >
-nm:     sta a2
-        lda #4
-        sta a0
-        txa
-        clc
-        adc #BK_TOP
-        sta a1
-        lda TH_accent
-        sta a3
-        jsr gfx_PutChar
-        ldx bbI
-        lda bbNameLo,x
-        sta r0
-        lda bbNameHi,x
-        sta r0+1
-        lda #6
-        sta a0
-        txa
-        clc
-        adc #BK_TOP
-        sta a1
-        lda TH_text              // directory-entry grijs: niet te verbinden
-        ldy bbFlags,x
-        bne col
-        lda #GREY
-col:    sta a2
-        jsr gfx_DrawText
-        ldx bbI
-        inx
-        cpx #BBS_COUNT
-        bne row
-        lda #<sBbBookHint
-        sta r0
-        lda #>sBbBookHint
-        sta r0+1
-        lda #4
-        sta a0
-        lda #BK_TOP+BBS_COUNT+2
-        sta a1
-        lda TH_accent
-        sta a2
-        jsr gfx_DrawText
-wait:   jsr evt_Poll
-        cmp #EVT_MOUSEDOWN
-        beq click
-        cmp #EVT_KEY
-        bne wait
-        lda evtA
-        cmp #$82                 // ESC = terug
-        beq back
-        cmp #$20                 // spatie/RETURN = klik op de cursor
-        beq kc
-        cmp #$80
-        bne wait
-kc:     jsr cursorToCell
-click:  jsr dlg_HitClose
-        bcs back
-        lda evtB                 // op een BBS-regel?
-        sec
-        sbc #BK_TOP
-        bcc wait
-        cmp #BBS_COUNT
-        bcs wait
-        sta BC_DEFAULT
-        jsr bb_CfgSave           // (berekent ook de checksum)
-        ldx #<sBbSaved
-        ldy #>sBbSaved
-        bcc sv
-        ldx #<sBbSaveErr
-        ldy #>sBbSaveErr
-sv:     stx bbMsg
-        sty bbMsg+1
-back:   jmp shell_DrawAll
 }
 
 //--------------------------------------------------------

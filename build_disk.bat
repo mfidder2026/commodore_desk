@@ -38,7 +38,7 @@ if errorlevel 1 ( echo Cowboy build failed. & exit /b 1 )
 :: verloren: ze worden van de oude disk naar ..\cd64_userfiles gekopieerd
 :: (buiten de repo, nooit committen) en na het formatteren teruggezet.
 set "KEEP=%~dp0..\cd64_userfiles"
-set "USERFILES=mail.cfg net.cfg bbs.cfg cd64.cfg desk.apps"
+set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps"
 if not exist "%KEEP%" mkdir "%KEEP%"
 for %%U in (%USERFILES%) do call :keepfile %%U
 

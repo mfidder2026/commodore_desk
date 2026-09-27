@@ -58,8 +58,8 @@ Ultimate-II+**.
 | BBS client | BBS address book | Connected to The Oasis BBS |
 | ![E-mail](docs/screenshots/email_inbox.png) | ![Reading mail](docs/screenshots/email_read.png) | ![Reply](docs/screenshots/email_reply.png) |
 | E-mail: mailbox | Reading a message | Writing a reply |
-| ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | |
-| AI chat | Ping | |
+| ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | ![Add BBS](docs/screenshots/bbs_add.png) |
+| AI chat | Ping | Adding your own BBS |
 
 | Settings | | |
 |---|---|---|
@@ -134,6 +134,13 @@ There is no SSL/TLS on a C64, so every service must work without it.
 An address book with ten Commodore BBSes (The Oasis BBS, RapidFire, Dead
 Zone, C64 Ultimate Club, …). Click one to make it your default (saved in
 `BBS.CFG`); **CONNECT** dials in.
+
+- **Your own BBSes**: **ADD** in the address book adds up to six boards of
+  your own (name, host name or IP address, port, PETSCII or ASCII); they
+  are saved in `BBS.BOOK`. **EDIT** and **DELETE** work on the selected
+  board; the ten built-in boards cannot be changed.
+- **Status line** during a session: the board's name, kilobytes received
+  and sent, and the connection time (`RX 12K TX 1K 03:12`).
 
 - A full-screen **PETSCII terminal**: colours, reverse, cursor control and
   upper/lower case, the way a C64 terminal program shows it.
@@ -270,10 +277,11 @@ C64. The cursor keys move the text cursor there, not the pointer.
 | `NET.CFG` | network and chat server settings |
 | `MAIL.CFG` | e-mail settings, **including your password** |
 | `BBS.CFG` | default BBS, local echo |
+| `BBS.BOOK` | your own BBSes |
 | `DESK.APPS` | your own programs on the desktop |
 
 `build_disk.bat` formats a fresh disk image on every build. So that you never
-lose your settings, it first copies these five files from the old disk image
+lose your settings, it first copies these files from the old disk image
 to `..\cd64_userfiles` (next to the repository, never committed) and then
 puts them back on the new D71 and D64.
 

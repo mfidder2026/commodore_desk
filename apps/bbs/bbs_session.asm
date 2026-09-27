@@ -73,6 +73,10 @@ md:     sty tmAscii
         jsr tn_Reset             // Telnet: alle opties uit
         lda #0
         sta tmTxLen
+        ldx #tmCntEnd-tmCnt-1    // RX/TX-tellers en verbindingstijd
+!:      sta tmCnt,x
+        dex
+        bpl !-
         jsr tm_Enter
         jsr tm_Intro             // "CONNECTING TO" / naam / host:poort
         lda netPlatform
@@ -173,7 +177,23 @@ bb_Term: {
         sta tmMenu
         jsr tm_StatOnline
         jsr tm_CurOn
-lp:     jsr evt_Poll
+lp:     lda frameLo              // klok: elke 50 beelden = 1 seconde
+        cmp tmFrLast
+        beq lp0
+        sta tmFrLast
+        inc tmFr
+        lda tmFr
+        cmp #50
+        bcc lp0
+        lda #0
+        sta tmFr
+        inc tmSecs
+        bne !+
+        inc tmSecs+1
+!:      lda tmMenu
+        bne lp0
+        jsr tm_StatInfo
+lp0:    jsr evt_Poll
         cmp #EVT_KEY
         bne net
         lda evtA
@@ -275,7 +295,15 @@ cp:     lda tmTx,x
         cpx tmTxLen
         bne cp
         stx tcpDataLen
-        lda #<tmSend
+        txa                      // TX-teller
+        clc
+        adc tmTxN
+        sta tmTxN
+        bcc !+
+        inc tmTxN+1
+        bne !+
+        inc tmTxN+2
+!:      lda #<tmSend
         sta tcpDataPtr
         lda #>tmSend
         sta tcpDataPtr+1
@@ -581,12 +609,143 @@ tm_StatOnline:
         ldx #<sTmOnStat
         ldy #>sTmOnStat
         jsr tm_Stat
-        ldx BC_DEFAULT           // naam van de BBS links
-        lda bbNameLo,x
+        ldx BC_DEFAULT           // naam van de BBS links (de info erna
+        lda bbNameLo,x           // overschrijft een te lange naam)
         ldy bbNameHi,x
         tax
         lda #1
+        jsr tm_StatAt
+// tm_StatInfo - "RX 12K TX 1K  03:12 F7=MENU" vanaf kolom 13 (bouwplan §32).
+tm_StatInfo: {
+        lda #0
+        sta tmSl
+        lda #$20                 // spatie na de naam
+        jsr put
+        lda #$12                 // R
+        jsr put
+        lda #$18                 // X
+        jsr put
+        lda tmRxN+1              // kB = teller / 1024
+        ldx tmRxN+2
+        jsr kb
+        lda #$20
+        jsr put
+        lda #$14                 // T
+        jsr put
+        lda #$18                 // X
+        jsr put
+        lda tmTxN+1
+        ldx tmTxN+2
+        jsr kb
+        lda #$20
+        jsr put
+        lda tmSecs               // mm:ss
+        sta tmV
+        lda tmSecs+1
+        sta tmV+1
+        lda #0
+        sta tmMin
+mn:     lda tmV+1                // minuten = seconden / 60
+        bne sub60
+        lda tmV
+        cmp #60
+        bcc mdone
+sub60:  lda tmV
+        sec
+        sbc #60
+        sta tmV
+        bcs !+
+        dec tmV+1
+!:      inc tmMin
+        jmp mn
+mdone:  lda tmMin
+        cmp #100
+        bcc !+
+        lda #99
+!:      jsr two
+        lda #$3a                 // :
+        jsr put
+        lda tmV
+        jsr two
+        ldx #<sTmF7
+        ldy #>sTmF7
+        lda #33
         jmp tm_StatAt
+// kb - (X:A) / 4 = kB (tellerbytes 1 en 2), 0-999 + "K"
+kb:     stx tmV+1
+        lsr tmV+1
+        ror
+        lsr tmV+1
+        ror
+        sta tmV
+        lda tmV+1                // > 999: 999
+        cmp #>1000
+        bcc k1
+        bne k9
+        lda tmV
+        cmp #<1000
+        bcc k1
+k9:     lda #<999
+        sta tmV
+        lda #>999
+        sta tmV+1
+k1:     lda #0
+        sta tmAny
+        ldx #0
+kd:     lda #0
+        sta tmDig
+ks:     lda tmV
+        sec
+        sbc kTabLo,x
+        tay
+        lda tmV+1
+        sbc kTabHi,x
+        bcc kp
+        sta tmV+1
+        sty tmV
+        inc tmDig
+        jmp ks
+kp:     lda tmDig
+        ora tmAny
+        bne kpr
+        cpx #2
+        bne kn
+kpr:    lda tmDig
+        ora #$30
+        stx tmKx                 // (put gebruikt X)
+        jsr put
+        ldx tmKx
+        inc tmAny
+kn:     inx
+        cpx #3
+        bne kd
+        lda #$0b                 // K
+        jmp put
+// two - A (0-99) als twee cijfers
+two:    ldx #$2f
+t1:     inx
+        sec
+        sbc #10
+        bcs t1
+        adc #10
+        pha
+        txa
+        jsr put
+        pla
+        ora #$30
+// put - teken A (hoofdletterset-schermcode) reverse op de statusregel
+put:    ldx tmSl
+        cpx #20
+        bcs pr
+        jsr tm_Upper
+        ora #$80
+        ldx tmSl
+        sta SCREEN_RAM+TM_STAT*40+13,x
+        inc tmSl
+pr:     rts
+kTabLo: .byte <100, <10, <1
+kTabHi: .byte >100, >10, >1
+}
 tm_StatMenu:
         ldx #<sTmMenu
         ldy #>sTmMenu
@@ -630,7 +789,12 @@ done:   rts
 // tm_Rx - één ontvangen byte (callback van TCP/UCI) naar het scherm.
 //--------------------------------------------------------
 tm_Rx:
-        jsr tn_Byte              // Telnet-commando's eruit
+        inc tmRxN                // RX-teller (24 bit)
+        bne !+
+        inc tmRxN+1
+        bne !+
+        inc tmRxN+2
+!:      jsr tn_Byte              // Telnet-commando's eruit
         bcs tm_Show
         rts
 // tm_Show - databyte A tonen (PETSCII of ASCII).
@@ -1009,6 +1173,18 @@ tmTxLen:  .byte 0
 tmTx:     .fill TM_TXMAX, 0
 tmSend:   .fill TM_TXMAX, 0
 tmXs:     .byte 0
+// tellers voor de statusregel (bij het verbinden op nul)
+tmCnt:
+tmRxN:    .fill 3, 0
+tmTxN:    .fill 3, 0
+tmSecs:   .word 0
+tmFr:     .byte 0
+tmCntEnd:
+tmFrLast: .byte 0
+tmSl:     .byte 0
+tmMin:    .byte 0
+tmV:      .word 0
+tmKx:     .byte 0
 tmKey:    .byte 0
 tmMods:   .byte 0
 
@@ -1022,8 +1198,8 @@ sTmConn:    .text "CONNECTING..."
 sTmOnline:  .text "CONNECTED"
             .byte $ff
 sTmBlank:   .byte $ff
-sTmOnStat:  .fill 32, $20
-            .text "F7=MENU"
+sTmOnStat:  .byte $ff
+sTmF7:      .text "F7=MENU"
             .byte $ff
 sTmMenu:    .text "D=DISCONNECT Q=DESKTOP OTHER=RESUME"
             .byte $ff

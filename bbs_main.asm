@@ -43,6 +43,7 @@
         // de BBS-client
         #import "apps/bbs/bbs_directory.asm"
         #import "apps/bbs/bbs_config.asm"
+        #import "apps/bbs/bbs_book.asm"
         #import "apps/bbs/bbs.asm"
         #import "apps/bbs/bbs_telnet.asm"
         #import "apps/bbs/bbs_session.asm"
