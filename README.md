@@ -48,7 +48,9 @@ draggable windows. Boots as a **D71 disk** and as an
 - **BBS client** (desktop icon, own overlay `BBS`) — address book with ten
   Commodore/retro BBSes, a default BBS saved in `BBS.CFG`, local-echo setting.
   **CONNECT** opens a full-screen PETSCII terminal (colours, reverse, cursor
-  control, upper/lower charset); **RUN/STOP** opens the session menu
+  control, upper/lower charset). The keyboard works like on a C64 terminal:
+  cursor keys, F1-F6, CLR/HOME, INST/DEL, CTRL/C= + 1-8 colours, C= graphics;
+  RUN/STOP sends an abort ($03) to the BBS. **F7** opens the session menu
   (D = disconnect, Q = back to the desktop). Telnet negotiation is handled
   (BINARY, ECHO, SGA, terminal type `PETSCII`, window size 40x24; other
   options are refused), so Telnet boards such as Synchronet switch to their

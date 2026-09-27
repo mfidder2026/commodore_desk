@@ -26,6 +26,7 @@
 .const KC_CTRL   = 7*8+2
 .const KC_CBM    = 7*8+5
 .const KS_N      = 14            // aantal SHIFT-symbolen (shFrom/shTo)
+.const KR_N      = 10            // aantal extra toetsen in de ruwe modus (rawKc)
 
 //--------------------------------------------------------
 input_Init:
@@ -114,8 +115,18 @@ kbd_Scan:
         beq !done+               // losgelaten
         tax
         lda keyTab,x
-        beq !done+               // 0 = negeren
-        ldy kbShift              // SHIFT (0 = ingedrukt)?
+        bne !have+
+        lda kbRaw                // 0 = negeren, behalve in de ruwe modus
+        beq !done+
+        ldy #KR_N-1              // (terminal): cursor, F-toetsen, HOME ...
+!rl:    txa
+        cmp rawKc,y
+        beq !rf+
+        dey
+        bpl !rl-
+        rts
+!rf:    lda rawCode,y
+!have:  ldy kbShift              // SHIFT (0 = ingedrukt)?
         bne !push+
         cmp #27
         bcs !sym+
@@ -129,8 +140,11 @@ kbd_Scan:
         jmp !push+
 !sf:    lda shTo,y
 !push:  sta pushCol
-        lda #0
-        sta pushRow
+        lda #0                   // ruwe modus: modificatiebits in evtB
+        ldy kbRaw
+        beq !pr+
+        lda kbMods
+!pr:    sta pushRow
         lda #EVT_KEY
         jsr evt_Push
 !done:  rts
@@ -310,6 +324,30 @@ rdKeyboard:
         lda #$00                // shift ingedrukt
         sta kbShift
 !shiftDone:
+        lda kbRaw                // terminal: modificaties, geen muisbesturing
+        beq !cur+
+        ldy #0
+        lda kbShift
+        bne !+
+        iny                      // bit 0 = SHIFT
+!:      lda #%01111111           // kolom 7: CTRL (rij 2), C= (rij 5)
+        sta CIA1_PRA
+        lda CIA1_PRB
+        sta kbTmp
+        and #$04
+        bne !+
+        tya
+        ora #KM_CTRL
+        tay
+!:      lda kbTmp
+        and #$20
+        bne !+
+        tya
+        ora #KM_CBM
+        tay
+!:      sty kbMods
+        rts
+!cur:
         // kolom 0 (cursortoetsen)
         lda #%11111110
         sta CIA1_PRA
@@ -468,6 +506,11 @@ inSrc:   .byte 0
 joyRaw:  .byte 0
 kbCol0:  .byte 0
 kbShift: .byte 0
+kbRaw:   .byte 0                 // 1 = ruwe modus (BBS-terminal)
+kbMods:  .byte 0                 // ruwe modus: KM_SHIFT/KM_CTRL/KM_CBM
+// ruwe modus: keycode -> eigen code (zie include/events.inc, KEY_*)
+rawKc:   .byte 0*8+2, 0*8+7, 0*8+3, 0*8+5, 0*8+6, 5*8+6, 6*8+0, 6*8+3, 6*8+6, 7*8+1
+rawCode: .byte KEY_CRSR_R, KEY_CRSR_D, KEY_F7, KEY_F3, KEY_F5, KEY_AT, KEY_POUND, KEY_HOME, KEY_UPARROW, KEY_LARROW
 mOldX:   .byte 0
 mOldY:   .byte 0
 tmpDy:   .byte 0

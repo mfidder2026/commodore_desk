@@ -15,7 +15,10 @@
 // worden overgeslagen.
 //
 // Toetsen: gewone toetsen gaan naar de BBS (lokale echo als BC_ECHO);
-// RUN/STOP opent het sessiemenu op de statusregel (wordt nooit verstuurd).
+// F7 opent het sessiemenu op de statusregel (wordt nooit verstuurd).
+// Het toetsenbord staat dan in de ruwe modus (kbRaw): cursortoetsen,
+// F-toetsen, CLR/HOME, INST, CTRL/C=-kleuren en C=-graphics gaan als
+// PETSCII naar de BBS; RUN/STOP stuurt $03 (lijst afbreken).
 //========================================================
 
 .const TM_ROWS   = 24            // terminalregels; rij 24 = statusregel
@@ -24,6 +27,7 @@
 .const TM_STATFG = LIGHT_BLUE
 .const TM_TXMAX  = 64            // toetsen + Telnet-antwoorden
 .const PC_N      = 16            // PETSCII-kleurcodes
+.const SK_N      = 13            // speciale toetsen (skCode)
 .label tmScr = r3                // zeropage: scherm- en kleurpointer
 .label tmClr = r6
 
@@ -175,13 +179,15 @@ lp:     jsr evt_Poll
         lda evtA
         ldx tmMenu               // sessiemenu open?
         bne menu
-        cmp #$82                 // RUN/STOP: sessiemenu (lokaal)
+        cmp #KEY_F7              // F7: sessiemenu (lokaal, nooit verstuurd)
         bne key
         lda #1
         sta tmMenu
         jsr tm_StatMenu
         jmp lp
-key:    jsr tm_Key               // -> tmTx
+key:    ldx evtB                 // SHIFT/CTRL/C= (ruwe toetsenbordmodus)
+        stx tmMods
+        jsr tm_Key               // -> tmTx
         jmp lp                   // eerst alle wachtende toetsen
 menu:   ldx #0
         stx tmMenu
@@ -287,18 +293,75 @@ rr:     jmp tcp_Send
 // tm_Key - toets (evtA-code) -> byte voor de BBS in tmTx.
 //--------------------------------------------------------
 tm_Key: {
-        cmp #$80                 // RETURN
-        bne k1
-        lda #$0d
+        sta tmKey
+        ldx #SK_N-1              // RETURN, DEL, STOP, F-toetsen, cursor ...
+sk:     cmp skCode,x
+        beq spec
+        dex
+        bpl sk
+        lda tmMods
+        and #KM_CTRL
+        beq nc
+        lda tmKey                // CTRL + letter = stuurcode $01-$1A
+        cmp #$1b
+        bcs cdig
         jmp put
-k1:     cmp #$81                 // DEL
-        bne k2
-        lda #$14
+cdig:   ldx tmAscii              // CTRL + cijfer = kleur / RVS (PETSCII)
+        bne none
+        sec
+        sbc #$30
+        cmp #10
+        bcs none
+        tax
+        lda ctrlDig,x
+        jmp put
+none:   rts
+nc:     lda tmMods
+        and #KM_CBM
+        beq plain
         ldx tmAscii
-        beq put
-        lda #$08
+        bne plain
+        lda tmKey
+        cmp #$1b                 // C= + letter = graphics links op de toets
+        bcs cd
+        tax
+        lda cbmTab-1,x
         jmp put
-k2:     cmp #$1b                 // letters $01-$1A
+cd:     sec                      // C= + 1-8 = de lichte kleuren
+        sbc #$31
+        cmp #8
+        bcs plain
+        tax
+        lda cbmDig,x
+        jmp put
+spec:   lda tmMods
+        and #KM_SHIFT
+        ldy tmAscii
+        bne sa
+        cmp #0
+        bne ss
+        lda skPet,x
+        jmp chk
+ss:     lda skPetS,x
+chk:    beq no
+        jmp put
+sa:     cmp #0
+        bne sas
+        lda skAsc,x
+        jmp ach
+sas:    lda skAscS,x
+ach:    beq no
+        bpl put
+        pha                      // bit 7: ANSI-reeks ESC [ x (zonder echo)
+        lda #$1b
+        jsr tm_TxPut
+        lda #$5b
+        jsr tm_TxPut
+        pla
+        and #$7f
+        jmp tm_TxPut
+plain:  lda tmKey
+        cmp #$1b                 // letters $01-$1A
         bcs k3
         tax
         beq no
@@ -333,6 +396,21 @@ put:    jsr tm_TxPut
         jmp tm_Show              // (buiten de Telnet-parser om)
 no:     rts
 }
+// speciale toetsen: code, PETSCII, PETSCII+SHIFT, ASCII, ASCII+SHIFT
+// (0 = niets sturen; ASCII met bit 7 = ANSI-reeks ESC [ x)
+skCode: .byte KEY_RETURN, KEY_DEL, KEY_STOP, KEY_F1, KEY_F3, KEY_F5
+        .byte KEY_CRSR_R, KEY_CRSR_D, KEY_HOME, KEY_AT, KEY_POUND, KEY_UPARROW, KEY_LARROW
+skPet:  .byte $0d, $14, $03, $85, $86, $87, $1d, $11, $13, $40, $5c, $5e, $5f
+skPetS: .byte $8d, $94, $03, $89, $8a, $8b, $9d, $91, $93, $ba, $a9, $de, $df
+skAsc:  .byte $0d, $08, $03, 0,   0,   0,   $c3, $c2, $c8, $40, $5c, $5e, $5f
+skAscS: .byte $0d, $08, $03, 0,   0,   0,   $c4, $c1, $0c, $40, $7c, $7e, $60
+// CTRL + 0-9: RVS UIT, ZWART, WIT, ROOD, CYAAN, PAARS, GROEN, BLAUW, GEEL, RVS AAN
+ctrlDig: .byte $92, $90, $05, $1c, $9f, $9c, $1e, $1f, $9e, $12
+// C= + 1-8: ORANJE, BRUIN, LICHTROOD, DONKERGRIJS, GRIJS, LICHTGROEN, LICHTBLAUW, LICHTGRIJS
+cbmDig:  .byte $81, $95, $96, $97, $98, $99, $9a, $9b
+// C= + A-Z (graphics links op de toets, zoals de KERNAL-tabel)
+cbmTab:  .byte $b0, $bf, $bc, $ac, $b1, $bb, $a5, $b4, $a2, $b5, $a1, $b6, $a7
+         .byte $aa, $b9, $af, $ab, $b2, $ae, $a3, $b8, $be, $b3, $bd, $b7, $ad
 
 // tm_TxPut - byte A achter in de zendrij (vol: weggooien). X/Y blijven.
 tm_TxPut:
@@ -358,6 +436,8 @@ tm_Enter: {
         lda SPR_ENABLE           // muispijl uit
         and #$fe
         sta SPR_ENABLE
+        lda #1                   // toetsenbord: ruwe modus
+        sta kbRaw
         lda #BLACK
         sta BORDER_COL
         sta BG_COL0
@@ -384,6 +464,7 @@ tm_Leave: {
         sta BG_COL0
         lda #0
         sta netNoKeys
+        sta kbRaw
         lda SPR_ENABLE
         ora #$01
         sta SPR_ENABLE
@@ -606,6 +687,8 @@ cc:     cmp pcCode,x
         beq home
         cmp #$14
         beq del
+        cmp #$94
+        beq ins
         cmp #$11
         beq down
         cmp #$91
@@ -633,6 +716,24 @@ cls:    jmp tm_Cls
 home:   lda #0
         sta tmX
         sta tmY
+        rts
+ins:    jsr tm_Ptr               // INST: rest van de regel naar rechts
+        ldy #38
+il:     cpy tmX
+        bcc ie
+        lda (tmScr),y
+        iny
+        sta (tmScr),y
+        dey
+        lda (tmClr),y
+        iny
+        sta (tmClr),y
+        dey
+        dey
+        bpl il
+ie:     ldy tmX
+        lda #$20
+        sta (tmScr),y
         rts
 del:    jsr tm_Left
         lda #$20
@@ -908,6 +1009,8 @@ tmTxLen:  .byte 0
 tmTx:     .fill TM_TXMAX, 0
 tmSend:   .fill TM_TXMAX, 0
 tmXs:     .byte 0
+tmKey:    .byte 0
+tmMods:   .byte 0
 
 .encoding "screencode_upper"
 sTmConnTo:  .text "CONNECTING TO"
@@ -919,8 +1022,8 @@ sTmConn:    .text "CONNECTING..."
 sTmOnline:  .text "CONNECTED"
             .byte $ff
 sTmBlank:   .byte $ff
-sTmOnStat:  .fill 30, $20
-            .text "STOP=MENU"
+sTmOnStat:  .fill 32, $20
+            .text "F7=MENU"
             .byte $ff
 sTmMenu:    .text "D=DISCONNECT Q=DESKTOP OTHER=RESUME"
             .byte $ff
