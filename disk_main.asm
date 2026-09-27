@@ -106,6 +106,7 @@ start:
         #import "net/ip.asm"
         #import "net/tcp.asm"
         #import "net/dns.asm"
+        #import "net/dhcp.asm"
         #import "net/ultimate.asm"
         #import "apps/inet.asm"
         #import "apps/ping.asm"

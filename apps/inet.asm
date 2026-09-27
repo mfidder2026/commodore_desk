@@ -193,6 +193,19 @@ macEnd: jsr lb_Show
         sta a2
         lda TH_accent
         sta a3
+        jsr btn_Draw
+        lda #<sInDhcp
+        sta r0
+        lda #>sInDhcp
+        sta r0+1
+        lda #IN_COL+28
+        sta a0
+        lda #IN_BTN_ROW
+        sta a1
+        lda #5
+        sta a2
+        lda TH_accent
+        sta a3
         jmp btn_Draw
 }
 
@@ -229,8 +242,15 @@ resc:   lda #IN_COL+8            // RESCAN
 mdl:    lda #IN_COL+18           // MODELS
         sta a0
         jsr btn_HitTest
-        bcc no
+        bcc dh
         jmp mdl_Fetch
+dh:     lda #IN_COL+28           // DHCP
+        sta a0
+        lda #5
+        sta a2
+        jsr btn_HitTest
+        bcc no
+        jmp in_Dhcp
 fields: lda evtA
         cmp #IN_COL
         bcc no
@@ -243,6 +263,38 @@ nx:     inx
         cpx #NUM_FLD
         bne fl
 no:     rts
+}
+
+// in_Dhcp - DHCP op de RR-Net; bij succes de velden opnieuw tekenen.
+in_Dhcp: {
+        lda netPlatform
+        cmp #NET_PLAT_RRNET
+        beq rr
+        ldx #<sDhUlt
+        ldy #>sDhUlt
+        cmp #NET_PLAT_ULTIMATE
+        beq msg
+        ldx #<sChNoHw
+        ldy #>sChNoHw
+msg:    jmp in_Msg
+rr:     lda csReady
+        bne go
+        jsr cs_Init
+        bcs ci
+        ldx #<sPgChip
+        ldy #>sPgChip
+        jmp in_Msg
+ci:     lda #1
+        sta csReady
+go:     ldx #<sDhAsk
+        ldy #>sDhAsk
+        jsr in_Msg
+        jsr dhcp_Run
+        bcc msg
+        jsr shell_DrawAll        // nieuwe waarden tonen
+        ldx #<sDhOk
+        ldy #>sDhOk
+        jmp in_Msg
 }
 
 // in_Msg - melding (X/Y) op de meldingsregel (rij 20), rest gewist.
@@ -1003,6 +1055,14 @@ sInSave:   .text "SAVE"
 sInRescan: .text "RESCAN"
            .byte $ff
 sInModels: .text "MODELS"
+           .byte $ff
+sInDhcp:   .text "DHCP"
+           .byte $ff
+sDhAsk:    .text "ASKING FOR AN ADDRESS (DHCP)..."
+           .byte $ff
+sDhOk:     .text "DHCP OK - PRESS SAVE TO KEEP IT"
+           .byte $ff
+sDhUlt:    .text "THE ULTIMATE SETS ITS OWN IP"
            .byte $ff
 sMdGet:    .text "ASKING THE SERVER FOR MODELS..."
            .byte $ff

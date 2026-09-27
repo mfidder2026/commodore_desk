@@ -270,19 +270,28 @@ ri:     lda NC_IP,x
 ip:     ldx #3                   // IPv4 aan ons, ICMP?
 di:     lda RX+30,x
         cmp NC_IP,x
-        bne out2
+        bne notUs
         dex
         bpl di
-        lda RX+14
+        jmp isUs
+notUs:  lda dhState              // DHCP bezig: ook broadcast / aangeboden IP
+        beq out2
+        lda RX+23
+        cmp #17
+        bne out2
+isUs:   lda RX+14
         cmp #$45                 // alleen 20-byte-kop
         bne out2
         lda RX+23
         cmp #6                   // TCP -> tcp.asm
         bne icmp
         jmp tcp_Input
-icmp:   cmp #17                  // UDP -> DNS-antwoord?
+icmp:   cmp #17                  // UDP -> DHCP of DNS
         bne ic2
-        jmp dns_Input
+        jsr dhcp_Input
+        bcc dns
+        rts
+dns:    jmp dns_Input
 ic2:    cmp #1
         bne out2
         lda RX+34                // ICMP-type

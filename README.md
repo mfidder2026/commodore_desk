@@ -49,7 +49,9 @@ draggable windows. Boots as a **D71 disk** and as an
   and holds *all* network settings in one place: IP, mask, gateway, DNS and the
   **chat server** (OpenAI-compatible: host, port, API key, model), saved to
   `NET.CFG`. **MODELS** fetches the server's model list (`GET /v1/models`)
-  and lets you pick one.
+  and lets you pick one; **DHCP** gets IP/mask/gateway/DNS from the network
+  (RR-Net). HOST may be an IP address or a name (DNS). On an **Ultimate** the
+  Ultimate itself does TCP/IP and DNS (UCI network target).
   **PING** (desktop icon) — ARP + 4 ICMP echo requests with round-trip time; while it waits
   the C64 also answers pings. **CHAT** (desktop icon) — talk to an OpenAI-compatible AI server
   (e.g. Ollama on your Mac, which can also relay Ollama Cloud models) over plain
