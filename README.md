@@ -11,7 +11,9 @@ It runs from a **D71/D64 disk** or an **EasyFlash cartridge** (instant boot),
 in VICE or on real hardware with an **RR-Net** or an **Ultimate 64 / 1541
 Ultimate-II+**.
 
-![Commodore Desk 64 — the desktop](docs/screenshots/theme_c64.png)
+| Boot screen | Desktop |
+|---|---|
+| ![Commodore Desk 64 — boot screen](docs/screenshots/boot.png) | ![Commodore Desk 64 — the desktop](docs/screenshots/theme_c64.png) |
 
 ---
 
@@ -67,6 +69,10 @@ Ultimate-II+**.
 
 ## The desktop
 
+- **Boot screen**: while the desktop loads, a separate loader (`BOOT`) shows
+  a sharp hi-res bitmap splash with the version and `LOADING - PLEASE WAIT`.
+  It costs no memory in the running system, because the desktop overwrites
+  it when it loads.
 - **Menu bar** (top): `CD64 · DESKTOP · FILES · SYSTEM`.
   - **CD64**: HELP, RESET (reboots the C64), EXIT (back to BASIC without a
     reset) and ABOUT.
