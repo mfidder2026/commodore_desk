@@ -33,6 +33,11 @@ if errorlevel 1 ( echo EMAIL build failed. & exit /b 1 )
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build
 if errorlevel 1 ( echo Cowboy build failed. & exit /b 1 )
+:: Plaatsvervangers voor de spellen (de echte staan in ..\cd64_parked)
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 CITY" -o build\c64cdesk.prg -odir build
+if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=POKEMON RED" -o build\c64rdesk.prg -odir build
+if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 
 :: Gebruikersbestanden (instellingen, ook het mailwachtwoord!) gaan niet
 :: verloren: ze worden van de oude disk naar ..\cd64_userfiles gekopieerd
