@@ -8,10 +8,7 @@
 // Elk event: type + kol + rij.
 //========================================================
 
-.const EVT_NONE      = 0
-.const EVT_MOUSEDOWN = 1
-.const EVT_MOUSEUP   = 2
-.const EVT_KEY       = 3
+// (EVT_*-typen staan in include/events.inc)
 
 .const EVT_QSIZE = 8             // moet een macht van 2 zijn
 

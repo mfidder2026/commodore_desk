@@ -12,6 +12,7 @@
 #import "include/layout.inc"
 #import "include/memmap.inc"
 #import "include/abi.inc"
+#import "include/events.inc"
 
 // Core mag NOOIT de charset op $3800 raken: max=$37FF laat de assembler
 // een fout geven zodra de Core te groot wordt.
@@ -24,7 +25,6 @@
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
 .segmentdef DeskTool [start=$8000]      // launcher-beheer (menu ADD/EDIT/DELETE)
-.segmentdef Bbs    [start=$8000, max=$bfff]    // BBS-client (apps/bbs)
 .segmentdef Inet   [start=$8000, max=$bfff]        // INET + netwerkdrivers (net/)
 .segmentdef Lower  [start=$3800]
 .segmentdef Tiny   [start=$3800]
@@ -43,7 +43,6 @@
 .file [name="setup.prg",  segments="Setup"]
 .file [name="desktool.prg", segments="DeskTool"]
 .file [name="inet.prg",   segments="Inet"]
-.file [name="bbs.prg",    segments="Bbs"]
 .file [name="lower.prg",  segments="Lower"]
 .file [name="tiny.prg",   segments="Tiny"]
 .file [name="fremen.prg", segments="Fremen"]
@@ -103,6 +102,7 @@ start:
 .segment Inet
         #import "net/net.inc"
         #import "net/log.asm"
+        #import "net/netcommon.asm"
         #import "net/uci.asm"
         #import "net/cs8900.asm"
         #import "net/netdrv.asm"
@@ -115,10 +115,6 @@ start:
         #import "apps/ping.asm"
         #import "apps/chat.asm"
         #import "net/logpoints.asm"
-.segment Bbs
-        #import "apps/bbs/bbs_directory.asm"
-        #import "apps/bbs/bbs_config.asm"
-        #import "apps/bbs/bbs.asm"
 
 // LOWER- en TINY-font als complete charsets op disk: System-charset met
 // de kleine letters (a-z op code 1-26) resp. het 3x5-font (A-Z op 1-26,

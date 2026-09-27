@@ -958,58 +958,6 @@ yes:    sec
 }
 
 // ip_Parse - feBuf/feLen "a.b.c.d" -> ipTmp[4]. Carry=1 geldig.
-ip_Parse: {
-        ldx #0                   // X = positie in feBuf
-        ldy #0                   // Y = octet
-oct:    lda #0
-        sta ipVal
-        sta ipDig
-dig:    cpx feLen
-        beq endOct
-        lda feBuf,x
-        cmp #$2e
-        beq endOct
-        cmp #$30                 // alleen cijfers
-        bcc bad
-        cmp #$3a
-        bcs bad
-        and #$0f
-        sta ipD
-        lda ipVal                // val = val*10 + cijfer, max 255
-        cmp #26
-        bcs bad
-        asl
-        sta ipT
-        asl
-        asl
-        adc ipT
-        adc ipD
-        bcs bad
-        sta ipVal
-        inx
-        inc ipDig
-        lda ipDig
-        cmp #4
-        bcs bad
-        jmp dig
-endOct: lda ipDig
-        beq bad
-        lda ipVal
-        sta ipTmp,y
-        iny
-        cpy #4
-        beq last
-        cpx feLen                // na octet 1-3 moet een punt komen
-        beq bad
-        inx
-        jmp oct
-last:   cpx feLen                // na octet 4: klaar
-        bne bad
-        sec
-        rts
-bad:    clc
-        rts
-}
 
 //--------------------------------------------------------
 // Regelbuffer: lb_Label begint een regel met een label, de
@@ -1127,15 +1075,8 @@ lbSaveX2: .byte 0
 fldI:     .byte 0
 fOffs:    .byte 0
 feRaw:    .byte 0
-feLen:    .byte 0
 feChr:    .byte 0
-ipVal:    .byte 0
-ipDig:    .byte 0
-ipD:      .byte 0
-ipT:      .byte 0
-ipTmp:    .fill 4, 0
 lineBuf:  .fill 80, 0
-feBuf:    .fill 48, 0
 decTab:   .byte 100, 10, 1
 
 // velden: rij, type, max. lengte, offset in NETCFG, label

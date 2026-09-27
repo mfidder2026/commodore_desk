@@ -67,6 +67,11 @@ shell_Run:
 //   rij 23     onderrand van het venster
 //   rij 24     statusbalk met datum en tijd
 .const WIN_CLOSE_COL = 38
+// BBS-overlay (apart geassembleerd, bbs_main.asm): sprongtabel op $8000
+.label BBS_INIT  = $8000
+.label BBS_DRAW  = $8003
+.label BBS_CLICK = $8006
+.label BBS_KEY   = $8009
 // SYSTEM-uitklapmenu: globale itemnummers (zie miLo)
 .const MI_SETTINGS  = 7
 .const MI_NETWORK   = 8
@@ -217,7 +222,7 @@ drawContent:
         jmp chat_Draw
 !e5:    cmp #8
         bne !f+
-        jmp bbs_Draw
+        jmp BBS_DRAW
 !f:     jmp drawStub
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
@@ -866,7 +871,7 @@ onMouseDown:
         jmp chat_Click
 !w7:    cmp #8
         bne !done+
-        jmp bbs_Click
+        jmp BBS_CLICK
 !done:  rts
 
 //--------------------------------------------------------
@@ -921,7 +926,7 @@ openApp:
         bne !na7+
         jsr chat_Init
         jmp !drawit+
-!na7:   jsr bbs_Init             // #8 BBS
+!na7:   jsr BBS_INIT             // #8 BBS (sprongtabel $8000)
 !drawit:
         jmp shell_DrawAll
 

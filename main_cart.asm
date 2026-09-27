@@ -13,6 +13,7 @@
 #import "include/layout.inc"
 #import "include/memmap.inc"
 #import "include/abi.inc"
+#import "include/events.inc"
 
 //--------------------------------------------------------
 // OS-image, geassembleerd op $0801 (het RAM-doeladres).
@@ -58,7 +59,6 @@ osEnd:
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
 .segmentdef DeskTool [start=$8000]
-.segmentdef Bbs    [start=$8000, max=$bfff]
 .segmentdef Inet   [start=$8000, max=$bfff]
 .segment Files
 #import "apps/filemanager.asm"
@@ -75,6 +75,7 @@ osEnd:
 .segment Inet
 #import "net/net.inc"
 #import "net/log.asm"
+#import "net/netcommon.asm"
 #import "net/uci.asm"
 #import "net/cs8900.asm"
 #import "net/netdrv.asm"
@@ -87,10 +88,6 @@ osEnd:
 #import "apps/ping.asm"
 #import "apps/chat.asm"
 #import "net/logpoints.asm"
-.segment Bbs
-#import "apps/bbs/bbs_directory.asm"
-#import "apps/bbs/bbs_config.asm"
-#import "apps/bbs/bbs.asm"
 
 //--------------------------------------------------------
 // 16 KB cartridge-image ($8000-$BFFF = ROML + ROMH bank 0).

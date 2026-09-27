@@ -23,6 +23,10 @@ for %%F in (disk_main.asm hal\vic.asm hal\input.asm hal\disk.asm gfx\font.asm gf
 echo [2/3] Assembleren (core + app-overlays + bootscherm)...
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" disk_main.asm -vicesymbols -odir build
 if errorlevel 1 ( echo Build failed. & exit /b 1 )
+python tools\export_core_syms.py
+if errorlevel 1 ( echo Core-symbolen mislukt. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" bbs_main.asm -odir build
+if errorlevel 1 ( echo BBS build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build

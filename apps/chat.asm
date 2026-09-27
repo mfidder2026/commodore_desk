@@ -1054,28 +1054,6 @@ nx:     inx
 }
 
 // sc2ascii - schermcode -> ASCII (letters klein: modelnamen e.d.).
-sc2ascii: {
-        cmp #0
-        bne n0
-        lda #$40                 // @
-        rts
-n0:     cmp #27
-        bcs n1
-        ora #$60                 // 1-26 -> a-z
-        rts
-n1:     cmp #$1b
-        bne n2
-        lda #$5b                 // [
-        rts
-n2:     cmp #$1d
-        bne n4
-        lda #$5d                 // ]
-        rts
-n4:     cmp #$64
-        bne n3
-        lda #$5f                 // _
-n3:     rts                      // $20-$3f = ASCII
-}
 
 //--------------------------------------------------------
 // chat_RxByte - elk ontvangen byte (TCP-callback).
@@ -1706,10 +1684,6 @@ sChNew:   .text "NEW CHAT"
           .byte $ff
 sChNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
           .byte $ff
-sChHost:  .text "INVALID HOST NAME"
-          .byte $ff
-sChPort:  .text "INVALID PORT"
-          .byte $ff
 sChConn:  .text "NO CONNECTION TO THE SERVER"
           .byte $ff
 sChSend:  .text "SENDING FAILED"
@@ -1722,3 +1696,20 @@ sChNoAns: .text "NO ANSWER FROM THE SERVER"
           .byte $ff
 sHttp:    .text "HTTP "
           .byte $ff
+
+// lg_Http - netwerklog: HTTP-statuscode (hoort bij http_Do).
+lg_Http:
+        jsr log_Begin
+        ldx #<tHttp
+        ldy #>tHttp
+        jsr log_Str
+        lda hCode
+        jsr log_Chr
+        lda hCode+1
+        jsr log_Chr
+        lda hCode+2
+        jsr log_Chr
+        jmp log_End
+.encoding "screencode_upper"
+tHttp:  .text "HTTP "
+        .byte $ff

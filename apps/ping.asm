@@ -363,7 +363,6 @@ d16Lo: .byte <10000, <1000, <100, <10, <1
 d16Hi: .byte >10000, >1000, >100, >10, >1
 
 //--------------------------------------------------------
-csReady: .byte 0
 pgSent:  .byte 0
 pgRecv:  .byte 0
 pgT0:    .byte 0
@@ -383,17 +382,11 @@ sPgNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
           .byte $ff
 sPgUlt:   .text "NO ICMP PING ON THE ULTIMATE"
           .byte $ff
-sPgChip:  .text "CS8900 INIT FAILED"
-          .byte $ff
 sPgIp:    .text "IP   "
           .byte $ff
 sPgArp:   .text "ARP  "
           .byte $ff
 sPgMac:   .text "MAC  "
-          .byte $ff
-sPgNoArp: .text "NO ANSWER (ARP)"
-          .byte $ff
-sPgStop:  .text "STOPPED"
           .byte $ff
 sPgSeq:   .text "SEQ "
           .byte $ff

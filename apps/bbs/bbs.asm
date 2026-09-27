@@ -30,6 +30,10 @@ bbs_Init:
         sta bbMsg+1              // geen melding
         rts
 
+// bbs_Key - toetsen (voor de terminal, volgt).
+bbs_Key:
+        rts
+
 //--------------------------------------------------------
 // bbs_Draw - hoofdscherm.
 //--------------------------------------------------------
@@ -445,7 +449,7 @@ sBbOff:      .text "OFF"
              .byte $ff
 sBbBook:     .text "BBS ADDRESS BOOK"
              .byte $ff
-sBbBookHint: .text "CLICK A BBS TO MAKE IT THE DEFAULT"
+sBbBookHint: .text "CLICK A BBS = NEW DEFAULT"
              .byte $ff
 sBbSaved:    .text "DEFAULT SAVED IN BBS.CFG"
              .byte $ff

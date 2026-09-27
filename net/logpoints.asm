@@ -151,16 +151,6 @@ lg_DhIn:
         jsr log_Sp
         LOGIP(RX+BOOTP+16)
         jmp log_End
-lg_Http:
-        jsr log_Begin
-        LOGS(tHttp)
-        lda hCode
-        jsr log_Chr
-        lda hCode+1
-        jsr log_Chr
-        lda hCode+2
-        jsr log_Chr
-        jmp log_End
 lg_Uci:
         jsr log_Begin
         LOGS(tUci)
@@ -252,8 +242,6 @@ tAckD:     .text "ACK"
 tNak:      .text "NAK"
            .byte $ff
 tOther:    .text "?"
-           .byte $ff
-tHttp:     .text "HTTP "
            .byte $ff
 tUci:      .text "UCI CMD "
            .byte $ff
