@@ -56,11 +56,7 @@ chat_Draw: {
         sta lbX
         ldx #NC_MODEL-NETCFG
         jsr lb_Cfg
-        lda #$20
-        jsr lb_Chr
-        lda #$00                 // @
-        jsr lb_Chr
-        lda #$20
+        lda #$00                 // @ (zonder spaties: past beter)
         jsr lb_Chr
         ldx #NC_HOST-NETCFG
         jsr lb_Cfg

@@ -763,11 +763,8 @@ item:   ldx menuId
         cmp #MI_EMAIL
         beq doMail
         pha                      // 4-6: launcher-beheer op het bureaublad
-        lda activeApp
-        cmp #$ff
-        beq !+
-        jsr exitToDesktop
-!:      pla
+        jsr exitToDesktop        // (tekent ook opnieuw: het menu gaat weg)
+        pla
         sec
         sbc #4
         tax

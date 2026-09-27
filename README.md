@@ -1,312 +1,394 @@
 # Commodore Desk 64
 
-A graphical, Apple-style desktop GUI for the Commodore 64, written in 6502/6510
-assembly (Kick Assembler). A Windows-95-style menu bar at the top, one large
-window in the middle and a status bar with date and time at the bottom — no
-draggable windows. Boots as a **D71 disk** and as an
-**EasyFlash `.CRT` cartridge** (instant boot).
+A graphical desktop for the **Commodore 64**, written in 6502/6510 assembly
+(Kick Assembler). It has a Windows-95-style menu bar, one large window, a status
+bar with date and time, and a desktop of programs you start with a click.
+There are built-in programs (editor, paint, calculator, file manager) and
+network programs: a **BBS terminal**, **e-mail**, an **AI chat** and **ping**,
+all running on the C64 itself over its own TCP/IP stack.
 
-![status](https://img.shields.io/badge/phase-0--10-brightgreen)
+It runs from a **D71/D64 disk** or an **EasyFlash cartridge** (instant boot),
+in VICE or on real hardware with an **RR-Net** or an **Ultimate 64 / 1541
+Ultimate-II+**.
 
-![Commodore Desk 64 — desktop](docs/desktop.png)
-
-<sub>Running in VICE: the desktop with contextual menu bar, status bar and the dock.</sub>
-
-### Screens
-
-| File Manager | Settings | Paint |
-|---|---|---|
-| ![File Manager](docs/filemanager.png) | ![Settings](docs/settings.png) | ![Paint](docs/paint.png) |
-
-<sub>Paint: full-screen multicolor bitmap with a 4-color palette (erase / white / red / cyan).</sub>
+![Commodore Desk 64 — the desktop](docs/screenshots/theme_c64.png)
 
 ---
 
-## Features
+## Contents
 
-- **Desktop shell**: a fixed menu bar (`CD64 · DESKTOP · FILES · SYSTEM`),
-  one large window (rows 1-23) and a **status bar** with date and time.
-- **Windows-95-style boot screen**: a separate loader (`BOOT`) shows a sharp
-  **hi-res bitmap** splash, then chain-loads the desktop — so the splash costs
-  **no memory** in the running OS (it's overwritten when `CD64` loads).
-- **One pointer, three input sources**: 1351 **mouse** (port 1), **joystick**
-  (port 2) and the **keyboard** (cursor keys) all move the same sprite cursor.
-- **Apps**:
-  - **Files** — File Manager: reads the disk directory into a scrollable list.
-  - **Editor** — text editor: type, RETURN (new line), DEL (backspace).
-  - **Paint** — real **multicolor bitmap** paint (160×200): full-screen canvas,
-    white background, all **16 colors** (per-cell colour slots) + an **eraser**
-    button, starts on black; hold fire to drag-draw, **ESC** to exit.
-  - **Calc** — 16-bit calculator (+ − × ÷).
-  - **Settings** — all **theme colors are adjustable**, plus a **font** picker
-    (System / Classic / Bold); everything is saved to `CD64.CFG`.
-- **F1 context help** — a help panel whose text depends on the active app; press
-  space to close it.
-- **Drop-down menus** — `CD64` (HELP · RESET · EXIT · ABOUT), `DESKTOP`
-  (ADD / EDIT / DELETE PROGRAM) and `SYSTEM` (SETTINGS · NETWORK · EMAIL);
-  click an item or click away to close.
-- **EMAIL** (desktop icon, own overlay `EMAIL`) — fetch, read, write and
-  reply to mail over **POP3 and SMTP without SSL/TLS**. **SYSTEM → EMAIL**
-  holds the settings, saved to `MAIL.CFG`: your name, e-mail address, POP3
-  server + port (110), SMTP server + port (587; empty = the POP3 server),
-  user name (empty = the address), password (shown as `*`, stored readable
-  in `MAIL.CFG`) and time zone for the Date header. **FETCH** lists the 18
-  newest messages (headers only, mail stays on the server); click one to
-  read it — MIME multipart, quoted-printable, base64, UTF-8 accents and
-  HTML-only mail are turned into plain 40-column text, and downloading stops
-  once the text is in (attachments are not fetched). **REPLY** fills in the
-  address, `Re:` and the quoted text; **NEW** starts an empty message. In the
-  text: cursor keys, RETURN, DEL, CLR/HOME. `@` and `_` can be typed in the
-  fields. Capitals (SHIFT) show as reverse letters, like in the editor.
-  `tools/mailtest_server.py` is a small POP3/SMTP test server with a test
-  mailbox (run it in WSL so VICE can reach it).
-- **Your settings survive a rebuild** — `build_disk.bat` copies `MAIL.CFG`,
-  `NET.CFG`, `BBS.CFG`, `CD64.CFG` and `DESK.APPS` from the old disk image to
-  `..\cd64_userfiles` (outside the repo, never committed: `MAIL.CFG` holds
-  your mail password) and writes them back onto the new D71 and D64.
-- **BBS client** (desktop icon, own overlay `BBS`) — address book with ten
-  Commodore/retro BBSes, a default BBS saved in `BBS.CFG`, local-echo setting.
-  **CONNECT** opens a full-screen PETSCII terminal (colours, reverse, cursor
-  control, upper/lower charset). The keyboard works like on a C64 terminal:
-  cursor keys, F1-F6, CLR/HOME, INST/DEL, CTRL/C= + 1-8 colours, C= graphics;
-  RUN/STOP sends an abort ($03) to the BBS. **F7** opens the session menu
-  (D = disconnect, Q = back to the desktop). Telnet negotiation is handled
-  (BINARY, ECHO, SGA, terminal type `PETSCII`, window size 40x24; other
-  options are refused), so Telnet boards such as Synchronet switch to their
-  PETSCII screens (see `docs/Commodore_Desk_BBS_Client_Technisch_Bouwplan.md`).
-- **Network** — **SYSTEM → NETWORK**: detects an RR-Net (CS8900) or an Ultimate (UCI)
-  and holds *all* network settings in one place: IP, mask, gateway, DNS and the
-  **chat server** (OpenAI-compatible: host, port, API key, model), saved to
-  `NET.CFG`. **MODELS** fetches the server's model list (`GET /v1/models`)
-  and lets you pick one; **DHCP** gets IP/mask/gateway/DNS from the network
-  (RR-Net). HOST may be an IP address or a name (DNS). On an **Ultimate** the
-  Ultimate itself does TCP/IP and DNS (UCI network target).
-  **DEBUG LOG** (click to switch on) records ARP, PING, DNS, DHCP, TCP
-  (flags, SEQ, lengths), HTTP status and UCI commands; **VIEW** shows the
-  last 15 lines — handy when something does not connect.
-  **PING** (desktop icon) — ARP + 4 ICMP echo requests with round-trip time; while it waits
-  the C64 also answers pings. **CHAT** (desktop icon) — talk to an OpenAI-compatible AI server
-  (e.g. Ollama on your Mac, which can also relay Ollama Cloud models) over plain
-  HTTP; the answer streams in with word wrap. Own TCP/IP stack on the RR-Net
-  (CS8900). See *Networking in VICE* below.
-- **Widgets**: buttons, checkbox, scrollable list, modal dialog.
-- **SID click sound**.
-- Strictly the **16-color VIC-II palette**.
+- [Screenshots](#screenshots)
+- [The desktop](#the-desktop)
+- [Programs](#programs)
+- [Network programs](#network-programs)
+- [Settings (SYSTEM menu)](#settings-system-menu)
+- [Themes and fonts](#themes-and-fonts)
+- [Controls](#controls)
+- [Your files and settings](#your-files-and-settings)
+- [Building](#building)
+- [Running it in VICE with networking](#running-it-in-vice-with-networking)
+- [Real hardware](#real-hardware)
+- [Architecture](#architecture)
+- [Files and tools](#files-and-tools)
 
-## Color palette
+---
 
-Only the 16 VIC-II colors — no approximations.
+## Screenshots
 
-![Color palette](docs/palette.png)
+| Desktop menus | | |
+|---|---|---|
+| ![CD64 menu](docs/screenshots/menu_cd64.png) | ![DESKTOP menu](docs/screenshots/menu_desktop.png) | ![SYSTEM menu](docs/screenshots/menu_system.png) |
+| **CD64**: help, reset, exit, about | **DESKTOP**: add/edit/delete programs | **SYSTEM**: all settings |
 
-| # | Name | Hex | | # | Name | Hex |
-|---|---|---|---|---|---|---|
-| 0 | Black | `#000000` | | 8 | Orange | `#DD8855` |
-| 1 | White | `#FFFFFF` | | 9 | Brown | `#664400` |
-| 2 | Red | `#880000` | | 10 | Light red | `#FF7777` |
-| 3 | Cyan | `#AAFFEE` | | 11 | Dark grey | `#333333` |
-| 4 | Purple | `#CC44CC` | | 12 | Grey | `#777777` |
-| 5 | Green | `#00CC55` | | 13 | Light green | `#AAFF66` |
-| 6 | Blue | `#0000AA` | | 14 | Light blue | `#0088FF` |
-| 7 | Yellow | `#EEEE77` | | 15 | Light grey | `#BBBBBB` |
+| Programs | | |
+|---|---|---|
+| ![File Manager](docs/screenshots/files.png) | ![Text editor](docs/screenshots/editor.png) | ![Paint](docs/screenshots/paint.png) |
+| File Manager | Text editor | Paint (multicolour bitmap) |
+| ![Calculator](docs/screenshots/calc.png) | ![Help](docs/screenshots/help.png) | ![About](docs/screenshots/about.png) |
+| Calculator | F1: context help | About |
 
-The colors and theme roles are constants in
-[`include/palette.inc`](include/palette.inc); in **Settings** you map each theme
-role to one of these 16.
+| Network programs | | |
+|---|---|---|
+| ![BBS client](docs/screenshots/bbs.png) | ![BBS address book](docs/screenshots/bbs_book.png) | ![BBS terminal](docs/screenshots/bbs_terminal.png) |
+| BBS client | BBS address book | Connected to The Oasis BBS |
+| ![E-mail](docs/screenshots/email_inbox.png) | ![Reading mail](docs/screenshots/email_read.png) | ![Reply](docs/screenshots/email_reply.png) |
+| E-mail: mailbox | Reading a message | Writing a reply |
+| ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | ![Loading screen](docs/screenshots/loading.png) |
+| AI chat | Ping | Starting a game |
+
+| Settings | | |
+|---|---|---|
+| ![Settings](docs/screenshots/settings.png) | ![Network](docs/screenshots/network.png) | ![E-mail settings](docs/screenshots/email_settings.png) |
+| SYSTEM → SETTINGS | SYSTEM → NETWORK | SYSTEM → EMAIL |
+
+<sub>All screenshots were made in VICE with example settings.</sub>
+
+---
+
+## The desktop
+
+- **Menu bar** (top): `CD64 · DESKTOP · FILES · SYSTEM`.
+  - **CD64**: HELP, RESET (reboots the C64), EXIT (back to BASIC without a
+    reset) and ABOUT.
+  - **DESKTOP**: ADD PROGRAM, EDIT PROGRAM and DELETE PROGRAM, to put your own
+    programs on the desktop (name, icon, colour, PRG file).
+    ![Add program](docs/screenshots/add_program.png)
+  - **FILES** opens the File Manager.
+  - **SYSTEM**: SETTINGS, NETWORK and EMAIL. These are the only way to reach
+    settings, the same everywhere.
+- **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
+  BBS, EMAIL) and your own programs, for example games. Click one to start it.
+  The list scrolls when it gets longer than the window.
+- **Starting a program from disk** (a game such as *C64 City* or *Pokémon
+  Red*) shows a calm screen in the theme colours with
+  `LOADING <name> please wait` while it loads. When the program ends (it
+  returns to BASIC), or when you press RESTORE, you come back to the desktop.
+- **Status bar** (bottom): date and time from the C64's own clock (CIA TOD).
+- **F1** shows help for the program you are in.
+- **ESC** (RUN/STOP) closes the program and returns to the desktop.
+
+---
+
+## Programs
+
+- **File Manager**: the disk directory as a scrollable list.
+- **Text editor**: type, RETURN for a new line, DEL to delete.
+- **Paint**: a full-screen **multicolour bitmap** (160×200) with all 16
+  colours and an eraser. Hold the fire button or space to draw, ESC to leave.
+- **Calculator**: a 16-bit calculator (+ − × ÷).
+
+---
+
+## Network programs
+
+All network programs use the C64's own TCP/IP stack: ARP, IPv4, ICMP, UDP,
+DNS, DHCP and TCP on the **RR-Net** (CS8900a). On an **Ultimate** the
+Ultimate's firmware does TCP/IP and DNS, through its command interface (UCI).
+There is no SSL/TLS on a C64, so every service must work without it.
+
+### BBS client
+
+An address book with ten Commodore BBSes (The Oasis BBS, RapidFire, Dead
+Zone, C64 Ultimate Club, …). Click one to make it your default (saved in
+`BBS.CFG`); **CONNECT** dials in.
+
+- A full-screen **PETSCII terminal**: colours, reverse, cursor control and
+  upper/lower case, the way a C64 terminal program shows it.
+- **Telnet** is handled automatically: binary, echo, suppress-go-ahead,
+  terminal type `PETSCII` and window size 40×24. Telnet boards such as
+  Synchronet switch to their PETSCII screens by themselves.
+- **Keys**: cursor keys, F1–F6, CLR/HOME, INST/DEL, CTRL/C= plus 1–8 for
+  colours and C= plus a letter for graphics are all sent to the BBS.
+  RUN/STOP sends an abort. **F7** opens the session menu: D = disconnect,
+  Q = back to the desktop.
+- **LOCAL ECHO** can be switched on for boards that don't echo your typing.
+
+### E-mail
+
+POP3 and SMTP **without SSL/TLS** (you need a mailbox that allows that).
+
+- **FETCH** lists the 18 newest messages. Only the headers are fetched, and
+  the mail stays on the server.
+- **Click a message** to read it. MIME multipart, quoted-printable, base64,
+  encoded headers, UTF-8 accents and HTML-only mail all become plain 40-column
+  text. Downloading stops as soon as the text is in, so attachments are never
+  fetched.
+- **REPLY** fills in the address, `Re:` and the quoted message. **NEW** starts
+  an empty message.
+- **Writing**: in the TO and SUBJ fields you can type `@` and `_`. The text
+  has 30 lines, with cursor keys, RETURN, DEL and CLR/HOME. **SEND** logs in
+  with AUTH PLAIN and sends it.
+- Keyboard shortcuts: F = fetch, N = new; in a message, SPACE = next page,
+  `-` = previous page, R = reply.
+- The desktop charset has only capital letters, so received text is shown in
+  capitals. Letters typed with SHIFT show as reversed letters and are sent as
+  capitals; the rest is sent as lower case.
+
+### AI chat
+
+Talk to an **OpenAI-compatible** AI server on your own network, such as
+Ollama or LM Studio, over plain HTTP. The answer streams in with word wrap,
+and the conversation is remembered.
+
+### Ping
+
+Ping an IP address or a name, 4 times, with the round-trip time. While it
+waits, the C64 answers pings itself.
+
+---
+
+## Settings (SYSTEM menu)
+
+### SETTINGS
+
+- **THEME**: C64, MATRIX, PAPER or FREMEN (see below). Click to switch.
+- **Colours**: pick your own colour for each part (border, window, bars,
+  accent, selection) from the 16 C64 colours.
+- **FONT**: ten fonts, see below.
+- **MENU**: drop-down menus filled or clear.
+- **SOUND**: a click sound on or off.
+- **CLOCK**: set the date and time.
+- **SAVE** writes `CD64.CFG`, which is loaded again at start-up.
+
+### NETWORK
+
+- The network hardware found: RR-Net or Ultimate.
+- **IP, mask, gateway and DNS**, or **DHCP** to get them from the network.
+- **The chat server**: host (IP address or name), port, API key and model.
+  **MODELS** fetches the server's model list to pick from.
+- **DEBUG LOG** records ARP, ping, DNS, DHCP, TCP, HTTP and UCI traffic, and
+  **VIEW** shows it. Handy when something does not connect.
+- **SAVE** writes `NET.CFG`.
+
+### EMAIL
+
+- Your name and e-mail address.
+- The POP3 server and port (110).
+- The SMTP server and port (587; empty = the POP3 server).
+- The user name (empty = your e-mail address).
+- The password, shown as `*`.
+- The time zone for the Date header.
+- **SAVE** writes `MAIL.CFG`. The password is stored readable in that file,
+  and without TLS it also goes over the network unencrypted.
+
+---
+
+## Themes and fonts
+
+Four colour themes. On every theme the mouse pointer takes the text colour,
+and desktop icons that would be hard to see get a darker or lighter variant.
+
+![The four themes](docs/screenshots/themes.png)
+
+| Theme | Look |
+|---|---|
+| **C64** | the classic blue C64 screen with grey bars |
+| **MATRIX** | green on black |
+| **PAPER** | black on white |
+| **FREMEN** | the GEOS colours: dark grey on light grey |
+
+Ten fonts. Five are built in: SYSTEM, CLASSIC (italic), BOLD, LOWER (lower
+case) and TINY. Five are loaded from disk: FREMEN, SERIF, MONO, CASUAL and
+HEAVY. The whole screen switches at once, including the menu bar, window
+titles and status bar.
+
+![The ten fonts](docs/screenshots/fonts.png)
+
+Only the 16 VIC-II colours are used:
+
+![Colour palette](docs/palette.png)
+
+---
 
 ## Controls
 
-| Action | Mouse | Joystick (port 2) | Keyboard |
+| Action | Mouse (port 1) | Joystick (port 2) | Keyboard |
 |---|---|---|---|
-| Move cursor | move the mouse | push the stick | cursor keys (+ shift for left/up) |
-| Click | left button | fire | **space** or **return** |
-| Type (Editor) | — | — | letters/digits, RETURN, DEL |
-| Context help | — | — | **F1** (space closes it) |
-| Back to desktop (close app) | — | — | **ESC** (= RUN/STOP) |
+| Move the pointer | move | push | cursor keys (+ SHIFT for left/up) |
+| Click | left button | fire | SPACE or RETURN |
+| Help | | | F1 |
+| Close the program | click ✕ | | ESC (= RUN/STOP) |
 
-Click **CD64**, **DESKTOP** or **SYSTEM** in the menu bar to open its drop-down;
-**FILES** opens the File Manager directly. All settings are reached the same
-way, only through **SYSTEM**: SETTINGS (theme, font, and the `CLOCK:` line for
-date and time), NETWORK and EMAIL. **ESC** closes the active app and
-returns to the desktop — that's how you leave the text editor (where space types a
-space) and Paint. (In VICE on a PC the RUN/STOP key is mapped to **Esc**.)
+In VICE on a PC, RUN/STOP is the **Esc** key.
+
+In the BBS terminal and the e-mail editor the keyboard works like on a real
+C64. The cursor keys move the text cursor there, not the pointer.
+
+---
+
+## Your files and settings
+
+| File | What it holds |
+|---|---|
+| `CD64.CFG` | theme, colours, font, menu style, sound |
+| `NET.CFG` | network and chat server settings |
+| `MAIL.CFG` | e-mail settings, **including your password** |
+| `BBS.CFG` | default BBS, local echo |
+| `DESK.APPS` | your own programs on the desktop |
+
+`build_disk.bat` formats a fresh disk image on every build. So that you never
+lose your settings, it first copies these five files from the old disk image
+to `..\cd64_userfiles` (next to the repository, never committed) and then
+puts them back on the new D71 and D64.
+
+---
 
 ## Building
 
-Requires (paths are set in the `.bat` scripts — adjust as needed): **Java**,
-**Kick Assembler** (`KickAss.jar`), **VICE** (`x64sc`, `c1541`, `cartconv`).
+Requirements (paths are set in the `.bat` scripts): **Java**, **Kick
+Assembler** (`KickAss.jar`), **VICE** (`x64sc`, `c1541`, `cartconv`) and
+**Python 3**.
 
-**One-time — extract the charset.** The System charset (`data/chargen.bin`) is the
-C64 character ROM and is **not** in this repo (copyright). Extract it locally from
-your VICE installation:
+**One-time: the character set.** The C64 character ROM is not in this
+repository (copyright). Extract it from your VICE installation:
 ```bash
 mkdir -p data
 head -c 2048 "<VICE>/C64/chargen-901225-01.bin" > data/chargen.bin
 ```
-(The first 2 KB = the uppercase/graphics set.)
-
-**One-time — generate the extra font data.** The Lowercase and Tiny fonts need
-`data/lower.bin` (the C64 lowercase letters, from the ROM) and `data/tiny.bin`
-(a generated 3×5 micro-font). Adjust the ROM path at the top of the script, then:
+Then generate the extra fonts (adjust the ROM path at the top of the script):
 ```bash
 python tools/make_fonts.py
-python tools/make_fremenfont.py    # -> data/fremen.bin, serif.bin, mono.bin, casual.bin, heavy.bin
+python tools/make_fremenfont.py
 ```
 
-**Disk (D71):**
+**Disk (D71 and D64):**
 ```bat
-build_disk.bat        :: -> build\CD64.d71
+build_disk.bat
 ```
-```bash
-x64sc -autostart build/CD64.d71
-```
+This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
+DESKTOOL, INET, BBS, EMAIL) and the fonts, and writes everything to
+`build\CD64.d71` and `build\CD64.d64`.
+
+Games and other programs you want on the desktop go into `build\` as well
+(for example `c64cdesk.prg` and `c64rdesk.prg`) and are written to the disks
+by `build_disk.bat`. Third-party programs are not part of this repository.
 
 **Cartridge (EasyFlash .CRT):**
 ```bat
-build_cart.bat        :: -> build\CommodoreDesk64.crt
+build_cart.bat
 ```
 ```bash
 x64sc -cartcrt build/CommodoreDesk64.crt -8 build/CD64.d71
 ```
-Flashing to real hardware: copy the `.CRT` to an SD card and flash it with
-**EasyProg** on the C64.
+The cartridge boots instantly and loads the programs from the disk in drive 8.
+To use it on real hardware, copy the `.CRT` to an SD card and flash it with
+**EasyProg**.
 
-> The D71 version loads over the slow IEC bus (~½ minute on real hardware). The
-> cartridge version boots **instantly**: the reset stub copies the OS image from
-> ROM into RAM (`$0801`), switches the cartridge off and runs as a plain C64.
+---
 
-## Networking in VICE (INET)
+## Running it in VICE with networking
 
-INET talks to an **RR-Net** ethernet cartridge (CS8900a chip at `$DE00`). VICE
-emulates this cartridge and connects it to a real network adapter on your PC via
-**Npcap**. Without Npcap, VICE prints `LoadLibrary WPCAP.DLL failed!` and the
-cartridge does nothing.
+VICE emulates the **RR-Net** cartridge and connects it to a network adapter
+on your PC through **Npcap**.
 
-**Easiest: `start_cd64.bat`** (double-click, or `start_cd64.bat build\CD64.d64`).
-It starts WSL (the `vEthernet (WSL)` adapter only exists while WSL runs, and it
-gets a **new ID every time WSL starts**, so a fixed adapter in the VICE settings
-goes stale), looks up that adapter and its subnet, writes the matching IP /
-MASK / GATEWAY into `NET.CFG` on the disk (the chat settings stay), and starts
-VICE with the RR-Net on that adapter. Requires Npcap (step 1).
+1. **Install Npcap** from <https://npcap.com> as administrator and tick
+   **"Install Npcap in WinPcap API-compatible Mode"**. VICE needs `wpcap.dll`.
+2. **Double-click `start_cd64.bat`** (or `start_cd64.bat build\CD64.d64`).
+   It starts WSL, looks up the `vEthernet (WSL)` adapter, writes the matching
+   IP, mask and gateway into `NET.CFG` on the disk (the other settings stay)
+   and starts VICE with the RR-Net on that adapter.
 
-**1. Install Npcap (one-time, Windows).**
-Download it from <https://npcap.com> and run the installer as administrator.
-In the installer, tick **"Install Npcap in WinPcap API-compatible Mode"** — VICE
-looks for `wpcap.dll`, which only exists in that mode (it ends up in
-`C:\Windows\System32\Npcap\`). Restart VICE afterwards.
+> **Why WSL and not Wi-Fi?** Wi-Fi adapters drop frames from a "foreign"
+> network card (the C64's own MAC address), so even your router won't answer.
+> On the Hyper-V `vEthernet (WSL)` adapter, Windows itself is the gateway and
+> routes on to your network, the internet and Tailscale. That adapter only
+> exists while WSL runs, and it gets a new ID each time WSL starts, which is why
+> `start_cd64.bat` looks it up every time.
 
-Check that your VICE build supports ethernet: `x64sc -help` must list
-`-ethernetcart`. (The official Windows GTK3 builds do.)
-
-> **Wi-Fi does not work.** Wi-Fi adapters and access points drop frames that
-> come from a "foreign" network card (the C64's own MAC), so even your router
-> won't answer ARP. Use a **wired** adapter, or on Windows the
-> **`vEthernet (WSL)`** Hyper-V adapter: Windows itself is the gateway there
-> (`172.27.208.1`) and routes on — including to **Tailscale** addresses. The
-> NETWORK defaults match that setup (IP `172.27.211.64`, mask `255.255.240.0`,
-> gateway `172.27.208.1`); WSL must be running, and WSL may pick a different
-> subnet after a reboot (`Get-NetIPAddress -InterfaceAlias "vEthernet (WSL*"`).
-
-**2. VICE settings (GUI).**
-
-| Where | Setting |
-|---|---|
-| *Preferences → Settings → Peripheral devices → Ethernet* | **Interface**: your **wired** network adapter (Wi-Fi often doesn't pass raw ethernet frames) |
-| *Settings → Cartridges → Ethernet Cartridge* | **Enable Ethernet Cartridge**: on · **Mode**: RR-Net · **Base address**: `$DE00` |
-| *Settings → Cartridges → GeoRAM* | **off** — GeoRAM also sits at `$DE00` and hides the RR-Net |
-| *Settings → Cartridges → REU* | off (not needed; frees `$DF00`) |
-| *Peripheral devices → Drive 8* | **1541** for `CD64.d64`, **1571** for `CD64.d71` (a 1581 cannot read these images) |
-
-**3. Command line (same settings, nothing saved to your VICE config):**
+Manual start (with a wired adapter, for example):
 ```bash
-x64sc -drive8type 1541 +georam +reu -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -autostart build/CD64.d64
+x64sc -drive8type 1571 +georam +reu -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -ethernetioif "\Device\NPF_{GUID}" -autostart build/CD64.d71
 ```
-To pick a specific network adapter, add `-ethernetioif "<name>"`. On Windows the
-name has the form `\Device\NPF_{GUID}`; list the GUIDs with PowerShell:
-```powershell
-Get-NetAdapter | Select-Object Name, InterfaceDescription, InterfaceGuid
-```
-Example (replace the GUID with your own):
+List the adapter GUIDs with PowerShell:
+`Get-NetAdapter | Select-Object Name, InterfaceGuid`.
+GeoRAM must be off (it also uses `$DE00`). Drive 8 must be a 1571 for the D71,
+or a 1541 for the D64.
+
+**Check:** SYSTEM → NETWORK should show `PLATFORM: RR-NET` and
+`STATUS: READY`.
+
+**Testing e-mail without a real mailbox:** `tools/mailtest_server.py` is a
+small POP3/SMTP server with a test mailbox (user `test@c64.test`, password
+`Secret99`). Run it inside WSL so VICE can reach it:
 ```bash
-x64sc -drive8type 1541 +georam +reu -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -ethernetioif "\Device\NPF_{12345678-90AB-CDEF-1234-567890ABCDEF}" -autostart build/CD64.d64
+wsl python3 tools/mailtest_server.py 1110 1587
 ```
 
-**4. Test.** Click **SYSTEM → NETWORK** in the menu bar. Expected:
-```text
-PLATFORM : RR-NET
-DEVICE   : CS8900 $DE00 REV $09
-STATUS   : READY
-```
-`NOT FOUND` means the cartridge is off, in TFE mode, at another base address,
-or blocked by GeoRAM; click **RESCAN** after changing a setting. The
-**cartridge build** (EasyFlash) never scans, because EasyFlash itself uses
-`$DE00`/`$DF00` — it shows `IN USE BY CARTRIDGE`. The **Ultimate** (UCI)
-detection is not emulated by VICE; it can only be tested on an Ultimate 64 /
-1541 Ultimate-II+ with the Command Interface enabled. Details and the test
-procedure: [`docs/INET_Milestone1.md`](docs/INET_Milestone1.md).
+---
+
+## Real hardware
+
+- **RR-Net** (or a compatible CS8900a cartridge at `$DE00`): works like in
+  VICE. Set the IP address in SYSTEM → NETWORK, or use DHCP.
+- **Ultimate 64 / 1541 Ultimate-II+**: enable the **Command Interface**. The
+  Ultimate's own network connection is used, and its firmware handles TCP/IP
+  and DNS. VICE cannot emulate this, so it can only be tested on the real thing.
+- **Cartridge build**: EasyFlash uses `$DE00`/`$DF00` itself, so the RR-Net
+  cannot be used together with it.
+
+---
 
 ## Architecture
 
 ```
-apps/     Files · Editor · Paint · Calc · Settings · INET
-gui/      shell (desktop/menu bar/status bar) · widgets · help · launcher
-gfx/      gfx primitives · font · sprite (cursor)
-kernel/   kernel · events · irq (raster 50 Hz) · clock (CIA TOD) · memory · banking
-net/      network drivers: CS8900/RR-Net · Ultimate UCI · platform detection
-hal/      vic · input (mouse/joy/kbd) · disk (IEC) · sound (SID)
-include/  palette · layout · memmap · abi · hardware
+gui/      shell (menu bar, windows, status bar) · desktop launcher · widgets · help
+gfx/      drawing primitives · fonts and icons · mouse pointer sprite
+kernel/   start-up · events · raster IRQ (50 Hz) · clock · memory
+hal/      VIC · input (mouse, joystick, keyboard) · disk (IEC) · sound (SID)
+apps/     files · editor · paint · calc · settings · network/ping/chat
+apps/bbs/ BBS client: directory, session, terminal, Telnet
+apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
+net/      network stack: CS8900, Ultimate UCI, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
+include/  palette · layout · memory map · ABI · hardware
 ```
 
-- **App overlays**: the resident **core** (kernel, gfx, input, shell/desktop) lives
-  at `$0801`; each app (Files, Editor, Paint, Calc, Settings) is a **separate PRG**
-  loaded from disk into a shared overlay region at `$8000` when you open it
-  (`LOADING …`). Only one app is resident at a time, so the memory ceiling is gone
-  and the OS scales to many apps. The cartridge boots the core and loads the same
-  app PRGs from the attached disk.
-- **Display**: hi-res character mode (40×25) for the desktop; Paint switches to
-  multicolor bitmap in VIC bank 1 (`$4000-$7FFF`, free RAM above the OS) and back.
-  The cursor is hardware sprite 0.
-- **System clock**: a raster IRQ (50 Hz) polls input and generates events.
-- **Memory**: runs from RAM with BASIC/KERNAL banked out; KERNAL is banked back in
-  temporarily for disk I/O.
-- **Font**: the System charset is embedded (`data/chargen.bin`) at `$3800`.
+- **The core** (kernel, graphics, input, shell, desktop) lives at `$0801` and
+  always stays in memory.
+- **Every program is an overlay**: a separate PRG loaded from disk into
+  `$8000–$BFFF` when you open it. BBS and EMAIL are separate assemblies that
+  include their own copy of the network stack; they call the core through
+  addresses exported by `tools/export_core_syms.py`.
+- **Display**: 40×25 character mode with its own charset at `$3800`. The
+  icons are drawn with that charset, and the pointer is hardware sprite 0.
+  Paint switches to a multicolour bitmap in VIC bank 1.
+- **Memory**: BASIC and KERNAL are banked out. The KERNAL is switched in only
+  for disk access. Network and e-mail buffers use the RAM under the I/O area
+  and the KERNAL.
 
-## Settings (persistence)
+---
 
-In **Settings** you pick a base **color profile** (Commodore 64 / Matrix /
-Paper), a color per theme role (border, desktop, menu bar, accent, selection),
-the **drop-down style** (filled/clear) and a **font**. There are 10 fonts: five
-built in (System, Classic, Bold, Lowercase, Tiny — derived or overlaid from the
-System charset) and five original **disk fonts** (Fremen, Serif, Mono, Casual,
-Heavy) that load from disk into the charset RAM on selection. Click the `FONT:`
-line to cycle; the whole UI switches instantly. **SAVE** writes `CD64.CFG` to the
-D71 and the OS loads it back at boot. All fonts share one UI-glyph block (frames,
-dock icons), so only the text glyphs change.
+## Files and tools
 
-## Files
-
-| File | Role |
+| File | Purpose |
 |---|---|
-| `disk_main.asm` | entry point for the D71 build (PRG at `$0801`) |
-| `boot_main.asm` | Windows-95-style boot loader: shows the splash, chain-loads `CD64` |
-| `main_cart.asm` | entry point for the EasyFlash CRT (OS image + reset stub) |
-| `tools/make_bootscreen.py` | generates the native hi-res boot screen bitmap (`data/boot_*.bin`) |
-| `tools/make_fonts.py` | extracts lowercase + generates the Tiny 3×5 font (`data/lower.bin`, `data/tiny.bin`) |
-| `tools/make_fremenfont.py` | generates the five original disk fonts (Fremen, Serif, Mono, Casual, Heavy) |
-| `build_disk.bat` / `build_cart.bat` | build scripts |
-| `Commodore-Desk-64-Ontwikkelplan.md` | full development plan (phases 0–10, Dutch) |
-| `C64_KICKASS_SKILL.md` | Kick Assembler working instructions (Dutch) |
-| `c64_ka_syntax_checker.py` | static syntax check |
-
-## Status
-
-Phases **0–10** complete: boot (disk + cart), kernel/IRQ, gfx primitives,
-input HAL, events, desktop shell, widgets, 5 apps, color personalization with
-persistence, and finishing (splash, sound, cartridge, docs). Plus F1 context help,
-auto-hiding bars, and apps that fill the full work area.
-
-**Open / upgrades:** selectable dock shape; config in flash instead of on disk.
-Later: a **Commodore 128** port (all hardware-specific code lives in `hal/`).
-
-> The development plan and the Kick Assembler skill document are still in Dutch;
-> the application's on-screen text and this README are English.
+| `disk_main.asm` | the core for the disk version |
+| `main_cart.asm` | the EasyFlash cartridge version |
+| `boot_main.asm` | boot loader with the splash screen |
+| `bbs_main.asm`, `email_main.asm` | the BBS and EMAIL overlays |
+| `build_disk.bat`, `build_cart.bat` | build scripts |
+| `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
+| `tools/export_core_syms.py` | core addresses for the separately built overlays |
+| `tools/mailtest_server.py` | POP3/SMTP test server |
+| `tools/make_fonts.py`, `tools/make_fremenfont.py` | font generators |
+| `tools/make_bootscreen.py` | boot screen bitmap |
+| `docs/` | development plans (Dutch) and screenshots |

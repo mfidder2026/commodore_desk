@@ -55,7 +55,7 @@ help_Show: {
         sta r0+1
         lda #5
         sta a0
-        lda #12
+        lda #11                  // (rij 13 = OK-knop)
         sta a1
         lda TH_title
         sta a2
