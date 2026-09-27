@@ -44,3 +44,4 @@
         #import "apps/bbs/bbs_directory.asm"
         #import "apps/bbs/bbs_config.asm"
         #import "apps/bbs/bbs.asm"
+        #import "apps/bbs/bbs_session.asm"

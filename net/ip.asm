@@ -154,6 +154,8 @@ net_Wait: {
         sta nwEnd
 lp:     lda netFlag
         bne yes
+        lda netNoKeys            // terminal: toetsen blijven in de rij
+        bne rx
         jsr evt_Poll             // ESC = afbreken
         cmp #EVT_KEY
         bne rx
@@ -554,6 +556,7 @@ arpValid:   .byte 0
 arpTry:     .byte 0
 netFlag:    .byte 0              // gezet door net_Handle: antwoord binnen
 netAbort:   .byte 0              // ESC tijdens net_Wait
+netNoKeys:  .byte 0              // 1 = net_Wait leest geen toetsen (BBS-terminal)
 nwEnd:      .byte 0
 pingSeq:    .byte 0
 pingTtl:    .byte 0

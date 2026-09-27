@@ -6,7 +6,7 @@
 // Hoofdscherm met de default BBS, knoppen CONNECT / DISCONNECT /
 // ADDRESS BOOK / LOCAL ECHO / BACK TO DESKTOP, en het adresboek waarin
 // een klik de default kiest (opgeslagen in BBS.CFG).
-// Increment 1: nog geen netwerk (CONNECT volgt in increment 2).
+// CONNECT start de sessie (bbs_session.asm, Increment 2).
 //========================================================
 
 .const BB_COL  = 4               // labels en knoppen
@@ -21,6 +21,8 @@
 .const BB_R_BACK    = 19
 
 bbs_Init:
+        jsr nc_Load              // netwerkinstellingen + hardware
+        jsr net_Detect
         jsr bb_CfgLoad
         lda #<sBbNotConn
         sta bbStatus
@@ -290,16 +292,7 @@ hit:    lda bbI
         beq echo
         jmp exitToDesktop        // BACK TO DESKTOP
 connect:
-        ldx BC_DEFAULT           // directory-entry: kan niet verbinden
-        lda bbFlags,x
-        and #BF_CONNECT
-        bne soon
-        ldx #<sBbDirOnly
-        ldy #>sBbDirOnly
-        jmp bb_SetMsg
-soon:   ldx #<sBbSoon
-        ldy #>sBbSoon
-        jmp bb_SetMsg
+        jmp bb_Connect           // (terminal; terug via shell_DrawAll)
 disc:   ldx #<sBbNotConnMsg
         ldy #>sBbNotConnMsg
         jmp bb_SetMsg
@@ -456,8 +449,6 @@ sBbSaved:    .text "DEFAULT SAVED IN BBS.CFG"
 sBbSaveErr:  .text "COULD NOT SAVE BBS.CFG"
              .byte $ff
 sBbDirOnly:  .text "DIRECTORY ONLY - NO CONNECT"
-             .byte $ff
-sBbSoon:     .text "CONNECT COMES IN THE NEXT STEP"
              .byte $ff
 sBbNotConnMsg: .text "NOT CONNECTED"
              .byte $ff

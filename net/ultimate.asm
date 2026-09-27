@@ -214,8 +214,20 @@ ucTimeout:
 // -----------------------------------------------------
 // ut_Connect - TCP naar NC_HOST (IP of naam; de Ultimate lost namen
 //              zelf op) op poort tcpRPort. Uit: carry=1 -> utSock.
+// ut_ConnectFe - hetzelfde met de host in feBuf/feLen (schermcodes).
 // -----------------------------------------------------
 ut_Connect: {
+        ldx #0
+cp:     lda NC_HOST,x
+        cmp #$ff
+        beq ce
+        sta feBuf,x
+        inx
+        cpx #32
+        bne cp
+ce:     stx feLen
+}
+ut_ConnectFe: {
         lda #$03
         sta ucCmd
         lda #$07
@@ -226,14 +238,13 @@ ut_Connect: {
         sta ucCmd+3
         ldx #0
         ldy #4
-hl:     lda NC_HOST,x
-        cmp #$ff
+hl:     cpx feLen
         beq he
+        lda feBuf,x
         jsr sc2ascii
         sta ucCmd,y
         iny
         inx
-        cpx #32
         bne hl
 he:     lda #0
         sta ucCmd,y
