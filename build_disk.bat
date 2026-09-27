@@ -53,6 +53,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
   -write build\desktool.prg desktool ^
+  -write build\sidplay.prg sidplay ^
   -write build\inet.prg inet ^
   -write build\bbs.prg bbs ^
   -write build\email.prg email ^
@@ -80,6 +81,7 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\calc.prg calc ^
   -write build\setup.prg setup ^
   -write build\desktool.prg desktool ^
+  -write build\sidplay.prg sidplay ^
   -write build\inet.prg inet ^
   -write build\bbs.prg bbs ^
   -write build\email.prg email ^
@@ -89,12 +91,22 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\serif.prg serif ^
   -write build\mono.prg mono ^
   -write build\casual.prg casual ^
-  -write build\heavy.prg heavy ^
-  -write build\cowboy.prg cowboy ^
-  -write build\scrsaver.prg scrsaver ^
-  -write build\c64cdesk.prg c64cdesk ^
-  -write build\c64rdesk.prg c64rdesk
+  -write build\heavy.prg heavy
 if errorlevel 1 ( echo c1541 D64 failed. & exit /b 1 )
+:: Extra's (programma's van derden, SID-tunes) alleen als ze passen; er
+:: blijven 10 blokken vrij voor de instellingen van de gebruiker.
+echo D64-extra's:
+python tools\disk_add.py "%C1541%" build\CD64.d64 10 build\cowboy.prg build\scrsaver.prg sid\*.sid build\c64cdesk.prg build\c64rdesk.prg
+
+:: SID-tunes: alle .sid-bestanden uit de map sid\ (niet in git: muziek
+:: van derden) op de D71; op de D64 via disk_add.py (als ze passen).
+if exist sid\*.sid (
+  echo SID-tunes uit sid\ op de D71 ...
+  for %%S in (sid\*.sid) do (
+    "%C1541%" -attach build\CD64.d71 -write "%%S" %%~nxS >nul 2>&1
+    echo   %%~nxS
+  )
+)
 
 echo Gebruikersbestanden terugzetten uit %KEEP% ...
 for %%U in (%USERFILES%) do (

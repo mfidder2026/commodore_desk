@@ -208,6 +208,32 @@ cfg_io_end:
         rts
 
 //--------------------------------------------------------
+// drv_Init - drive 8 in 1571-modus zetten ("U0>M1"). Een 1571 aan een C64
+//            start als 1541 en leest dan alleen kant 1 van een D71: een
+//            bestand op kant 2 (track 36+) staat wel in de directory maar
+//            geeft FILE NOT FOUND. Een 1541 negeert de opdracht (foutmelding
+//            op kanaal 15, verder niets).
+//--------------------------------------------------------
+drv_Init: {
+        jsr cfg_io_begin
+        lda #[nEnd-nm]
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #15
+        ldx #8
+        ldy #15
+        jsr K_SETLFS
+        jsr K_OPEN               // de opdracht gaat mee met het openen
+        lda #15
+        jsr K_CLOSE
+        jmp cfg_io_end
+nm:     .encoding "petscii_upper"
+        .text "U0>M1"
+nEnd:   .encoding "screencode_upper"
+}
+
+//--------------------------------------------------------
 // cfg_Save - schrijf het config-blok naar "@0:CD64.CFG".
 //--------------------------------------------------------
 cfg_Save: {
@@ -328,10 +354,10 @@ loadCharset:
         sec
         rts
 
-// index 0-5 = apps (5 = INET), 6 = DESKTOOL, 7 = BBS, 8 = EMAIL
-appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool, <anBbs, <anMail
-appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool, >anBbs, >anMail
-appLen:   .byte 5, 6, 5, 4, 5, 4, 8, 3, 5
+// index 0-5 = apps (5 = INET), 6 = DESKTOOL, 7 = BBS, 8 = EMAIL, 9 = SIDPLAY
+appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool, <anBbs, <anMail, <anSid
+appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool, >anBbs, >anMail, >anSid
+appLen:   .byte 5, 6, 5, 4, 5, 4, 8, 3, 5, 7
 // disk-fonts: 0-4 = Fremen..Heavy, 5 = Lower, 6 = Tiny
 fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy, <anLower, <anTiny
 fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy, >anLower, >anTiny
@@ -346,6 +372,7 @@ anInet:   .text "INET"
 anTool:   .text "DESKTOOL"
 anBbs:    .text "BBS"
 anMail:   .text "EMAIL"
+anSid:    .text "SIDPLAY"
 anLower:  .text "LOWER"
 anTiny:   .text "TINY"
 anFremen: .text "FREMEN"

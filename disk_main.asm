@@ -24,6 +24,7 @@
 .segmentdef Calc   [start=$8000]
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
+.segmentdef Sidplay [start=$8000, max=$bfff]   // SID PLAYER
 .segmentdef DeskTool [start=$8000]      // launcher-beheer (menu ADD/EDIT/DELETE)
 .segmentdef Inet   [start=$8000, max=$bfff]        // INET + netwerkdrivers (net/)
 .segmentdef Lower  [start=$3800]
@@ -42,6 +43,7 @@
 .file [name="paint.prg",  segments="Paint"]
 .file [name="setup.prg",  segments="Setup"]
 .file [name="desktool.prg", segments="DeskTool"]
+.file [name="sidplay.prg", segments="Sidplay"]
 .file [name="inet.prg",   segments="Inet"]
 .file [name="lower.prg",  segments="Lower"]
 .file [name="tiny.prg",   segments="Tiny"]
@@ -97,6 +99,8 @@ start:
         #import "apps/paint.asm"
 .segment Setup
         #import "apps/settings.asm"
+.segment Sidplay
+        #import "apps/sidplay.asm"
 .segment DeskTool
         #import "gui/desktool.asm"
 .segment Inet

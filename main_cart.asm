@@ -58,6 +58,7 @@ osEnd:
 .segmentdef Calc   [start=$8000]
 .segmentdef Paint  [start=$8000]
 .segmentdef Setup  [start=$8000]
+.segmentdef Sidplay [start=$8000, max=$bfff]   // SID PLAYER
 .segmentdef DeskTool [start=$8000]
 .segmentdef Inet   [start=$8000, max=$bfff]
 .segment Files
@@ -70,6 +71,8 @@ osEnd:
 #import "apps/paint.asm"
 .segment Setup
 #import "apps/settings.asm"
+.segment Sidplay
+#import "apps/sidplay.asm"
 .segment DeskTool
 #import "gui/desktool.asm"
 .segment Inet

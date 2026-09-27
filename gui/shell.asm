@@ -232,8 +232,11 @@ drawContent:
 !e6:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
         beq !em+
         cmp #10
-        bne !f+
+        bne !e7+
 !em:    jmp EMAIL_DRAW
+!e7:    cmp #11                  // SID PLAYER
+        bne !f+
+        jmp sp_Draw
 !f:     jmp drawStub
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
@@ -830,7 +833,7 @@ menuBarClick:
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
-        ldx #11
+        ldx #12
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -971,8 +974,11 @@ onMouseDown:
 !w8:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
         beq !em+
         cmp #10
-        bne !done+
+        bne !w9+
 !em:    jmp EMAIL_CLICK
+!w9:    cmp #11                  // SID PLAYER
+        bne !done+
+        jmp sp_Click
 !done:  rts
 
 //--------------------------------------------------------
@@ -1031,7 +1037,11 @@ openApp:
         bne !na8+
         jsr BBS_INIT             // #8 BBS (sprongtabel $8000)
         jmp !drawit+
-!na8:   jsr EMAIL_INIT           // #9 EMAIL / #10 EMAIL SETTINGS
+!na8:   cmp #11
+        bne !na9+
+        jsr sp_Init              // #11 SID PLAYER
+        jmp !drawit+
+!na9:   jsr EMAIL_INIT           // #9 EMAIL / #10 EMAIL SETTINGS
 !drawit:
         jmp shell_DrawAll
 
@@ -1051,12 +1061,12 @@ deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
 // De gebruikersprogramma's staan als records in deskapps.asm.
-biCount:    .byte 7
-biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail
-biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail
-biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH  // 2x3
-biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE
-biApp:      .byte 1, 2, 3, 6, 7, 8, 9  // app-id
+biCount:    .byte 8
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail, <nSid
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail, >nSid
+biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH, ICO_SID  // 2x3
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE, LIGHT_BLUE
+biApp:      .byte 1, 2, 3, 6, 7, 8, 9, 11  // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
@@ -1071,15 +1081,15 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid
 // overlay (loadApp-index) per app-id: PING zit in de INET-overlay
-appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9
 
 dbI:       .byte 0
-// laadvenster-namen per app-id (11 = launcher-beheer)
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >lTool
+// laadvenster-namen per app-id (12 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -1157,6 +1167,8 @@ oChat:  .text "CHAT"
 oMail:  .text "EMAIL"
         .byte $ff
 nMailS: .text "EMAIL SETTINGS"
+        .byte $ff
+nSid:   .text "SID PLAYER"
         .byte $ff
 mbSys:  .text "SYSTEM"
         .byte $ff

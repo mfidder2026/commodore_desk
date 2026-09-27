@@ -49,7 +49,7 @@
 // icon_Build maakt die 6 glyphs per icoon uit de 2x2-tekeningen, in de
 // reverse-helft (codes 192-245: de omgekeerde UI-glyphs zijn nooit nodig).
 .const ICON3_BASE = 192
-.const ICON3_N    = 9
+.const ICON3_N    = 10
 .const ICO_EDIT   = ICON3_BASE + 0*6
 .const ICO_PAINT  = ICON3_BASE + 1*6
 .const ICO_CALC   = ICON3_BASE + 2*6
@@ -59,6 +59,7 @@
 .const MAIL_GLYPH = ICON3_BASE + 6*6   // envelop (EMAIL)
 .const ICO_CITY   = ICON3_BASE + 7*6
 .const POKE_GLYPH = ICON3_BASE + 8*6   // Pokéball
+.const ICO_SID    = ICON3_BASE + 9*6   // muzieknoot (SID PLAYER), t/m 251
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
@@ -248,10 +249,10 @@ ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
 // bron per icoon (volgorde = ICO_*): charset-glyphs of eigen tabellen
 ibSrcLo: .byte <[CHARSET_BASE+111*8], <[CHARSET_BASE+115*8], <[CHARSET_BASE+119*8]
          .byte <[CHARSET_BASE+107*8], <[CHARSET_BASE+102*8], <[CHARSET_BASE+80*8]
-         .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs
+         .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs, <sidGlyphs
 ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*8]
          .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
-         .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs
+         .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs, >sidGlyphs
 }
 ibI:    .byte 0
 
@@ -381,6 +382,12 @@ frameGlyphs:
         .byte $53,$72,$53,$72,$53,$ff,$00,$00   // BL
         .byte $9c,$94,$9c,$94,$9c,$ff,$00,$00   // BR
 
+// Muzieknoot 16x16 (TL, TR, BL, BR): SID PLAYER.
+sidGlyphs:
+        .byte $00,$07,$07,$04,$04,$04,$04,$04   // TL
+        .byte $00,$fe,$fe,$02,$02,$02,$02,$02   // TR
+        .byte $04,$04,$3c,$7c,$7c,$38,$00,$00   // BL
+        .byte $02,$02,$1e,$3e,$3e,$1c,$00,$00   // BR
 // Envelop 16x16 (TL, TR, BL, BR) direct gevolgd door de Pokéball.
 mailGlyphs:
         .byte $00,$00,$7f,$60,$50,$48,$44,$42   // TL

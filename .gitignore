@@ -11,3 +11,6 @@
 *.swp
 Thumbs.db
 .DS_Store
+
+# SID-tunes (muziek van derden): alleen lokaal, build_disk.bat zet ze op de disk
+/sid/*.sid
