@@ -60,6 +60,10 @@ draggable windows. Boots as a **D71 disk** and as an
   fields. Capitals (SHIFT) show as reverse letters, like in the editor.
   `tools/mailtest_server.py` is a small POP3/SMTP test server with a test
   mailbox (run it in WSL so VICE can reach it).
+- **Your settings survive a rebuild** — `build_disk.bat` copies `MAIL.CFG`,
+  `NET.CFG`, `BBS.CFG`, `CD64.CFG` and `DESK.APPS` from the old disk image to
+  `..\cd64_userfiles` (outside the repo, never committed: `MAIL.CFG` holds
+  your mail password) and writes them back onto the new D71 and D64.
 - **BBS client** (desktop icon, own overlay `BBS`) — address book with ten
   Commodore/retro BBSes, a default BBS saved in `BBS.CFG`, local-echo setting.
   **CONNECT** opens a full-screen PETSCII terminal (colours, reverse, cursor
@@ -121,8 +125,9 @@ role to one of these 16.
 | Back to desktop (close app) | — | — | **ESC** (= RUN/STOP) |
 
 Click **CD64**, **DESKTOP** or **SYSTEM** in the menu bar to open its drop-down;
-**FILES** opens the File Manager directly. Click the **clock** in the status bar
-to open SETUP, where the `CLOCK:` line sets the date and time. **ESC** closes the active app and
+**FILES** opens the File Manager directly. All settings are reached the same
+way, only through **SYSTEM**: SETTINGS (theme, font, and the `CLOCK:` line for
+date and time), NETWORK and EMAIL. **ESC** closes the active app and
 returns to the desktop — that's how you leave the text editor (where space types a
 space) and Paint. (In VICE on a PC the RUN/STOP key is mapped to **Esc**.)
 

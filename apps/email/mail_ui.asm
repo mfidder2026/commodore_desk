@@ -3,8 +3,9 @@
 // apps/email/mail_ui.asm - schermen van EMAIL
 // Commodore Desk 64
 //
-//   postvak  FETCH / NEW / SETTINGS, lijst van de nieuwste berichten
-//            (klik = lezen); toetsen F = fetch, N = new
+//   postvak  FETCH / NEW, lijst van de nieuwste berichten
+//            (klik = lezen); toetsen F = fetch, N = new. De instellingen
+//            zijn alleen via SYSTEM -> EMAIL te bereiken (zoals overal).
 //   lezen    afzender, onderwerp, datum, tekst; UP/DOWN/REPLY/BACK
 //            (SPATIE = volgende bladzijde, - = vorige, R = reply)
 //   opstellen TO, SUBJ en de tekst (klik om te typen); SEND / CANCEL.
@@ -18,6 +19,7 @@
 .const IN_TOP   = 4              // eerste rij van de lijst
 .const IN_ROWS  = 18
 .const IN_SUBJ  = 15             // kolom van het onderwerp
+.const IN_BTNS  = 2              // FETCH, NEW
 .const RD_BTN   = 21
 .const CP_BTN   = 20
 .const CP_FCOL  = 8              // kolom van de TO/SUBJ-velden
@@ -107,7 +109,7 @@ bl:     stx emI
         jsr btn_Draw
         ldx emI
         inx
-        cpx #3
+        cpx #IN_BTNS
         bne bl
         lda mbCount
         bne list
@@ -187,7 +189,7 @@ bl:     stx emI
         bcs hit
         ldx emI
         inx
-        cpx #3
+        cpx #IN_BTNS
         bne bl
         lda evtB                 // op een bericht?
         sec
@@ -206,11 +208,7 @@ bl:     stx emI
 err:    jmp em_Error
 hit:    lda emI
         beq in_Fetch
-        cmp #1
-        bne set
-        jmp cp_New
-set:    lda #EM_APP_SET          // SETTINGS
-        jmp openApp
+        jmp cp_New               // (instellingen: alleen via SYSTEM -> EMAIL)
 r:      rts
 }
 
@@ -1299,10 +1297,10 @@ cpHi:   .fill CP_LINES, >[CP_BODY + i*CP_W]
 msLo:   .fill MS_LINES, <[MSGBUF + i*CP_W]
 msHi:   .fill MS_LINES, >[MSGBUF + i*CP_W]
 
-inBtnLo:  .byte <sFetch, <sNew, <sSetB
-inBtnHi:  .byte >sFetch, >sNew, >sSetB
-inBtnCol: .byte 2, 10, 16
-inBtnW:   .byte 7, 5, 10
+inBtnLo:  .byte <sFetch, <sNew
+inBtnHi:  .byte >sFetch, >sNew
+inBtnCol: .byte 2, 10
+inBtnW:   .byte 7, 5
 rdBtnLo:  .byte <sUp, <sDown, <sReply, <sBack
 rdBtnHi:  .byte >sUp, >sDown, >sReply, >sBack
 rdBtnCol: .byte 2, 7, 14, 22
@@ -1312,8 +1310,6 @@ rdBtnW:   .byte 4, 6, 7, 6
 sFetch:   .text "FETCH"
           .byte $ff
 sNew:     .text "NEW"
-          .byte $ff
-sSetB:    .text "SETTINGS"
           .byte $ff
 sInEmpty: .text "CLICK FETCH TO GET YOUR MAIL"
           .byte $ff

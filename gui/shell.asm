@@ -854,13 +854,9 @@ onMouseDown:
         cmp #$ff
         beq !rt+                 // bureaublad heeft geen sluitknop
         jmp exitToDesktop
-!nt:    cmp #STATUS_ROW          // klik op de statusbalk (klok) -> SETUP
-        bne !ns+
-        lda #4
-        cmp activeApp
-        beq !rt+
-        jmp openApp
-!ns:    cmp #WIN_FRAME_BOT       // onderrand: niets
+!nt:    cmp #STATUS_ROW          // statusbalk (klok): niets; instellingen
+        beq !rt+                 // gaan alleen via SYSTEM
+        cmp #WIN_FRAME_BOT       // onderrand: niets
         bcc !widget+
 !rt:    rts
 !widget:

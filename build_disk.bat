@@ -34,6 +34,14 @@ if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build
 if errorlevel 1 ( echo Cowboy build failed. & exit /b 1 )
 
+:: Gebruikersbestanden (instellingen, ook het mailwachtwoord!) gaan niet
+:: verloren: ze worden van de oude disk naar ..\cd64_userfiles gekopieerd
+:: (buiten de repo, nooit committen) en na het formatteren teruggezet.
+set "KEEP=%~dp0..\cd64_userfiles"
+set "USERFILES=mail.cfg net.cfg bbs.cfg cd64.cfg desk.apps"
+if not exist "%KEEP%" mkdir "%KEEP%"
+for %%U in (%USERFILES%) do call :keepfile %%U
+
 echo [3/3] D71 maken en PRG's erop schrijven (BOOT start eerst)...
 if exist build\CD64.d71 del build\CD64.d71
 "%C1541%" -format "commodore desk,cd" d71 build\CD64.d71 ^
@@ -88,6 +96,15 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\c64rdesk.prg c64rdesk
 if errorlevel 1 ( echo c1541 D64 failed. & exit /b 1 )
 
+echo Gebruikersbestanden terugzetten uit %KEEP% ...
+for %%U in (%USERFILES%) do (
+  if exist "%KEEP%\%%U" (
+    "%C1541%" -attach build\CD64.d71 -write "%KEEP%\%%U" %%U >nul 2>&1
+    "%C1541%" -attach build\CD64.d64 -write "%KEEP%\%%U" %%U >nul 2>&1
+    echo   %%U
+  )
+)
+
 echo.
 echo Klaar: build\CD64.d71 en build\CD64.d64
 echo Inhoud:
@@ -99,3 +116,25 @@ echo.
 
 :: Optioneel automatisch starten (haal de :: weg om te activeren):
 :: "%VICE_EXE%" -autostart build\CD64.d71 +confirmonexit
+
+goto :eof
+
+:: keepfile <naam> - bestand van de oude D71 (anders de D64) naar %KEEP%.
+:: Alleen als het echt op de disk staat; anders blijft de bewaarde kopie.
+:keepfile
+set "FOUND="
+if exist build\CD64.d71 call :keepfrom build\CD64.d71 %1
+if not defined FOUND if exist build\CD64.d64 call :keepfrom build\CD64.d64 %1
+goto :eof
+
+:keepfrom
+if exist "%KEEP%\%2.new" del "%KEEP%\%2.new"
+"%C1541%" -attach %1 -read %2 "%KEEP%\%2.new" >nul 2>&1
+if not exist "%KEEP%\%2.new" goto :eof
+for %%S in ("%KEEP%\%2.new") do if %%~zS GTR 0 (
+  move /y "%KEEP%\%2.new" "%KEEP%\%2" >nul
+  set "FOUND=1"
+) else (
+  del "%KEEP%\%2.new"
+)
+goto :eof
