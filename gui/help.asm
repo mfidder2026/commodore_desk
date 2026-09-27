@@ -70,10 +70,10 @@ help_Show: {
 }
 
 //--------------------------------------------------------
-help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1, <hi1, <hg1, <ht1, <hb1
-help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1, >hi1, >hg1, >ht1, >hb1
-help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2, <hi2, <hg2, <ht2, <hb2
-help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2, >hg2, >ht2, >hb2
+help1Lo: .byte <hd1, <hf1, <he1, <hp1, <hc1, <hs1, <hi1, <hg1, <ht1, <hb1, <hm1, <hn1
+help1Hi: .byte >hd1, >hf1, >he1, >hp1, >hc1, >hs1, >hi1, >hg1, >ht1, >hb1, >hm1, >hn1
+help2Lo: .byte <hd2, <hf2, <he2, <hp2, <hc2, <hs2, <hi2, <hg2, <ht2, <hb2, <hm2, <hn2
+help2Hi: .byte >hd2, >hf2, >he2, >hp2, >hc2, >hs2, >hi2, >hg2, >ht2, >hb2, >hm2, >hn2
 
 .encoding "screencode_upper"
 hTitle: .text "HELP"
@@ -119,5 +119,13 @@ ht2: .text "SERVER: SEE INET - NETWORK."
      .byte $ff
 hb1: .text "ADDRESS BOOK: PICK A BBS."
      .byte $ff
-hb2: .text "IT IS SAVED AS THE DEFAULT."
+hb2: .text "IN A SESSION: F7 = MENU."
+     .byte $ff
+hm1: .text "F = FETCH MAIL, N = NEW MAIL."
+     .byte $ff
+hm2: .text "CLICK A MESSAGE TO READ IT."
+     .byte $ff
+hn1: .text "CLICK A FIELD TO CHANGE IT."
+     .byte $ff
+hn2: .text "SAVE WRITES MAIL.CFG."
      .byte $ff

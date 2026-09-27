@@ -45,6 +45,7 @@
 // Pokéball (groot 2x2-icoon, POKEMON RED): in de reverse-helft, op de
 // codes van de omgekeerde iconen 120-123 (die worden nooit reverse getoond).
 .const POKE_GLYPH = 248
+.const MAIL_GLYPH = 244          // envelop (EMAIL), codes 244-247
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
@@ -168,9 +169,9 @@ font_OverlayUI:
         sta CHARSET_BASE + [64*8],x
         inx
         bne !ic-
-        ldx #31                  // Pokéball: codes 248-251
-!pk:    lda pokeGlyphs,x
-        sta CHARSET_BASE + [POKE_GLYPH*8],x
+        ldx #63                  // envelop + Pokéball: codes 244-251
+!pk:    lda mailGlyphs,x
+        sta CHARSET_BASE + [MAIL_GLYPH*8],x
         dex
         bpl !pk-
         rts
@@ -302,6 +303,12 @@ frameGlyphs:
         .byte $53,$72,$53,$72,$53,$ff,$00,$00   // BL
         .byte $9c,$94,$9c,$94,$9c,$ff,$00,$00   // BR
 
+// Envelop 16x16 (TL, TR, BL, BR) direct gevolgd door de Pokéball.
+mailGlyphs:
+        .byte $00,$00,$7f,$60,$50,$48,$44,$42   // TL
+        .byte $00,$00,$fe,$06,$0a,$12,$22,$42   // TR
+        .byte $41,$40,$40,$40,$40,$7f,$00,$00   // BL
+        .byte $82,$02,$02,$02,$02,$fe,$00,$00   // BR
 // Pokéball 16x16 (TL, TR, BL, BR): bovenhelft vol, knop in het midden.
 pokeGlyphs:
         .byte $07,$1f,$3f,$7f,$7f,$fc,$fb,$04   // TL

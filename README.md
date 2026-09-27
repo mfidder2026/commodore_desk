@@ -43,8 +43,23 @@ draggable windows. Boots as a **D71 disk** and as an
 - **F1 context help** — a help panel whose text depends on the active app; press
   space to close it.
 - **Drop-down menus** — `CD64` (HELP · RESET · EXIT · ABOUT), `DESKTOP`
-  (ADD / EDIT / DELETE PROGRAM) and `SYSTEM` (SETTINGS · NETWORK); click an
-  item or click away to close.
+  (ADD / EDIT / DELETE PROGRAM) and `SYSTEM` (SETTINGS · NETWORK · EMAIL);
+  click an item or click away to close.
+- **EMAIL** (desktop icon, own overlay `EMAIL`) — fetch, read, write and
+  reply to mail over **POP3 and SMTP without SSL/TLS**. **SYSTEM → EMAIL**
+  holds the settings, saved to `MAIL.CFG`: your name, e-mail address, POP3
+  server + port (110), SMTP server + port (587; empty = the POP3 server),
+  user name (empty = the address), password (shown as `*`, stored readable
+  in `MAIL.CFG`) and time zone for the Date header. **FETCH** lists the 18
+  newest messages (headers only, mail stays on the server); click one to
+  read it — MIME multipart, quoted-printable, base64, UTF-8 accents and
+  HTML-only mail are turned into plain 40-column text, and downloading stops
+  once the text is in (attachments are not fetched). **REPLY** fills in the
+  address, `Re:` and the quoted text; **NEW** starts an empty message. In the
+  text: cursor keys, RETURN, DEL, CLR/HOME. `@` and `_` can be typed in the
+  fields. Capitals (SHIFT) show as reverse letters, like in the editor.
+  `tools/mailtest_server.py` is a small POP3/SMTP test server with a test
+  mailbox (run it in WSL so VICE can reach it).
 - **BBS client** (desktop icon, own overlay `BBS`) — address book with ten
   Commodore/retro BBSes, a default BBS saved in `BBS.CFG`, local-echo setting.
   **CONNECT** opens a full-screen PETSCII terminal (colours, reverse, cursor

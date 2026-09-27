@@ -328,10 +328,10 @@ loadCharset:
         sec
         rts
 
-// index 0-5 = apps (5 = INET), 6 = DESKTOOL, 7 = BBS
-appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool, <anBbs
-appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool, >anBbs
-appLen:   .byte 5, 6, 5, 4, 5, 4, 8, 3
+// index 0-5 = apps (5 = INET), 6 = DESKTOOL, 7 = BBS, 8 = EMAIL
+appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool, <anBbs, <anMail
+appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool, >anBbs, >anMail
+appLen:   .byte 5, 6, 5, 4, 5, 4, 8, 3, 5
 // disk-fonts: 0-4 = Fremen..Heavy, 5 = Lower, 6 = Tiny
 fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy, <anLower, <anTiny
 fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy, >anLower, >anTiny
@@ -345,6 +345,7 @@ anSetup:  .text "SETUP"
 anInet:   .text "INET"
 anTool:   .text "DESKTOOL"
 anBbs:    .text "BBS"
+anMail:   .text "EMAIL"
 anLower:  .text "LOWER"
 anTiny:   .text "TINY"
 anFremen: .text "FREMEN"

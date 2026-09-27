@@ -14,7 +14,8 @@ import re, sys, glob, os
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 vs = os.path.join(root, 'build', 'disk_main.vs')
 out = os.path.join(root, 'build', 'core_syms.inc')
-own_sources = sys.argv[1:] or ['net/*.asm', 'net/*.inc', 'apps/bbs/*.asm', 'include/*.inc', 'bbs_main.asm']
+own_sources = sys.argv[1:] or ['net/*.asm', 'net/*.inc', 'apps/bbs/*.asm', 'apps/email/*.asm',
+                               'apps/email/*.inc', 'include/*.inc', 'bbs_main.asm', 'email_main.asm']
 
 defined = set()
 pat = re.compile(r'^\s*(?:\.label\s+|\.const\s+|\.var\s+)?([A-Za-z_]\w*)\s*(?::|=)', re.M)

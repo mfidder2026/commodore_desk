@@ -8,6 +8,27 @@
 // geassembleerd, zodat alle labels van de drivers bekend zijn.
 //========================================================
 
+#if NO_NETLOG
+// zonder netwerklog (EMAIL-overlay): elk logpunt doet niets
+lg_ArpAsk:
+lg_ArpGot:
+lg_ArpFrom:
+lg_PingOut:
+lg_PingIn:
+lg_PingedBy:
+lg_TcpOut:
+lg_TcpIn:
+lg_TcpRst:
+lg_TcpRetry:
+lg_DnsAsk:
+lg_DnsGot:
+lg_DnsNf:
+lg_DhSend:
+lg_DhIn:
+lg_Uci:
+lg_UciFail:
+        rts
+#else
 .macro LOGS(txt) {
         ldx #<txt
         ldy #>txt
@@ -251,3 +272,4 @@ tN:        .text " N "
            .byte $ff
 tUciFail:  .text "UCI TIMEOUT CMD "
            .byte $ff
+#endif

@@ -72,9 +72,15 @@ shell_Run:
 .label BBS_DRAW  = $8003
 .label BBS_CLICK = $8006
 .label BBS_KEY   = $8009
+// EMAIL-overlay (email_main.asm): zelfde sprongtabel, app 9 en 10
+.label EMAIL_INIT  = $8000
+.label EMAIL_DRAW  = $8003
+.label EMAIL_CLICK = $8006
+.label EMAIL_KEY   = $8009
 // SYSTEM-uitklapmenu: globale itemnummers (zie miLo)
 .const MI_SETTINGS  = 7
 .const MI_NETWORK   = 8
+.const MI_EMAIL     = 9
 
 shell_DrawAll:
         lda TH_deskbg
@@ -221,8 +227,11 @@ drawContent:
         bne !e5+
         jmp chat_Draw
 !e5:    cmp #8
-        bne !f+
+        bne !e6+
         jmp BBS_DRAW
+!e6:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
+        bcc !f+
+        jmp EMAIL_DRAW
 !f:     jmp drawStub
 
 // drawDesktopContent - launcher-raster (ingebouwde apps + gebruikers-
@@ -544,10 +553,14 @@ appKey:
         sec
         rts
 !c:     cmp #7
-        bne !n+
+        bne !m+
         jsr chat_Key
         sec
         rts
+!m:     cmp #9                   // EMAIL: eigen sneltoetsen
+        bcc !n+
+        lda evtA
+        jmp EMAIL_KEY
 !n:     clc
         rts
 
@@ -662,6 +675,8 @@ item:   ldx menuId
         beq doSet
         cmp #MI_NETWORK
         beq doNet
+        cmp #MI_EMAIL
+        beq doMail
         pha                      // 4-6: launcher-beheer op het bureaublad
         lda activeApp
         cmp #$ff
@@ -676,6 +691,8 @@ close:  jmp shell_DrawAll
 doSet:  lda #4                   // SETTINGS
         .byte $2c                // (bit abs: sla lda #5 over)
 doNet:  lda #5                   // NETWORK
+        .byte $2c
+doMail: lda #10                  // EMAIL SETTINGS
         cmp activeApp
         beq close
         jmp openApp
@@ -730,7 +747,7 @@ menuBarClick:
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
-        ldx #9
+        ldx #11
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -757,12 +774,12 @@ mbMenu:  .byte 0, 1, $ff, 2           // uitklapmenu per knop ($ff = app)
 // uitklapmenu's: 0 = CD64, 1 = DESKTOP, 2 = SYSTEM
 mnX:     .byte 0, 7, 25
 mnW:     .byte 10, 18, 12
-mnN:     .byte 4, 3, 2
+mnN:     .byte 4, 3, 3
 mnFirst: .byte 0, 4, 7
 miLo:    .byte <oHelp, <oReset, <oExit, <oAbout, <oAdd, <oEditP, <oDel
-         .byte <nSet, <oNet
+         .byte <nSet, <oNet, <oMail
 miHi:    .byte >oHelp, >oReset, >oExit, >oAbout, >oAdd, >oEditP, >oDel
-         .byte >nSet, >oNet
+         .byte >nSet, >oNet, >oMail
 
 //--------------------------------------------------------
 // about_Show - "over deze OS"-dialoog (Win95-stijl: titelbalk, sluitknop,
@@ -870,8 +887,11 @@ onMouseDown:
         bne !w7+
         jmp chat_Click
 !w7:    cmp #8
-        bne !done+
+        bne !w8+
         jmp BBS_CLICK
+!w8:    cmp #9
+        bcc !done+
+        jmp EMAIL_CLICK
 !done:  rts
 
 //--------------------------------------------------------
@@ -926,7 +946,11 @@ openApp:
         bne !na7+
         jsr chat_Init
         jmp !drawit+
-!na7:   jsr BBS_INIT             // #8 BBS (sprongtabel $8000)
+!na7:   cmp #8
+        bne !na8+
+        jsr BBS_INIT             // #8 BBS (sprongtabel $8000)
+        jmp !drawit+
+!na8:   jsr EMAIL_INIT           // #9 EMAIL / #10 EMAIL SETTINGS
 !drawit:
         jmp shell_DrawAll
 
@@ -946,12 +970,12 @@ deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
 // De gebruikersprogramma's staan als records in deskapps.asm.
-biCount:    .byte 6
-biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs
-biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs
-biIcon:     .byte 111, 115, 119, 107, 102, 80   // 2x2 TL-glyph
-biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY
-biApp:      .byte 1, 2, 3, 6, 7, 8     // app-id
+biCount:    .byte 7
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail
+biIcon:     .byte 111, 115, 119, 107, 102, 80, MAIL_GLYPH   // 2x2 TL-glyph
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE
+biApp:      .byte 1, 2, 3, 6, 7, 8, 9  // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
@@ -966,15 +990,15 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS
 // overlay (loadApp-index) per app-id: PING zit in de INET-overlay
-appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8
 
 dbI:       .byte 0
-// laadvenster-namen per app-id (9 = launcher-beheer)
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >lTool
+// laadvenster-namen per app-id (11 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -1048,6 +1072,10 @@ oNet:   .text "NETWORK"
 oPing:  .text "PING"
         .byte $ff
 oChat:  .text "CHAT"
+        .byte $ff
+oMail:  .text "EMAIL"
+        .byte $ff
+nMailS: .text "EMAIL SETTINGS"
         .byte $ff
 mbSys:  .text "SYSTEM"
         .byte $ff

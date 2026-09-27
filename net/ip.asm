@@ -279,11 +279,16 @@ di:     lda RX+30,x
         dex
         bpl di
         jmp isUs
-notUs:  lda dhState              // DHCP bezig: ook broadcast / aangeboden IP
+notUs:
+#if !NO_DHCP
+        lda dhState              // DHCP bezig: ook broadcast / aangeboden IP
         beq out2
         lda RX+23
         cmp #17
         bne out2
+#else
+        jmp out2                 // (overlay zonder DHCP)
+#endif
 isUs:   lda RX+14
         cmp #$45                 // alleen 20-byte-kop
         bne out2
@@ -293,9 +298,11 @@ isUs:   lda RX+14
         jmp tcp_Input
 icmp:   cmp #17                  // UDP -> DHCP of DNS
         bne ic2
+#if !NO_DHCP
         jsr dhcp_Input
         bcc dns
         rts
+#endif
 dns:    jmp dns_Input
 ic2:    cmp #1
         bne out2

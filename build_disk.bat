@@ -27,6 +27,8 @@ python tools\export_core_syms.py
 if errorlevel 1 ( echo Core-symbolen mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" bbs_main.asm -odir build
 if errorlevel 1 ( echo BBS build failed. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" email_main.asm -odir build
+if errorlevel 1 ( echo EMAIL build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build
@@ -45,6 +47,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\desktool.prg desktool ^
   -write build\inet.prg inet ^
   -write build\bbs.prg bbs ^
+  -write build\email.prg email ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
@@ -71,6 +74,7 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\desktool.prg desktool ^
   -write build\inet.prg inet ^
   -write build\bbs.prg bbs ^
+  -write build\email.prg email ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
