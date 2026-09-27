@@ -366,7 +366,7 @@ rpStub: jsr cfg_io_begin
         ldy #$03
         jsr $ffbd                // SETNAM
         lda #1
-        ldx #8
+        ldx $03be                // device (8, of de drive uit de File Manager)
         ldy #1                   // sa=1 -> laadadres uit bestand ($0801)
         jsr $ffba                // SETLFS
         lda #0
@@ -667,6 +667,7 @@ exitToDesktop:
         jsr paint_Exit
 !np:    lda #0
         sta helpCtx
+        sta kbRaw
         lda #$ff
         sta activeApp
         jmp shell_DrawAll
@@ -955,8 +956,11 @@ onMouseDown:
         bne !app+
         jmp desk_Click           // bureaublad -> launcher-icoon
 !app:   cmp #0
-        bne !w1+
+        bne !w0+
         jmp fm_Click
+!w0:    cmp #1
+        bne !w1+
+        jmp ed_Click
 !w1:    cmp #2
         bne !w2+
         jmp paint_Click
@@ -996,6 +1000,7 @@ openApp:
         sta activeApp
         ldx #0                   // hulpcontext: die van de app
         stx helpCtx
+        stx kbRaw                // toetsenbord normaal (apps zetten zelf ruw)
         tax                      // overlay van deze app
         lda appOvl,x
         cmp ovlLoaded            // staat hij al in $8000? (NETWORK <-> PING)

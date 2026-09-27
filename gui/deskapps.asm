@@ -397,6 +397,8 @@ da_Launch:
         lda ($fb),y
         sta $03bf
         beq !bad+
+        lda #8                   // bureaublad-programma's staan op drive 8
+        sta $03be
         ldx #0
 !cp:    txa
         clc

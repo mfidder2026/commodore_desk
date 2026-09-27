@@ -40,6 +40,7 @@ osStart:                         // = $0810
 #import "hal/disk.asm"
 #import "gui/widgets.asm"
 #import "gui/help.asm"
+#import "gui/files.asm"
 #import "gui/shell.asm"
 #import "gui/deskapps.asm"
 #import "kernel/clock.asm"
