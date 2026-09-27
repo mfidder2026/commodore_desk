@@ -782,7 +782,8 @@ doMail: lda #10                  // EMAIL SETTINGS
         beq close
         jmp openApp
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
-doAbout:jmp about_Show
+doAbout:jsr shell_DrawAll        // menu weg, dan het venster
+        jmp about_Show
 doReset:
         sei
         lda #$37                 // BASIC+KERNAL+I/O inbanken

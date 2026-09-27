@@ -161,12 +161,24 @@ da_drawOne:
         sta r0+1
         jmp da_drawLabel
 
-// da_icoCol - icoonkleur A; gelijk aan de vensterachtergrond -> tekstkleur.
+// da_icoCol - icoonkleur A leesbaar maken op de vensterachtergrond: een
+//             licht icoon op een lichte achtergrond (of donker op donker)
+//             krijgt zijn tegenhanger (geel -> bruin, blauw -> lichtblauw).
 da_icoCol:
-        cmp TH_deskbg
-        bne !+
-        lda TH_text
-!:      rts
+        tax
+        lda icClass,x
+        beq !ok+                 // middentint: altijd zichtbaar
+        ldy TH_deskbg
+        cmp icClass,y
+        bne !ok+
+        lda icAlt,x
+        rts
+!ok:    txa
+        rts
+// helderheid: 0 = midden, 1 = licht, 2 = donker (VIC-II-kleuren 0-15)
+icClass: .byte 2, 1, 2, 1, 0, 0, 2, 1, 0, 2, 0, 2, 0, 1, 0, 1
+icAlt:   .byte LIGHT_GREY, DARK_GREY, LIGHT_RED, BLUE, PURPLE, GREEN, LIGHT_BLUE, BROWN
+         .byte ORANGE, ORANGE, LIGHT_RED, LIGHT_GREY, GREY, GREEN, LIGHT_BLUE, DARK_GREY
 
 // da_draw2x2 - groot icoon deIcon/deIcoC: 2 breed, 3 hoog (rijen deRow-1
 //              .. deRow+1, zie icon_Build): het label op deRow staat zo
