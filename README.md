@@ -147,6 +147,13 @@ emulates this cartridge and connects it to a real network adapter on your PC via
 **Npcap**. Without Npcap, VICE prints `LoadLibrary WPCAP.DLL failed!` and the
 cartridge does nothing.
 
+**Easiest: `start_cd64.bat`** (double-click, or `start_cd64.bat build\CD64.d64`).
+It starts WSL (the `vEthernet (WSL)` adapter only exists while WSL runs, and it
+gets a **new ID every time WSL starts**, so a fixed adapter in the VICE settings
+goes stale), looks up that adapter and its subnet, writes the matching IP /
+MASK / GATEWAY into `NET.CFG` on the disk (the chat settings stay), and starts
+VICE with the RR-Net on that adapter. Requires Npcap (step 1).
+
 **1. Install Npcap (one-time, Windows).**
 Download it from <https://npcap.com> and run the installer as administrator.
 In the installer, tick **"Install Npcap in WinPcap API-compatible Mode"** — VICE
