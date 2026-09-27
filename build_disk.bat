@@ -54,7 +54,8 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\heavy.prg heavy ^
   -write build\cowboy.prg cowboy ^
   -write build\scrsaver.prg scrsaver ^
-  -write build\c64city.prg c64city
+  -write build\c64cdesk.prg c64cdesk ^
+  -write build\c64rdesk.prg c64rdesk
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
 echo [3b/3] Ook een D64 maken (1541-compatibel, zelfde bestanden)...
@@ -79,7 +80,8 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\heavy.prg heavy ^
   -write build\cowboy.prg cowboy ^
   -write build\scrsaver.prg scrsaver ^
-  -write build\c64city.prg c64city
+  -write build\c64cdesk.prg c64cdesk ^
+  -write build\c64rdesk.prg c64rdesk
 if errorlevel 1 ( echo c1541 D64 failed. & exit /b 1 )
 
 echo.

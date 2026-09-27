@@ -42,6 +42,9 @@
 .const W_B  = 93         // onderrand
 .const W_BL = 94         // hoek linksonder
 .const W_BR = 95         // hoek rechtsonder
+// Pokéball (groot 2x2-icoon, POKEMON RED): in de reverse-helft, op de
+// codes van de omgekeerde iconen 120-123 (die worden nooit reverse getoond).
+.const POKE_GLYPH = 248
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
@@ -165,6 +168,11 @@ font_OverlayUI:
         sta CHARSET_BASE + [64*8],x
         inx
         bne !ic-
+        ldx #31                  // Pokéball: codes 248-251
+!pk:    lda pokeGlyphs,x
+        sta CHARSET_BASE + [POKE_GLYPH*8],x
+        dex
+        bpl !pk-
         rts
 .assert "userIcons moet 256 bytes zijn", OVL_GLYPHS*8, 256
 
@@ -293,6 +301,13 @@ frameGlyphs:
         .byte $00,$00,$80,$80,$9c,$94,$9c,$94   // TR
         .byte $53,$72,$53,$72,$53,$ff,$00,$00   // BL
         .byte $9c,$94,$9c,$94,$9c,$ff,$00,$00   // BR
+
+// Pokéball 16x16 (TL, TR, BL, BR): bovenhelft vol, knop in het midden.
+pokeGlyphs:
+        .byte $07,$1f,$3f,$7f,$7f,$fc,$fb,$04   // TL
+        .byte $e0,$f8,$fc,$fe,$fe,$3f,$df,$20   // TR
+        .byte $84,$83,$80,$40,$40,$20,$18,$07   // BL
+        .byte $21,$c1,$01,$02,$02,$04,$18,$e0   // BR
 
 //--------------------------------------------------------
 // userIcons - 20 launcher-iconen (1 cel, 8x8) op charset-codes 64..83.

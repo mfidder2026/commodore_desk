@@ -24,7 +24,7 @@
 .const DESK_MAXUSER  = 12
 .const NUM_USERICONS = 16        // kiesbare 1-cel-iconen (codes 64-79)
 .const BIG_ICON_BASE = 20        // icoon >= 20 = groot 2x2-icoon (bigIcon)
-.const NUM_SEED      = 3         // standaard-programma's (COWBOY, SCRSAVER, C64 CITY)
+.const NUM_SEED      = 4         // standaard-programma's (COWBOY, SCRSAVER, C64 CITY, POKEMON RED)
 .label DA_count = $c100
 .label DA_recs  = $c101
 .const DA_end   = DA_recs + DESK_MAXUSER*REC_STRIDE
@@ -475,7 +475,7 @@ nEnd:   .encoding "screencode_upper"
 }
 
 //--------------------------------------------------------
-// da_Seed - standaardlijst (COWBOY + SCRSAVER).
+// da_Seed - standaardlijst (COWBOY, SCRSAVER, C64 CITY, POKEMON RED).
 //--------------------------------------------------------
 da_Seed:
         lda #0
@@ -575,14 +575,14 @@ daColor: .byte 0
 
 .encoding "screencode_upper"
 
-seedIcon: .byte 3, 7, BIG_ICON_BASE+0     // C64 CITY: groot skyline-icoon
-seedCol:  .byte YELLOW, PURPLE, ORANGE
-seedDispLo: .byte <sdCow, <sdScr, <sdCity
-seedDispHi: .byte >sdCow, >sdScr, >sdCity
-seedPrgLo:  .byte <spCow, <spScr, <spCity
-seedPrgHi:  .byte >spCow, >spScr, >spCity
+seedIcon: .byte 3, 7, BIG_ICON_BASE+0, BIG_ICON_BASE+1   // CITY: skyline, POKEMON: Pokéball
+seedCol:  .byte YELLOW, PURPLE, ORANGE, RED
+seedDispLo: .byte <sdCow, <sdScr, <sdCity, <sdPoke
+seedDispHi: .byte >sdCow, >sdScr, >sdCity, >sdPoke
+seedPrgLo:  .byte <spCow, <spScr, <spCity, <spPoke
+seedPrgHi:  .byte >spCow, >spScr, >spCity, >spPoke
 // grote (2x2) iconen voor gebruikersprogramma's: TL-glyph per nummer
-bigIcon:  .byte 123                       // 0 = CITY
+bigIcon:  .byte 123, POKE_GLYPH           // 0 = CITY, 1 = Pokéball
 .encoding "screencode_upper"
 sdCow:  .text "COWBOY"
         .byte $ff
@@ -590,11 +590,15 @@ sdScr:  .text "SCRSAVER"
         .byte $ff
 sdCity: .text "C64 CITY"
         .byte $ff
+sdPoke: .text "POKEMON RED"
+        .byte $ff
 .encoding "petscii_upper"
 spCow:  .text "COWBOY"
         .byte $ff
 spScr:  .text "SCRSAVER"
         .byte $ff
-spCity: .text "C64CITY"
+spCity: .text "C64CDESK"
+        .byte $ff
+spPoke: .text "C64RDESK"
         .byte $ff
 .encoding "screencode_upper"
