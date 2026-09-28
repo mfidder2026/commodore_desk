@@ -201,7 +201,26 @@ drawMenubar:
         inx
         cpx #MB_ITEMS
         bne !lp-
-        rts
+        lda stGeos               // GEOS: lijntjes tussen de menu's
+        beq !r+
+        ldx #0
+!sp:    stx menuI
+        lda mbEnd,x
+        sec
+        sbc #1
+        sta a0
+        lda #0
+        sta a1
+        lda #FR_V
+        sta a2
+        lda TH_menubg
+        sta a3
+        jsr gfx_PutChar
+        ldx menuI
+        inx
+        cpx #MB_ITEMS-1
+        bne !sp-
+!r:     rts
 
 //--------------------------------------------------------
 drawContent:

@@ -70,11 +70,12 @@ da_total:
 // Tekenen
 //========================================================
 da_DrawEntries:
+        jsr da_Style
         jsr da_clampScroll
         lda #0
         sta daSlot
 !lp:    lda daSlot
-        cmp #DA_VIS
+        cmp daVis
         bcs !bars+
         clc
         adc daScroll
@@ -83,26 +84,68 @@ da_DrawEntries:
         cmp daEnt
         beq !bars+
         bcc !bars+
-        lda daSlot
-        and #1
-        beq !left+
-        lda #21
-        jmp !setx+
-!left:  lda #3
-!setx:  sta deCol
-        lda daSlot
-        lsr
-        sta deRow
-        asl
+        lda daSlot               // kolom = slot mod n, rij = slot div n
+        jsr da_div
+        stx deRow
+        clc                      // kolom-x uit de tabel van de stijl
+        adc daColOff
+        tax
+        lda daColX,x
+        sta deCol
+        lda #0                   // rij-y = rij * hoogte + eerste rij
+        ldx deRow
+!m:     beq !md+
         clc
-        adc deRow
-        clc
-        adc #3
+        adc daRowH
+        dex
+        jmp !m-
+!md:    clc
+        adc daRow0
         sta deRow
         jsr da_drawOne
         inc daSlot
         jmp !lp-
 !bars:  jmp da_drawScrollbar
+
+// da_Style - indeling van de stijl (stGeos): Win95 2 kolommen met het
+//            label ernaast, GEOS 3 kolommen met het label eronder.
+da_Style:
+        ldx stGeos
+        lda dsCols,x
+        sta daCols
+        lda dsRowH,x
+        sta daRowH
+        lda dsVisR,x
+        sta daVisR
+        lda dsVis,x
+        sta daVis
+        lda dsRow0,x
+        sta daRow0
+        lda dsColOff,x
+        sta daColOff
+        cpx daLastSt             // andere stijl: bovenaan beginnen
+        beq !+
+        stx daLastSt
+        lda #0
+        sta daScroll
+!:      rts
+dsCols:   .byte 2, 3
+dsRowH:   .byte 3, 5
+dsVisR:   .byte 7, 4
+dsVis:    .byte 14, 12
+dsRow0:   .byte 3, 4
+dsColOff: .byte 0, 2
+daColX:   .byte 3, 21, 6, 17, 28 // Win95: kol 3/21; GEOS: iconen op 6/17/28
+
+// da_div - A / daCols -> X = quotient, A = rest.
+da_div:
+        ldx #0
+!d:     cmp daCols
+        bcc !r+
+        sbc daCols
+        inx
+        bne !d-
+!r:     rts
 
 // da_drawOne - teken entry daEnt op (deCol,deRow).
 da_drawOne:
@@ -232,7 +275,30 @@ da_drawLabel:
         sta a0
         lda deRow
         sta a1
-        lda TH_text
+        lda stGeos               // GEOS: gecentreerd onder het icoon
+        beq !w+
+        ldy #0
+!l:     lda (r0),y
+        cmp #$ff
+        beq !le+
+        iny
+        cpy #11
+        bne !l-
+!le:    sty daTmp                // kolom = cel + (11 - lengte) / 2
+        lda #11
+        sec
+        sbc daTmp
+        lsr
+        clc
+        adc deCol
+        sec
+        sbc #4
+        sta a0
+        lda deRow
+        clc
+        adc #2
+        sta a1
+!w:     lda TH_text
         sta a2
         jmp gfx_DrawText
 
@@ -243,21 +309,31 @@ da_drawLabel:
 
 // da_maxRow - A = hoogste eerste zichtbare rij (0 = alles past).
 da_maxRow:
-        jsr da_total
+        jsr da_total             // aantal rijen = (totaal+n-1)/n
         clc
-        adc #1
-        lsr                      // aantal rijen = (totaal+1)/2
+        adc daCols
         sec
-        sbc #DA_VISROWS
+        sbc #1
+        jsr da_div
+        txa
+        sec
+        sbc daVisR
         bcs !m+
         lda #0
 !m:     rts
 
 // da_clampScroll - daScroll binnen bereik houden (bv. na verwijderen).
 da_clampScroll:
-        jsr da_maxRow
-        asl                      // max in entries (2 per rij)
-        cmp daScroll
+        jsr da_maxRow            // max in entries (n per rij)
+        tax
+        lda #0
+!m:     cpx #0
+        beq !md+
+        clc
+        adc daCols
+        dex
+        jmp !m-
+!md:    cmp daScroll
         bcs !ok+
         sta daScroll
 !ok:    rts
@@ -266,9 +342,9 @@ da_clampScroll:
 da_drawScrollbar:
         jsr da_maxRow
         sta a4
-        lda daScroll
-        lsr
-        sta a3
+        lda daScroll             // rij van de bovenste entry
+        jsr da_div
+        stx a3
         lda #DA_SCR_COL
         sta a0
         lda #DA_SCR_TOP
@@ -319,21 +395,21 @@ da_scrollClick:
 !up:    lda daScroll
         beq !r+
         sec
-        sbc #2
+        sbc daCols
         jmp !st+
 !dn:    lda daScroll
         clc
-        adc #2
+        adc daCols
         jmp !cl+
 !pu:    lda daScroll
         sec
-        sbc #DA_VIS
+        sbc daVis
         bcs !st+
         lda #0
         jmp !st+
 !pd:    lda daScroll
         clc
-        adc #DA_VIS
+        adc daVis
 !cl:    sta daScroll
         jsr da_clampScroll
         jmp da_Redraw
@@ -359,31 +435,55 @@ da_gridClick:
 //               Uit: A=entry, carry=1 geldig, carry=0 buiten het raster.
 //--------------------------------------------------------
 da_hitEntry:
-        // Ruim klikgebied: hele linker-/rechterhelft telt (grens kol 20).
+        jsr da_Style
+        lda stGeos
+        bne !g+
+        // Win95: hele linker-/rechterhelft telt (grens kol 20).
         lda evtA
         cmp #20
         bcc !lc+
         lda #1
         jmp !cp+
 !lc:    lda #0
-!cp:    sta deCol
-        lda evtB                 // entry k: rijen 3k+2..3k+4
+        beq !cp+
+!g:     lda evtA                 // GEOS: kolommen van 11 vanaf kol 2
         sec
         sbc #2
+        bcc !no+
+        ldx #0
+!gc:    cmp #11
+        bcc !gd+
+        sbc #11
+        inx
+        bne !gc-
+!gd:    cpx #3
+        bcs !no+
+        txa
+!cp:    sta deCol
+        lda evtB                 // entry-rij: (rij - (eerste-1)) / hoogte
+        clc
+        adc #1
+        sec
+        sbc daRow0
         bcc !no+
         sta deRow
         ldx #0
 !dl:    lda deRow
-        cmp #3
+        cmp daRowH
         bcc !rem+
         sec
-        sbc #3
+        sbc daRowH
         sta deRow
         inx
         jmp !dl-
-!rem:   txa
-        asl
+!rem:   lda #0                   // rij * n + kolom
+!rm:    cpx #0
+        beq !rd+
         clc
+        adc daCols
+        dex
+        jmp !rm-
+!rd:    clc
         adc deCol
         clc
         adc daScroll
@@ -580,6 +680,13 @@ daSlot:  .byte 0
 daEnt:   .byte 0
 daScroll:.byte 0
 daTmp:   .byte 0
+daCols:  .byte 2                 // indeling (da_Style)
+daRowH:  .byte 3
+daVisR:  .byte 7
+daVis:   .byte 14
+daRow0:  .byte 3
+daColOff:.byte 0
+daLastSt:.byte 0
 daU:     .byte 0
 daOff:   .byte 0
 daLen:   .byte 0
