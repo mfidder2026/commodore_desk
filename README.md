@@ -67,6 +67,8 @@ Ultimate-II+**.
 |---|---|---|
 | ![Settings](docs/screenshots/settings.png) | ![Network](docs/screenshots/network.png) | ![E-mail settings](docs/screenshots/email_settings.png) |
 | SYSTEM → SETTINGS | SYSTEM → NETWORK | SYSTEM → EMAIL |
+| ![Date and time](docs/screenshots/time.png) | ![Time zones](docs/screenshots/time_zones.png) | |
+| SYSTEM → TIME: date and time from the internet | Picking a time zone | |
 
 <sub>All screenshots were made in VICE with example settings.</sub>
 
@@ -85,8 +87,8 @@ Ultimate-II+**.
     programs on the desktop (name, icon, colour, PRG file).
     ![Add program](docs/screenshots/add_program.png)
   - **FILES** opens the File Manager.
-  - **SYSTEM**: SETTINGS, NETWORK and EMAIL. These are the only way to reach
-    settings, the same everywhere.
+  - **SYSTEM**: SETTINGS, NETWORK, EMAIL and TIME. These are the only way to
+    reach settings, the same everywhere.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
   BBS, EMAIL, SID PLAYER) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
@@ -94,6 +96,7 @@ Ultimate-II+**.
   `LOADING <name> please wait` while it loads. When the program ends (it
   returns to BASIC), or when you press RESTORE, you come back to the desktop.
 - **Status bar** (bottom): date and time from the C64's own clock (CIA TOD).
+  SYSTEM → TIME can set it from a time server on the internet.
 - **F1** shows help for what you are doing, everywhere: on the desktop, in
   every program, and also inside menus and dialogs (the screen underneath
   comes back when you close it). The status bar shows `F1=HELP`. The help
@@ -249,6 +252,27 @@ waits, the C64 answers pings itself.
 - **SAVE** writes `MAIL.CFG`. The password is stored readable in that file,
   and without TLS it also goes over the network unencrypted.
 
+### TIME
+
+Gets the date and time from a time server (NTP) on the internet and sets
+the C64's clock.
+
+- **TIME ZONE**: click it for a list of every time zone (UTC−12:00 to
+  UTC+14:00, including the half-hour and 45-minute ones), each with example
+  cities. Cursor keys or PG UP / PG DOWN scroll, RETURN or a second click
+  picks one.
+- **SUMMER TIME** follows from the zone: Europe, USA/Canada, Australia, New
+  Zealand, or none. The change-over is calculated for the current year.
+- **TIME SERVER**: `pool.ntp.org` by default; any name or IP address works.
+- **SYNC AT START**: get the time each time CD64 starts. This loads the
+  TIME program at start-up, so starting takes a little longer.
+- **SYNC NOW** gets the time straight away.
+- **SAVE** keeps these settings in `CD64.CFG`.
+
+It uses the network settings from SYSTEM → NETWORK. On an RR-Net it sends
+one UDP packet to port 123 through CD64's own stack; on an Ultimate it uses
+the Ultimate's UDP socket (not testable in VICE, so not tested yet).
+
 ---
 
 ## Themes and fonts
@@ -336,7 +360,7 @@ python tools/make_fremenfont.py
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
-DESKTOOL, SIDPLAY, INET, BBS, EMAIL) and the fonts, and writes everything to
+DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME) and the fonts, and writes everything to
 `build\CD64.d71` and `build\CD64.d64`.
 
 Games and other programs you want on the desktop go into `build\` as well
@@ -424,9 +448,10 @@ gui/      shell (menu bar, windows, status bar) · desktop launcher · widgets �
 gfx/      drawing primitives · fonts and icons · mouse pointer sprite
 kernel/   start-up · events · raster IRQ (50 Hz) · clock · memory
 hal/      VIC · input (mouse, joystick, keyboard) · disk (IEC) · sound (SID)
-apps/     files · editor · paint · calc · settings · network/ping/chat · SID player
+apps/     files (+ RAM drives) · editor · paint · calc · settings · network/ping/chat · SID player
 apps/bbs/ BBS client: directory, session, terminal, Telnet
 apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
+apps/time/   date and time: NTP client, time zones, summer time
 net/      network stack: CS8900, Ultimate UCI, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
 include/  palette · layout · memory map · ABI · hardware
 ```
@@ -453,7 +478,7 @@ include/  palette · layout · memory map · ABI · hardware
 | `disk_main.asm` | the core for the disk version |
 | `main_cart.asm` | the EasyFlash cartridge version |
 | `boot_main.asm` | boot loader with the splash screen |
-| `bbs_main.asm`, `email_main.asm` | the BBS and EMAIL overlays |
+| `bbs_main.asm`, `email_main.asm`, `time_main.asm` | the BBS, EMAIL and TIME overlays |
 | `build_disk.bat`, `build_cart.bat` | build scripts |
 | `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
 | `tools/export_core_syms.py` | core addresses for the separately built overlays |

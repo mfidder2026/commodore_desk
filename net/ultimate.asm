@@ -6,6 +6,7 @@
 // Op een Ultimate 64 / 1541 Ultimate-II+ doet de Ultimate zelf TCP/IP
 // (en DNS). De C64 geeft opdrachten aan de "network target" ($03):
 //   $07 open TCP   <poort LSB,MSB> <host> 0     -> handle
+//   $08 open UDP   (idem; utProto = $08, bv. voor NTP)
 //   $10 read       <handle> <len LSB,MSB>       -> <aantal LE> <data>
 //   $11 write      <handle> <data...>
 //   $09 close      <handle>
@@ -230,7 +231,7 @@ ce:     stx feLen
 ut_ConnectFe: {
         lda #$03
         sta ucCmd
-        lda #$07
+        lda utProto              // $07 TCP, $08 UDP
         sta ucCmd+1
         lda tcpRPort+1           // poort LSB, MSB (tcpRPort is big-endian)
         sta ucCmd+2
@@ -465,6 +466,7 @@ ucStatN:   .byte 0
 ucCode:    .byte 0               // 0-99 uit de statustekst, $ff = geen
 ucEnd:     .word 0
 utSock:    .byte 0
+utProto:   .byte $07             // opdracht voor ut_ConnectFe
 utOpen:    .byte 0
 utLeft:    .word 0
 utCnt:     .word 0

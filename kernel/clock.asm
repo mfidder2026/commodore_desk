@@ -57,7 +57,8 @@ ntsc:   sta CIA1_CRA
         lda CLK_MARK+1
         cmp #'D'
         beq warm
-cold:   lda #'C'
+cold:   inc clkCold              // (koude start: tijd ophalen mag)
+        lda #'C'
         sta CLK_MARK
         lda #'D'
         sta CLK_MARK+1
@@ -75,6 +76,21 @@ warm:   lda #$ff                 // statusbalk bij de eerste poll tekenen
         sta clkShown
         rts
 }
+
+// -----------------------------------------------------
+// time_Boot - na een koude start de tijd ophalen als SYSTEM -> TIME dat
+//             vraagt: overlay TIME laden en zijn AUTO-ingang aanroepen.
+// -----------------------------------------------------
+time_Boot:
+        lda CFG_timeAuto
+        beq !r+
+        lda clkCold
+        beq !r+
+        ldx #10                  // TIME
+        jsr loadApp
+        bcs !r+
+        jsr TIME_AUTO
+!r:     rts
 
 // -----------------------------------------------------
 // clk_SetTime - A = uur (BCD 00-23), X = minuut (BCD). Seconden = 0.
@@ -289,4 +305,5 @@ clkHour:  .byte 0
 clkMin:   .byte 0
 clkShown: .byte $ff              // minuut die nu op het scherm staat
 clkTmp:   .byte 0
+clkCold:  .byte 0
 clkBuf:   .fill 18, 0

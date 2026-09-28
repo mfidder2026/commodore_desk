@@ -296,13 +296,17 @@ isUs:   lda RX+14
         cmp #6                   // TCP -> tcp.asm
         bne icmp
         jmp tcp_Input
-icmp:   cmp #17                  // UDP -> DHCP of DNS
+icmp:   cmp #17                  // UDP -> DHCP, NTP of DNS
         bne ic2
 #if !NO_DHCP
         jsr dhcp_Input
+        bcc udp2
+        rts
+udp2:
+#endif
+        jsr udpCall              // eigen UDP-ontvanger (bv. NTP)?
         bcc dns
         rts
-#endif
 dns:    jmp dns_Input
 ic2:    cmp #1
         bne out2
@@ -561,6 +565,12 @@ arpMac:     .fill 6, 0
 arpCacheIp: .fill 4, 0
 arpValid:   .byte 0
 arpTry:     .byte 0
+// udpCall - extra UDP-ontvanger via udpVec (standaard: geen).
+//           Carry=1 = pakket verwerkt.
+udpCall:    jmp (udpVec)
+udpNone:    clc
+            rts
+udpVec:     .word udpNone
 netFlag:    .byte 0              // gezet door net_Handle: antwoord binnen
 netAbort:   .byte 0              // ESC tijdens net_Wait
 netNoKeys:  .byte 0              // 1 = net_Wait leest geen toetsen (BBS-terminal)

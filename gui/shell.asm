@@ -68,10 +68,13 @@ shell_Run:
 .label EMAIL_DRAW  = $8003
 .label EMAIL_CLICK = $8006
 .label EMAIL_KEY   = $8009
+// TIME-overlay (time_main.asm): zelfde sprongtabel, app 12, plus AUTO
+.label TIME_AUTO   = $800c
 // SYSTEM-uitklapmenu: globale itemnummers (zie miLo)
 .const MI_SETTINGS  = 7
 .const MI_NETWORK   = 8
 .const MI_EMAIL     = 9
+.const MI_TIME      = 10
 
 shell_DrawAll:
         lda TH_deskbg
@@ -234,9 +237,11 @@ drawContent:
 !e5:    cmp #8
         bne !e6+
         jmp BBS_DRAW
-!e6:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
-        beq !em+
+!e6:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12):
+        beq !em+                 // sprongtabel op $8000
         cmp #10
+        beq !em+
+        cmp #12
         bne !e7+
 !em:    jmp EMAIL_DRAW
 !e7:    cmp #11                  // SID PLAYER
@@ -652,9 +657,11 @@ appKey:
         jsr chat_Key
         sec
         rts
-!m:     cmp #9                   // EMAIL (9/10): eigen sneltoetsen
+!m:     cmp #9                   // EMAIL (9/10), TIME (12): eigen toetsen
         beq !em+                 // (precies vergelijken: het bureaublad
         cmp #10                  //  is $ff en heeft geen overlay)
+        beq !em+
+        cmp #12
         bne !n+
 !em:    lda evtA
         jmp EMAIL_KEY
@@ -777,6 +784,8 @@ item:   ldx menuId
         beq doNet
         cmp #MI_EMAIL
         beq doMail
+        cmp #MI_TIME
+        beq doTime
         pha                      // 4-6: launcher-beheer op het bureaublad
         jsr exitToDesktop        // (tekent ook opnieuw: het menu gaat weg)
         pla
@@ -790,6 +799,8 @@ doSet:  lda #4                   // SETTINGS
 doNet:  lda #5                   // NETWORK
         .byte $2c
 doMail: lda #10                  // EMAIL SETTINGS
+        .byte $2c
+doTime: lda #12                  // TIME
         cmp activeApp
         beq close
         jmp openApp
@@ -845,7 +856,7 @@ menuBarClick:
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
-        ldx #12
+        ldx #13
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -872,12 +883,12 @@ mbMenu:  .byte 0, 1, $ff, 2           // uitklapmenu per knop ($ff = app)
 // uitklapmenu's: 0 = CD64, 1 = DESKTOP, 2 = SYSTEM
 mnX:     .byte 0, 7, 25
 mnW:     .byte 10, 18, 12
-mnN:     .byte 4, 3, 3
+mnN:     .byte 4, 3, 4
 mnFirst: .byte 0, 4, 7
 miLo:    .byte <oHelp, <oReset, <oExit, <oAbout, <oAdd, <oEditP, <oDel
-         .byte <nSet, <oNet, <oMail
+         .byte <nSet, <oNet, <oMail, <oTime
 miHi:    .byte >oHelp, >oReset, >oExit, >oAbout, >oAdd, >oEditP, >oDel
-         .byte >nSet, >oNet, >oMail
+         .byte >nSet, >oNet, >oMail, >oTime
 
 //--------------------------------------------------------
 // about_Show - "over deze OS"-dialoog (Win95-stijl: titelbalk, sluitknop,
@@ -986,9 +997,11 @@ onMouseDown:
 !w7:    cmp #8
         bne !w8+
         jmp BBS_CLICK
-!w8:    cmp #9                   // EMAIL (9) en EMAIL SETTINGS (10)
+!w8:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12)
         beq !em+
         cmp #10
+        beq !em+
+        cmp #12
         bne !w9+
 !em:    jmp EMAIL_CLICK
 !w9:    cmp #11                  // SID PLAYER
@@ -1099,15 +1112,15 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <nTime
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >nTime
 // overlay (loadApp-index) per app-id: PING zit in de INET-overlay
-appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9, 10
 
 dbI:       .byte 0
-// laadvenster-namen per app-id (12 = launcher-beheer)
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >lTool
+// laadvenster-namen per app-id (13 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <oTime, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >oTime, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -1187,6 +1200,10 @@ oMail:  .text "EMAIL"
 nMailS: .text "EMAIL SETTINGS"
         .byte $ff
 nSid:   .text "SID PLAYER"
+        .byte $ff
+oTime:  .text "TIME"
+        .byte $ff
+nTime:  .text "DATE AND TIME"
         .byte $ff
 sF1Help: .text "F1=HELP"
         .byte $ff

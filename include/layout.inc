@@ -90,6 +90,11 @@
 // ---- Muispijl (instelbaar via Settings, WEL opgeslagen: CFG-blok t/m $0213).
 //      $FF = nog niet gezet (oude CD64.CFG): dan de kleur van het profiel.
 .label TH_mouse     = $0213
+// ---- Datum en tijd (SYSTEM -> TIME, ook opgeslagen in CD64.CFG) ----
+.label CFG_tz       = $0214   // tijdzone (index in apps/time/tzdata.asm)
+.label CFG_timeAuto = $0215   // 1 = bij het opstarten de tijd ophalen (NTP)
+.label CFG_ntp      = $0216   // tijdserver: schermcodes, $ff-afgesloten (32)
+.const TZ_DEFAULT   = 21      // AMSTERDAM, BERLIN, PARIS
 
 // ---- Venster-layout (Win95-stijl, vast) ----
 //   rij 0      menubalk          rij 1      titelbalk

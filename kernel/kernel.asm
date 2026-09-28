@@ -38,6 +38,7 @@ kernel_Init:
         jsr theme_Apply          // rand/achtergrond -> VIC
         lda #$1b                 // bureaublad klaar -> scherm aan (DEN)
         sta VIC_CTRL1
+        jsr time_Boot
         jmp shell_Run            // hoofdlus (keert niet terug)
 
 // theme_Apply - rand- en achtergrondkleur naar de VIC schrijven.
@@ -91,6 +92,11 @@ osvars_Init:
         sta TH_text
         lda #$ff                 // muiskleur: nog niet gezet (zie profile_Derive)
         sta TH_mouse
+        sta CFG_ntp              // tijdserver: standaard (pool.ntp.org)
+        lda #TZ_DEFAULT
+        sta CFG_tz
+        lda #0
+        sta CFG_timeAuto
         rts
 
 //--------------------------------------------------------
