@@ -361,7 +361,23 @@ nosid:  ldx #<sSpNoSid
         ldy #>sSpNoSid
         clc
         rts
-hdr:    lda SP_HDR+$0c         // play-adres (big-endian)
+hdr:    lda SP_HDR+$05         // PSID v2+: welk geheugen is vrij?
+        cmp #2                   // (startPage/pageLength op $78/$79)
+        bcc fr
+        lda SP_HDR+$78
+        beq fr                   // 0: alleen het eigen bereik
+        cmp #$81                 // anders moet $8000-$BFFF (deze overlay)
+        bcs nfr                  // in het vrije bereik liggen
+        clc
+        adc SP_HDR+$79
+        bcs fr
+        cmp #$c0
+        bcs fr
+nfr:    ldx #<sSpMem             // tune gebruikt (bijna) al het geheugen
+        ldy #>sSpMem
+        clc
+        rts
+fr:     lda SP_HDR+$0c         // play-adres (big-endian)
         sta spPlay+1
         lda SP_HDR+$0d
         sta spPlay
@@ -1081,6 +1097,8 @@ sSpNone:  .text "NO .SID FILES ON THE DISK"
 sSpHint:  .text "CLICK A TUNE TO PLAY IT"
           .byte $ff
 sSpBig:   .text "THIS TUNE IS TOO BIG"
+          .byte $ff
+sSpMem:   .text "THIS TUNE NEEDS ALL MEMORY"
           .byte $ff
 sSpLoad:  .text "COULD NOT LOAD THE FILE"
           .byte $ff

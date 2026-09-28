@@ -8,6 +8,8 @@ CD64 SID player (apps/sidplay.asm), so RADIO only gets tunes it can play:
   - load area $0800-$3FFF, $4000-$7FFF, $C000-$CFFF or $E000-$FFF9
   - the file (at $4000) plus, if needed, a copy of the memory it replaces
     must stay below $8000
+  - the free memory in the PSID v2 header must include $8000-$BFFF (the
+    player itself); tunes that use (almost) all memory are left out
 Only the paths are stored; the music itself stays on the server.
 
 usage: python tools/make_radio_list.py [per-composer] [max-bytes]
@@ -43,6 +45,10 @@ def playable(d):
         return False
     if ver >= 2 and len(d) > 0x77 and d[0x77] & 2:           # C64 BASIC tune
         return False
+    if ver >= 2 and len(d) > 0x79 and d[0x78]:                # free pages must
+        sp, pl = d[0x78], d[0x79]                              # hold $8000-$BFFF
+        if sp == 0xff or sp > 0x80 or sp + pl < 0xc0:          # (the player)
+            return False
     data = d[off:]
     if load == 0:
         load, data = data[0] | (data[1] << 8), data[2:]

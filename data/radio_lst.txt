@@ -7,10 +7,7 @@ H/Hubbard_Rob/Chain_Reaction.sid
 H/Hubbard_Rob/Chicken_Song.sid
 H/Hubbard_Rob/Commando.sid
 H/Hubbard_Rob/Crazy_Comets.sid
-G/Galway_Martin/Athena.sid
 G/Galway_Martin/Commando_High-Score.sid
-G/Galway_Martin/Miami_Vice.sid
-G/Galway_Martin/Ping_Pong.sid
 G/Galway_Martin/Swag.sid
 D/Daglish_Ben/720_Degrees.sid
 D/Daglish_Ben/Artura.sid
@@ -33,16 +30,13 @@ H/Huelsbeck_Chris/Compilation_III.sid
 H/Huelsbeck_Chris/Hard_n_Heavy.sid
 H/Huelsbeck_Chris/Metro_Dance.sid
 H/Huelsbeck_Chris/Oxxonian.sid
-H/Huelsbeck_Chris/Planet_of_War.sid
 H/Huelsbeck_Chris/Third_TFMX_Song.sid
 H/Huelsbeck_Chris/Wellenreiter.sid
-F/Follin_Tim/Bionic_Commando.sid
 F/Follin_Tim/Black_Lamp.sid
 F/Follin_Tim/Bodyslam.sid
 F/Follin_Tim/Ghouls_n_Ghosts_Alternate.sid
 F/Follin_Tim/Qix.sid
 F/Follin_Tim/Scumball.sid
-F/Follin_Tim/Test_Bits.sid
 W/Whittaker_David/4_Soccer_Sims_Soccer_Skills.sid
 W/Whittaker_David/All_Points_Bulletin.sid
 W/Whittaker_David/All_Terrain_Vehicle_Simulator.sid
@@ -52,8 +46,6 @@ W/Whittaker_David/Armageddon_Man.sid
 W/Whittaker_David/BMX_Simulator.sid
 W/Whittaker_David/Beverly_Hills_Cop.sid
 G/Gray_Matt/Atmosphere_II.sid
-G/Gray_Matt/Deliverance.sid
-G/Gray_Matt/Hunters_Moon.sid
 G/Gray_Matt/KGB_Superspy.sid
 G/Gray_Matt/Make_My_Day.sid
 G/Gray_Matt/Maze_Mania.sid
@@ -72,7 +64,6 @@ C/Cooksey_Mark/1942.sid
 C/Cooksey_Mark/1942_v2.sid
 C/Cooksey_Mark/A_Question_of_Sport.sid
 C/Cooksey_Mark/Airwolf.sid
-C/Cooksey_Mark/Airwolf_II.sid
 C/Cooksey_Mark/Battle_Island.sid
 C/Cooksey_Mark/Crack_Down.sid
 D/Dunn_Jonathan/Basket_Master.sid
