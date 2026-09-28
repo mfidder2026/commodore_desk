@@ -16,6 +16,7 @@
 .const NET_PLAT_NONE     = 0
 .const NET_PLAT_ULTIMATE = 1
 .const NET_PLAT_RRNET    = 2
+.const NET_PLAT_WIC64    = 3     // userport; TCP/DNS in de firmware (zoals de Ultimate)
 
 // Foutcodes (foutmodel uit het bouwplan)
 .const NET_OK                     = 0

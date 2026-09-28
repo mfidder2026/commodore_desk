@@ -79,8 +79,7 @@ md:     sty tmAscii
         bpl !-
         jsr tm_Enter
         jsr tm_Intro             // "CONNECTING TO" / naam / host:poort
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne rr
         // --- Ultimate: de firmware doet DNS + TCP
         ldx #<sTmConn
@@ -224,8 +223,7 @@ net:    lda tmTxLen              // verzamelde toetsen versturen
         ldx #<sBbLost
         ldy #>sBbLost
         jmp gone
-rx:     lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+rx:     jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         beq ut
         jsr net_Poll
         lda tcpRst
@@ -278,8 +276,7 @@ back:   jsr tm_Leave
 tm_Close:
         lda #0
         sta netNoKeys
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne !+
         jmp ut_Close
 !:      jmp tcp_Close
@@ -310,8 +307,7 @@ cp:     lda tmTx,x
         lda #0
         sta tcpDataLen+1
         sta tmTxLen
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne rr
         jmp ut_Write
 rr:     jmp tcp_Send

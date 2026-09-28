@@ -39,6 +39,7 @@
         #import "net/dns.asm"
         #import "net/dhcp.asm"
         #import "net/ultimate.asm"
+        #import "net/wic64net.asm"
         #import "net/logpoints.asm"
         // de BBS-client
         #import "apps/bbs/bbs_directory.asm"

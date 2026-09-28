@@ -229,6 +229,11 @@ cp:     lda NC_HOST,x
 ce:     stx feLen
 }
 ut_ConnectFe: {
+        lda netPlatform          // WiC64: net/wic64net.asm
+        cmp #NET_PLAT_WIC64
+        bne !+
+        jmp wc_ConnectFe
+!:
         lda #$03
         sta ucCmd
         lda utProto              // $07 TCP, $08 UDP
@@ -274,6 +279,11 @@ fail:   clc
 
 // ut_Write - tcpDataLen bytes vanaf tcpDataPtr sturen (per 512).
 ut_Write: {
+        lda netPlatform          // WiC64: net/wic64net.asm
+        cmp #NET_PLAT_WIC64
+        bne !+
+        jmp wc_Write
+!:
         lda tcpDataPtr
         sta ucDataPtr
         lda tcpDataPtr+1
@@ -335,6 +345,11 @@ fail:   clc
 //           Uit: A = 0 data, 1 gesloten, 2 nog niets, $ff fout.
 // -----------------------------------------------------
 ut_Read: {
+        lda netPlatform          // WiC64: net/wic64net.asm
+        cmp #NET_PLAT_WIC64
+        bne !+
+        jmp wc_Read
+!:
         lda #$03
         sta ucCmd
         lda #$10
@@ -406,6 +421,11 @@ deliver:
 
 // ut_Close - handle sluiten (niet na "01": die is al vrijgegeven).
 ut_Close:
+        lda netPlatform          // WiC64: net/wic64net.asm
+        cmp #NET_PLAT_WIC64
+        bne !+
+        jmp wc_Close
+!:
         lda utOpen
         beq !r+
         lda #$03
@@ -426,6 +446,11 @@ ut_Close:
 // ut_GetIp - IP-configuratie van de Ultimate (interface 0) -> utIp.
 //            Carry=1 gelukt.
 ut_GetIp: {
+        lda netPlatform          // WiC64: net/wic64net.asm
+        cmp #NET_PLAT_WIC64
+        bne !+
+        jmp wc_GetIp
+!:
         lda #$03
         sta ucCmd
         lda #$05

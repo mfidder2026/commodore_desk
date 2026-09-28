@@ -9,8 +9,8 @@ all running on the C64 itself over its own TCP/IP stack. A **SID player**
 plays the music files on the disk.
 
 It runs from a **D71/D64 disk** or an **EasyFlash cartridge** (instant boot),
-in VICE or on real hardware with an **RR-Net** or an **Ultimate 64 / 1541
-Ultimate-II+**.
+in VICE or on real hardware with an **RR-Net**, an **Ultimate 64 / 1541
+Ultimate-II+** or a **WiC64** (WiFi on the userport).
 
 | Boot screen | Desktop |
 |---|---|
@@ -156,6 +156,8 @@ Ultimate-II+**.
 All network programs use the C64's own TCP/IP stack: ARP, IPv4, ICMP, UDP,
 DNS, DHCP and TCP on the **RR-Net** (CS8900a). On an **Ultimate** the
 Ultimate's firmware does TCP/IP and DNS, through its command interface (UCI).
+On a **WiC64** its firmware does WiFi, TCP and DNS; CD64 talks to it over the
+userport. CD64 looks for them in that order.
 There is no SSL/TLS on a C64, so every service must work without it.
 
 ### BBS client
@@ -233,7 +235,8 @@ waits, the C64 answers pings itself.
 
 ### NETWORK
 
-- The network hardware found: RR-Net or Ultimate.
+- The network hardware found: RR-Net, Ultimate or WiC64 (with its own IP
+  address).
 - **IP, mask, gateway and DNS**, or **DHCP** to get them from the network.
 - **The chat server**: host (IP address or name), port, API key and model.
   **MODELS** fetches the server's model list to pick from.
@@ -271,7 +274,9 @@ the C64's clock.
 
 It uses the network settings from SYSTEM → NETWORK. On an RR-Net it sends
 one UDP packet to port 123 through CD64's own stack; on an Ultimate it uses
-the Ultimate's UDP socket (not testable in VICE, so not tested yet).
+the Ultimate's UDP socket (not testable in VICE, so not tested yet). A WiC64
+has no UDP, so there CD64 asks `time.nist.gov` over TCP port 37 (the TIME
+protocol, RFC 868), which gives the same UTC seconds.
 
 ---
 
@@ -436,8 +441,14 @@ wsl python3 tools/mailtest_server.py 1110 1587
 - **Ultimate 64 / 1541 Ultimate-II+**: enable the **Command Interface**. The
   Ultimate's own network connection is used, and its firmware handles TCP/IP
   and DNS. VICE cannot emulate this, so it can only be tested on the real thing.
+- **WiC64** (WiFi module on the userport, firmware 2.x): set up the WiFi
+  connection with the WiC64's own tools first. CD64 then finds it by itself;
+  BBS, EMAIL, CHAT and TIME work through it (its firmware does TCP and DNS).
+  PING and DHCP are not available on it. In VICE 3.8+ it can be emulated:
+  `x64sc -userportdevice 23`.
 - **Cartridge build**: EasyFlash uses `$DE00`/`$DF00` itself, so the RR-Net
-  cannot be used together with it.
+  cannot be used together with it. The WiC64 works, because it is on the
+  userport.
 
 ---
 
@@ -447,12 +458,12 @@ wsl python3 tools/mailtest_server.py 1110 1587
 gui/      shell (menu bar, windows, status bar) · desktop launcher · widgets · help
 gfx/      drawing primitives · fonts and icons · mouse pointer sprite
 kernel/   start-up · events · raster IRQ (50 Hz) · clock · memory
-hal/      VIC · input (mouse, joystick, keyboard) · disk (IEC) · sound (SID)
+hal/      VIC · input (mouse, joystick, keyboard) · disk (IEC) · sound (SID) · WiC64 (userport)
 apps/     files (+ RAM drives) · editor · paint · calc · settings · network/ping/chat · SID player
 apps/bbs/ BBS client: directory, session, terminal, Telnet
 apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
 apps/time/   date and time: NTP client, time zones, summer time
-net/      network stack: CS8900, Ultimate UCI, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
+net/      network stack: CS8900, Ultimate UCI, WiC64, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
 include/  palette · layout · memory map · ABI · hardware
 ```
 

@@ -85,8 +85,7 @@ pok:    lda mnPort+1
         sta tcpRxVec
         lda #>mn_Rx
         sta tcpRxVec+1
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne rr
         jsr ut_ConnectFe         // Ultimate: DNS + TCP in de firmware
         bcs ok
@@ -150,16 +149,14 @@ ok:     sec
 
 // mn_Close - verbinding sluiten.
 mn_Close:
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne !+
         jmp ut_Close
 !:      jmp tcp_Close
 
 // mn_Send - tcpDataLen bytes vanaf tcpDataPtr versturen. Carry=1 gelukt.
 mn_Send:
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne !+
         jmp ut_Write
 !:      jmp tcp_Send
@@ -237,8 +234,7 @@ ok:     sec
 
 // mn_Poll - ontvangen (RR-Net: frames; Ultimate: één keer per beeld).
 mn_Poll: {
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         beq ut
         jsr net_Poll
         lda tcpRst

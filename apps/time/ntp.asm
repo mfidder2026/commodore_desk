@@ -8,6 +8,8 @@
 // seconden sinds 1-1-1900 (UTC, big-endian).
 //   RR-Net:   UDP via de eigen stack (ntp_Input via udpVec in ip.asm).
 //   Ultimate: UDP-socket van de firmware (opdracht $08, zie ultimate.asm).
+//   WiC64:    geen UDP: TIME-protocol (RFC 868, TCP-poort 37) bij
+//             time.nist.gov (ntp_Wic).
 //========================================================
 
 .const NTP_LEN = 48
@@ -18,8 +20,7 @@
 //           Uit: carry=1 -> ntpSec, carry=0 -> X/Y = melding.
 // -----------------------------------------------------
 ntp_Get: {
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw               // Ultimate of WiC64
         bne n1
         jmp ntp_Ult
 n1:     cmp #NET_PLAT_RRNET
@@ -192,7 +193,11 @@ no:     clc
 //           in VICE).
 // -----------------------------------------------------
 ntp_Ult: {
-        lda #0                   // poort 123 (big-endian)
+        lda netPlatform
+        cmp #NET_PLAT_WIC64
+        bne u
+        jmp ntp_Wic
+u:      lda #0                   // poort 123 (big-endian)
         sta tcpRPort
         lda #123
         sta tcpRPort+1
@@ -255,6 +260,73 @@ cs:     lda ntpBuf+40,x
         sec
         rts
 }
+// -----------------------------------------------------
+// ntp_Wic - de WiC64 heeft geen UDP (en zijn eigen klok rekent met een
+//   vaste zomertijd). Daarom het TIME-protocol (RFC 868) via TCP: de
+//   server stuurt 4 bytes, seconden sinds 1900 (UTC, big-endian) - net
+//   als NTP - en sluit de verbinding.
+// -----------------------------------------------------
+ntp_Wic: {
+        ldx #0
+cs:     lda sNtpTcp,x
+        sta feBuf,x
+        inx
+        cpx #sNtpTcpE-sNtpTcp
+        bne cs
+        stx feLen
+        lda #0                   // poort 37 (big-endian)
+        sta tcpRPort
+        lda #37
+        sta tcpRPort+1
+        jsr wc_ConnectFe
+        bcc fail
+        lda #<ntp_UtByte
+        sta tcpRxVec
+        lda #>ntp_UtByte
+        sta tcpRxVec+1
+        lda #0
+        sta ntpCnt
+        lda frameLo
+        sta ntpT0
+rl:     jsr wc_Read
+        ldx ntpCnt
+        cpx #4
+        bcs got
+        cmp #1                   // gesloten zonder 4 bytes
+        beq cl
+        lda frameLo              // 3 s
+        sec
+        sbc ntpT0
+        cmp #150
+        bcc rl
+cl:     jsr wc_Close
+fail:   ldx #<sNtpNoAns
+        ldy #>sNtpNoAns
+        clc
+        rts
+got:    lda frameLo              // de server sluit zelf: daarop wachten
+        sta ntpT0                // (max. 1 s), dan pas zelf sluiten
+gw:     lda utOpen
+        beq gc
+        jsr wc_Read
+        lda frameLo
+        sec
+        sbc ntpT0
+        cmp #50
+        bcc gw
+gc:     jsr wc_Close
+        ldx #3
+cp:     lda ntpBuf,x
+        sta ntpSec,x
+        dex
+        bpl cp
+        sec
+        rts
+}
+.encoding "screencode_upper"
+sNtpTcp:  .text "TIME.NIST.GOV"
+sNtpTcpE:
+
 ntp_UtByte:
         ldx ntpCnt
         cpx #NTP_LEN

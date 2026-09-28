@@ -40,6 +40,7 @@
         #import "net/tcp.asm"
         #import "net/dns.asm"
         #import "net/ultimate.asm"
+        #import "net/wic64net.asm"
         #import "net/logpoints.asm"
         // DATE AND TIME
         #import "apps/time/ntp.asm"

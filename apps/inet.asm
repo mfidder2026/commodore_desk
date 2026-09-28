@@ -50,7 +50,13 @@ inet_Draw: {
         ldy #>lDev
         jsr lb_Label
         lda netPlatform
-        cmp #NET_PLAT_ULTIMATE
+        cmp #NET_PLAT_WIC64
+        bne notWic
+        ldx #<sWicDev            // "USERPORT"
+        ldy #>sWicDev
+        jsr lb_Str
+        jmp devEnd
+notWic: cmp #NET_PLAT_ULTIMATE
         bne notUlt
         ldx #<sUci               // "UCI $DF1C"
         ldy #>sUci
@@ -93,8 +99,7 @@ devEnd: jsr lb_Show
         ldy errHi,x
         tax
         jsr lb_Str
-        lda netPlatform          // Ultimate: zijn eigen IP-adres erbij
-        cmp #NET_PLAT_ULTIMATE
+        jsr net_Fw               // Ultimate/WiC64: zijn eigen IP-adres erbij
         bne stS
         jsr ut_GetIp
         bcc stS
@@ -431,6 +436,8 @@ in_Dhcp: {
         ldx #<sDhUlt
         ldy #>sDhUlt
         cmp #NET_PLAT_ULTIMATE
+        beq msg
+        cmp #NET_PLAT_WIC64
         beq msg
         ldx #<sChNoHw
         ldy #>sChNoHw
@@ -1090,8 +1097,8 @@ fOff:   .byte NC_IP-NETCFG, NC_MASK-NETCFG, NC_GW-NETCFG, NC_DNS-NETCFG
 fLblLo: .byte <lIp, <lMask, <lGw, <lDns, <lHost, <lPort, <lKey, <lModel, <lTarget
 fLblHi: .byte >lIp, >lMask, >lGw, >lDns, >lHost, >lPort, >lKey, >lModel, >lTarget
 
-platLo: .byte <pNone, <pUlt, <pRr
-platHi: .byte >pNone, >pUlt, >pRr
+platLo: .byte <pNone, <pUlt, <pRr, <pWic
+platHi: .byte >pNone, >pUlt, >pRr, >pWic
 errLo:  .byte <eOk, <eNoDev, <eNoDev, <eNoDev, <eNoDev, <eNoDev, <eNoDev, <eNoDev, <eNoDev, <eNoDev, <eBusy
 errHi:  .byte >eOk, >eNoDev, >eNoDev, >eNoDev, >eNoDev, >eNoDev, >eNoDev, >eNoDev, >eNoDev, >eNoDev, >eBusy
 .assert "errLo dekt alle NET_ERR-codes", errHi - errLo, NET_ERR_IO_BUSY + 1
@@ -1128,6 +1135,10 @@ pNone:     .text "NONE"
 pUlt:      .text "ULTIMATE"
            .byte $ff
 pRr:       .text "RR-NET"
+           .byte $ff
+pWic:      .text "WIC64"
+           .byte $ff
+sWicDev:   .text "USERPORT (WIFI)"
            .byte $ff
 sUci:      .text "UCI "
            .byte $ff
@@ -1173,7 +1184,7 @@ sDhAsk:    .text "ASKING FOR AN ADDRESS (DHCP)..."
            .byte $ff
 sDhOk:     .text "DHCP OK - PRESS SAVE TO KEEP IT"
            .byte $ff
-sDhUlt:    .text "THE ULTIMATE SETS ITS OWN IP"
+sDhUlt:    .text "THIS DEVICE SETS ITS OWN IP"
            .byte $ff
 sMdGet:    .text "ASKING THE SERVER FOR MODELS..."
            .byte $ff

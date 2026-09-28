@@ -113,8 +113,11 @@ ping_Run: {
         beq rr
         ldx #<sPgNoHw
         ldy #>sPgNoHw
-        cmp #NET_PLAT_ULTIMATE   // de Ultimate kent geen ICMP-opdracht:
-        bne sayN                 // geen nep-ping (zie het bouwplan)
+        cmp #NET_PLAT_RRNET+1    // Ultimate en WiC64 kennen geen ICMP-
+        bcs pu                   // opdracht: geen nep-ping (zie het bouwplan)
+        cmp #NET_PLAT_ULTIMATE
+        bne sayN
+pu:
         ldx #<sPgUlt
         ldy #>sPgUlt
 sayN:   jmp say
@@ -380,7 +383,7 @@ sPgHint:  .text "ESC STOPS"
           .byte $ff
 sPgNoHw:  .text "NO RR-NET FOUND (SEE NETWORK)"
           .byte $ff
-sPgUlt:   .text "NO ICMP PING ON THE ULTIMATE"
+sPgUlt:   .text "NO PING ON THIS DEVICE (RR-NET ONLY)"
           .byte $ff
 sPgIp:    .text "IP   "
           .byte $ff

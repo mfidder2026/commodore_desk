@@ -3,10 +3,11 @@
 // net/netdrv.asm - platformdetectie + netwerkconfig (Milestone 1)
 // Commodore Desk 64
 //
-// Volgorde (bouwplan): eerst Ultimate (UCI), dan RR-Net (CS8900),
-// anders geen netwerk. In de cartridge-build (cartMode=1) wordt de
-// I/O-ruimte niet aangeraakt: EasyFlash gebruikt $DE00/$DE02 als
-// bank/control-register en heeft RAM op $DF00.
+// Volgorde (bouwplan): eerst Ultimate (UCI), dan RR-Net (CS8900), dan
+// WiC64 (userport), anders geen netwerk. In de cartridge-build
+// (cartMode=1) wordt de I/O-ruimte niet aangeraakt: EasyFlash gebruikt
+// $DE00/$DE02 als bank/control-register en heeft RAM op $DF00. De WiC64
+// zit op de userport en werkt daar wel.
 //========================================================
 
 // -----------------------------------------------------
@@ -19,10 +20,7 @@ net_Detect: {
         lda #NET_PLAT_NONE
         sta netPlatform
         lda cartMode
-        beq go
-        lda #NET_ERR_IO_BUSY
-        sta netError
-        rts
+        bne wic
 go:
 .if (PLATFORM != PLATFORM_RRNET) {
         jsr uci_Detect
@@ -38,14 +36,32 @@ noUci:
         jmp ok
 noCs:
 }
-        lda #NET_ERR_NO_DEVICE
-        sta netError
+wic:    jsr wc_Detect            // WiC64 op de userport (Core)
+        bcc none
+        lda #NET_PLAT_WIC64
+        jmp ok
+none:   lda #NET_ERR_NO_DEVICE
+        ldx cartMode
+        beq ne
+        lda #NET_ERR_IO_BUSY
+ne:     sta netError
         rts
 ok:     sta netPlatform
         lda #NET_OK
         sta netError
         rts
 }
+
+// net_Fw - doet de firmware TCP en DNS (Ultimate of WiC64)? Dan
+//          A = NET_PLAT_ULTIMATE, anders A = netPlatform; vlaggen van
+//          "cmp #NET_PLAT_ULTIMATE" (Z=1 = firmware).
+net_Fw:
+        lda netPlatform
+        cmp #NET_PLAT_WIC64
+        bne !+
+        lda #NET_PLAT_ULTIMATE
+!:      cmp #NET_PLAT_ULTIMATE
+        rts
 
 netPlatform: .byte NET_PLAT_NONE
 netError:    .byte NET_ERR_NO_DEVICE

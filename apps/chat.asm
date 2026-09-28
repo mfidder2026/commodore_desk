@@ -218,8 +218,7 @@ http_Do: {
         lda #0
         sta netAbort
         // hardware + server
-        lda netPlatform
-        cmp #NET_PLAT_ULTIMATE   // Ultimate: TCP via de firmware (UCI)
+        jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne rr
         jmp ut_HttpDo
 rr:     cmp #NET_PLAT_RRNET
