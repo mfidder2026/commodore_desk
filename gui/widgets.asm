@@ -39,7 +39,7 @@ btn_Draw:
         sta a2
         lda #1
         sta a3
-        lda #$a0
+        lda stBtnFill            // (GEOS-stijl: stippen)
         sta a4
         lda wColor
         sta a5
@@ -273,7 +273,7 @@ dlg_Draw:
         sta a2
         lda #1
         sta a3
-        lda #$a0
+        lda stTitleFill          // (GEOS-stijl: strepen)
         sta a4
         lda TH_title
         sta a5

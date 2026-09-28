@@ -184,7 +184,7 @@ lp:     cpx ciLen
         jsr lb_Chr
         inx
         bne lp
-cur:    lda #$a0
+cur:    lda #GL_SOLID
         jsr lb_Chr
 pad:    lda lbX
         cmp #CI_VIS+2

@@ -328,7 +328,7 @@ sp:     ldx leOn                 // cursor achter de tekst
         beq ch
         cpy leL
         bne ch
-        lda #$a0
+        lda #GL_SOLID
 ch:     sta a2
         lda leI
         clc

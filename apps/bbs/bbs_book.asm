@@ -822,7 +822,7 @@ sp:     ldx fxOn
         beq ch
         cpy fxL
         bne ch
-        lda #$a0                 // cursor
+        lda #GL_SOLID                 // cursor
 ch:     sta a2
         lda fxI
         clc

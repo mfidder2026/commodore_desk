@@ -127,7 +127,7 @@ da_tiDraw:
         sta a0
         lda daTY
         sta a1
-        lda #$a0                 // cursorblok
+        lda #GL_SOLID                 // cursorblok
         sta a2
         lda TH_select
         sta a3
@@ -298,7 +298,7 @@ da_ColorPick:
         sta a0
         lda #14
         sta a1
-        lda #$a0
+        lda #GL_SOLID
         sta a2
         lda daK
         sta a3

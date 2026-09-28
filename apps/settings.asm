@@ -60,7 +60,7 @@ setCol: sta a2
         sta a2
         lda #1
         sta a3
-        lda #$a0
+        lda #GL_SOLID
         sta a4
         ldx setI
         ldy roleOff,x            // kleurvariabele van de rol ($02xx)
@@ -99,7 +99,7 @@ pgo:    lda setI
         sta a2
         lda #1
         sta a3
-        lda #$a0
+        lda #GL_SOLID
         sta a4
         lda setI
         sta a5
@@ -347,6 +347,7 @@ chkProf: // THEME-regel (rij 3, kol 4-20) -> volgend profiel
         lda #0
 !:      sta CFG_profile
         jsr profile_Apply
+        jsr font_OverlayUI       // omgekeerde tekens volgen de stijl
         jsr shell_DrawAll
         rts
 chkSound: // SOUND-regel (rij 4, kol 4-20) -> aan/uit
@@ -632,8 +633,8 @@ fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny, >fFremen, >fSeri
 menuNameLo: .byte <mClear, <mFilled
 menuNameHi: .byte >mClear, >mFilled
 
-profNameLo: .byte <pC64, <pMatrix, <pPaper, <pFremen
-profNameHi: .byte >pC64, >pMatrix, >pPaper, >pFremen
+profNameLo: .byte <pC64, <pMatrix, <pPaper, <pFremen, <pGeos
+profNameHi: .byte >pC64, >pMatrix, >pPaper, >pFremen, >pGeos
 
 soundNameLo: .byte <sNo, <sYes
 soundNameHi: .byte >sNo, >sYes
@@ -696,6 +697,8 @@ pMatrix: .text "MATRIX "
 pPaper:  .text "PAPER  "
          .byte $ff
 pFremen: .text "FREMEN "
+         .byte $ff
+pGeos:   .text "GEOS   "
          .byte $ff
 sSound:  .text "SOUND:"
          .byte $ff

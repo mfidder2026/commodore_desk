@@ -198,7 +198,7 @@ sp:     ldx liOn
         beq ch
         cpy liL
         bne ch
-        lda #$a0
+        lda #GL_SOLID
 ch:     sta a2
         lda liI
         clc

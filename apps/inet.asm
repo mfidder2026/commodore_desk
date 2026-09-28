@@ -849,7 +849,7 @@ vis:    cpx feLen
         jsr lb_Chr
         inx
         bne vis
-cur:    lda #$a0                 // cursor = blok
+cur:    lda #GL_SOLID                 // cursor = blok
         jsr lb_Chr
 pad:    lda lbX
         cmp #IN_VW

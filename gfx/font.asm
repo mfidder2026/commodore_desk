@@ -67,6 +67,10 @@
 .const ICO_RADIO   = 252
 .const ICO_RADIO_B = 80          // onderste rij
 .const ICO_RADIO_D = ICO_RADIO - 2
+// GEOS-stijl: titelstrepen en knoppenpatroon, na icon_Build op 82-83
+// (net als 80-81 alleen bron van het BBS-icoon)
+.const GL_STRIPE   = 82
+.const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
@@ -164,11 +168,16 @@ font_OverlayUI:
 !rv:
     .for (var p=0; p<4; p++) {
         lda CHARSET_BASE + p*$100,x
-        eor #$ff
+        eor stRevMask            // GEOS-stijl: niet omgekeerd
         sta CHARSET_BASE + $400 + p*$100,x
     }
         inx
         bne !rv-
+        ldx #7                   // GL_SOLID: altijd een vol blok
+        lda #$ff                 // (kleurvlakken, cursor)
+!sb:    sta CHARSET_BASE + GL_SOLID*8,x
+        dex
+        bpl !sb-
         ldx #0
 !lp:    lda frameGlyphs,x
         sta CHARSET_BASE + [96*8],x
@@ -237,6 +246,11 @@ rb:     sta CHARSET_BASE+ICO_RADIO_B*8-32,x
 rn:     inx
         cpx #48
         bne rg
+        ldx #15                  // strepen + stippen (GEOS-stijl)
+sg:     lda styleGlyphs,x
+        sta CHARSET_BASE+GL_STRIPE*8,x
+        dex
+        bpl sg
         rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
@@ -381,6 +395,10 @@ frameGlyphs:
         .byte $53,$72,$53,$72,$53,$ff,$00,$00   // BL
         .byte $9c,$94,$9c,$94,$9c,$ff,$00,$00   // BR
 
+// GEOS-stijl: strepen (titelbalk) en een licht stippenpatroon (knoppen).
+styleGlyphs:
+        .byte $ff,$00,$ff,$00,$ff,$00,$ff,$00
+        .byte $00,$44,$00,$11,$00,$44,$00,$11
 // Radio met antenne 16x16 (TL, TR, BL, BR): SID RADIO.
 radioGlyphs:
         .byte $00,$00,$00,$7f,$80,$be,$aa,$be   // TL

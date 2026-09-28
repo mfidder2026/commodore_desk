@@ -174,7 +174,7 @@ gfx_BarRow:
         adc #$d4
         sta r5+1
         ldy #0
-!lp:    lda #$a0
+!lp:    lda stBarFill            // (GEOS-stijl: geen vol blok)
         sta (r4),y
         lda a2
         sta (r5),y

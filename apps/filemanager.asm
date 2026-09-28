@@ -426,7 +426,7 @@ bl:     stx fmI
         sta a0
         lda #FM_BTNR
         sta a1
-        lda TH_accent
+        lda TH_text              // functie in tekstkleur, toets in accent
         sta a2
         jsr gfx_DrawText
         ldx fmI

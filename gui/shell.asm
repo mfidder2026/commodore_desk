@@ -98,7 +98,7 @@ drawDesktopBg:
         lda #0
         sta a0
         stx a1
-        lda #$a0
+        lda stDeskFill           // (GEOS-stijl: ruitjes)
         sta a2
         lda TH_desktop
         sta a3

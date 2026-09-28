@@ -133,6 +133,21 @@ profile_Derive:
         sta TH_desktop
         lda profTitle,x
         sta TH_title
+        txa                      // stijl: vullingen + omgekeerde tekens
+        pha
+        ldy #0
+        cpx #PROFILE_GEOS
+        bne !st+
+        ldy #ST_N
+!st:    ldx #0
+!sl:    lda stTab,y
+        sta stBarFill,x
+        iny
+        inx
+        cpx #ST_N
+        bne !sl-
+        pla
+        tax
         lda TH_mouse             // geen (geldige) muiskleur opgeslagen:
         cmp #16                  // die van het profiel
         bcc !r+
@@ -144,13 +159,27 @@ profile_Derive:
 // desktop = grijs eromheen.
 // Fremen = de kleuren van GEOS: donkergrijs op lichtgrijs, grijze tinten
 // (balktekst = achtergrondkleur, dus donkere balken voor het contrast).
-//          C64/Win95     Matrix       Paper        Fremen
-profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY
-profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY
-profMenu:    .byte LIGHT_GREY, GREEN,       GREY,        DARK_GREY
-profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE,        BLACK
-profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE,  GREY
-profText:    .byte WHITE,      GREEN,       BLACK,       DARK_GREY
-profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY
-profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY
-profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE
+// GEOS = de look van de GEOS deskTop: lichtgrijs, zwarte tekst zonder
+// balken, gestreepte titels en een geruit bureaublad (zie stTab).
+//          C64/Win95     Matrix       Paper        Fremen       GEOS
+profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY,   BLACK
+profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY,  LIGHT_GREY
+profMenu:    .byte LIGHT_GREY, GREEN,       GREY,        DARK_GREY,   BLACK
+profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE,        BLACK,       BLUE
+profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE,  GREY,        BLUE
+profText:    .byte WHITE,      GREEN,       BLACK,       DARK_GREY,   BLACK
+profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY,        DARK_GREY
+profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY,   BLACK
+profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE
+
+// Stijl per profiel (Win95 / GEOS): vulteken van de balken (menu, status),
+// van titelbalken, van knoppen en van de desktoprand, en het masker voor
+// de "omgekeerde" tekens (128-255). GEOS: niet omgekeerd, dus tekst op
+// balken en knoppen wordt gewone donkere tekst op de lichte achtergrond.
+stTab:  .byte $a0, $a0,      $a0,     $a0,      $ff
+        .byte $20, GL_STRIPE, GL_DOTS, GL_TRACK, $00
+stBarFill:   .byte $a0
+stTitleFill: .byte $a0
+stBtnFill:   .byte $a0
+stDeskFill:  .byte $a0
+stRevMask:   .byte $ff

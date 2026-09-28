@@ -108,12 +108,17 @@
 .const PROFILE_C64      = 0
 .const PROFILE_MATRIX   = 1
 .const PROFILE_PAPER    = 2
-.const NUM_PROFILES     = 4
+.const PROFILE_FREMEN   = 3
+.const PROFILE_GEOS     = 4      // GEOS-stijl: licht, strepen, ruitjes
+.const NUM_PROFILES     = 5
+.const ST_N             = 5      // stijlwaarden per profiel (kernel.asm: stTab)
 .const DEFAULT_PROFILE  = PROFILE_C64
 
 // Vast UI-glyphblok binnen elke charset (identiek in alle fonts).
 // Reserveer bijv. de bovenste tekens voor frames/iconen; tekst-glyphs
 // staan op de standaard screencode-posities.
+.const GL_SOLID      = 127   // altijd een vol blok (cursor, kleurvlakken),
+                              // ook in de GEOS-stijl (daar is $A0 een spatie)
 .const UI_GLYPH_FIRST = 96    // eerste screencode gereserveerd voor UI/iconen
 
 // Basis van het scherm-RAM (char-mode). VIC-bank 0, scherm op $0400.
