@@ -20,6 +20,7 @@
 .segmentdef Core   [start=$0801, max=$37ff]
 // System-charset: zit in hetzelfde cd64.prg, direct op $3800 geladen.
 .segmentdef SysCharset [start=$3800]
+.segmentdef UiGlyphs [start=$dc00, max=$dfff]   // gaat mee in HELPTEXT (make_help.py)
 .segmentdef Files  [start=$8000]
 .segmentdef Editor [start=$8000]
 .segmentdef Calc   [start=$8000]
@@ -38,6 +39,7 @@
 .segmentdef Heavy  [start=$3800]
 
 .file [name="cd64.prg",   segments="Core,SysCharset"]
+.file [name="uiglyphs.prg", segments="UiGlyphs"]
 .file [name="files.prg",  segments="Files"]
 .file [name="editor.prg", segments="Editor"]
 .file [name="calc.prg",   segments="Calc"]
@@ -92,6 +94,9 @@ start:
 //--------------------------------------------------------
 // App-overlays - elk een los PRG dat op $8000 geladen wordt.
 //--------------------------------------------------------
+.segment UiGlyphs
+        #import "gfx/uiglyphs.asm"
+
 .segment Files
         #import "apps/filemanager.asm"
         #import "apps/ramdisk.asm"

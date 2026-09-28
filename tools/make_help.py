@@ -6,6 +6,7 @@ Layout (loaded to $4000 at start-up and copied to $D000, RAM under I/O):
   +3 .. +2N+2   offset of each context (lo, hi), 0 = none
   text:         title, $FE, line, $FE, line, ..., $FF   (screencodes)
   dictionary:   the words, the last character of each with bit 7 set
+  +$0C00        the UI glyphs (build/uiglyphs.prg, gfx/uiglyphs.asm)
 Bytes $40-$FD in a text are words from the dictionary (index = byte-$40),
 chosen by merging the most frequent pairs (byte-pair encoding); help_Show
 unpacks them. The PRG load address is $4000; the file must stay within 4 KB.
@@ -17,6 +18,7 @@ root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 src = os.path.join(root, 'gui', 'help.txt')
 out = os.path.join(root, 'build', 'helptext.prg')
 MAX_LINES, MAX_W, LIMIT = 14, 33, 4096
+GLYPHS_AT = 0x0c00                       # UI-glyphs op $DC00
 
 
 def sc(text):
@@ -113,8 +115,14 @@ data = bytearray([count, dict_off & 0xff, dict_off >> 8])
 for o in offs:
     data += bytes([o & 0xff, o >> 8])
 data += body
+if len(data) > GLYPHS_AT:
+    sys.exit('helptext is %d bytes, more than %d' % (len(data), GLYPHS_AT))
+# de UI-glyphs (gfx/uiglyphs.asm, segment UiGlyphs op $DC00) erachter
+g = open(os.path.join(root, 'build', 'uiglyphs.prg'), 'rb').read()
+assert g[0] | (g[1] << 8) == 0xd000 + GLYPHS_AT, 'uiglyphs.prg moet op $DC00 staan'
+data += bytes(GLYPHS_AT - len(data)) + g[2:]
 if len(data) > LIMIT:
-    sys.exit('helptext is %d bytes, more than %d' % (len(data), LIMIT))
+    sys.exit('helptext + glyphs is %d bytes, more than %d' % (len(data), LIMIT))
 os.makedirs(os.path.dirname(out), exist_ok=True)
 open(out, 'wb').write(bytes([0x00, 0x40]) + data)
 print('helptext.prg: %d contexts, %d words, %d bytes' % (count, len(words), len(data)))

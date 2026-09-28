@@ -46,6 +46,10 @@ osStart:                         // = $0810
 #import "gui/deskapps.asm"
 #import "kernel/clock.asm"
 #import "kernel/kernel.asm"
+.segmentdef UiGlyphs [start=$dc00, max=$dfff]   // (van de disk: HELPTEXT)
+.segment UiGlyphs
+#import "gfx/uiglyphs.asm"
+.segment OSIMG
 osEnd:
 
 .var osLen = osEnd - $0801
