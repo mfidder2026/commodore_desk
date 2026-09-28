@@ -23,7 +23,30 @@ calc_Init:
 // calc_Draw - display + toetsen.
 //--------------------------------------------------------
 calc_Draw: {
-        gfxDrawBox(6, 4, 22, 3, LIGHT_GREY)
+        lda #LIGHT_GREY          // kleuren: vast, GEOS: uit het thema
+        sta calcBoxC
+        sta calcBtnC
+        lda #LIGHT_GREEN
+        sta calcDispC
+        lda stGeos
+        beq !d+
+        lda TH_text
+        sta calcBoxC
+        lda TH_menubg
+        sta calcBtnC
+        lda TH_accent
+        sta calcDispC
+!d:     lda #6
+        sta a0
+        lda #4
+        sta a1
+        lda #22
+        sta a2
+        lda #3
+        sta a3
+        lda calcBoxC
+        sta a4
+        jsr gfx_DrawBox
         // display leegmaken met kleur, dan getal erin
         lda #7
         sta a0
@@ -35,7 +58,7 @@ calc_Draw: {
         sta a3
         lda #$20
         sta a4
-        lda #LIGHT_GREEN
+        lda calcDispC
         sta a5
         jsr gfx_FillRect
         lda #<[SCREEN_RAM + 5*40 + 22]
@@ -60,7 +83,7 @@ bloop:  lda calcI
         sta a1
         lda #4
         sta a2
-        lda #LIGHT_GREY
+        lda calcBtnC
         sta a3
         ldy calcI
         lda btnLabelLo,y
@@ -411,3 +434,6 @@ keq: .text " = "
      .byte $ff
 kplus:.text " + "
       .byte $ff
+calcBoxC:  .byte 0
+calcBtnC:  .byte 0
+calcDispC: .byte 0

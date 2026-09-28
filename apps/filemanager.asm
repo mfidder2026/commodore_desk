@@ -56,7 +56,29 @@ fm_Load: {
         lda fmScanned            // (eenmaal per keer dat de overlay laadt)
         bne rd
         inc fmScanned
-        jsr fm_Scan
+        lda #4                   // melding in een kader (het venster staat
+        sta a0                   // er nog niet; GEOS: binnen het bureaublad)
+        lda #10
+        sta a1
+        lda #28
+        sta a2
+        lda #3
+        sta a3
+        lda TH_text
+        sta a4
+        jsr gfx_DrawBox
+        lda #<sFmScan
+        sta r0
+        lda #>sFmScan
+        sta r0+1
+        lda #7
+        sta a0
+        lda #11
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        jsr fm_Scan.q
 rd:     jsr fm_ReadBoth
         lda #0                   // scanmelding weg
         sta fmMsg+1
@@ -68,7 +90,7 @@ fm_Scan: {
         ldx #<sFmScan
         ldy #>sFmScan
         jsr fm_Say
-        lda #0
+q:      lda #0
         sta drvCnt
         lda #8
         sta fmI
