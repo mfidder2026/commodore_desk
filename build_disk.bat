@@ -40,8 +40,6 @@ python tools\make_radio_seq.py
 if errorlevel 1 ( echo RADIO.LST mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
-"%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build
-if errorlevel 1 ( echo Cowboy build failed. & exit /b 1 )
 :: Plaatsvervangers voor de spellen (de echte staan in ..\cd64_parked)
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 CITY" -o build\c64cdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
@@ -83,7 +81,6 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\mono.prg mono ^
   -write build\casual.prg casual ^
   -write build\heavy.prg heavy ^
-  -write build\cowboy.prg cowboy ^
   -write build\scrsaver.prg scrsaver ^
   -write build\c64cdesk.prg c64cdesk ^
   -write build\c64rdesk.prg c64rdesk
@@ -118,7 +115,7 @@ if errorlevel 1 ( echo c1541 D64 failed. & exit /b 1 )
 :: Extra's (programma's van derden, SID-tunes) alleen als ze passen; er
 :: blijven 10 blokken vrij voor de instellingen van de gebruiker.
 echo D64-extra's:
-python tools\disk_add.py "%C1541%" build\CD64.d64 10 build\cowboy.prg build\scrsaver.prg sid\*.sid build\c64cdesk.prg build\c64rdesk.prg
+python tools\disk_add.py "%C1541%" build\CD64.d64 10 build\scrsaver.prg sid\*.sid build\c64cdesk.prg build\c64rdesk.prg
 
 :: SID-tunes: alle .sid-bestanden uit de map sid\ (niet in git: muziek
 :: van derden) op de D71; op de D64 via disk_add.py (als ze passen).
