@@ -62,8 +62,10 @@ osEnd:
 .segmentdef Sidplay [start=$8000, max=$bfff]   // SID PLAYER
 .segmentdef DeskTool [start=$8000]
 .segmentdef Inet   [start=$8000, max=$bfff]
+#import "net/net.inc"
 .segment Files
 #import "apps/filemanager.asm"
+#import "apps/ramdisk.asm"
 .segment Editor
 #import "apps/editor.asm"
 .segment Calc

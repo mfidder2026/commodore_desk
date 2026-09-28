@@ -13,6 +13,7 @@
 #import "include/memmap.inc"
 #import "include/abi.inc"
 #import "include/events.inc"
+#import "net/net.inc"
 
 // Core mag NOOIT de charset op $3800 raken: max=$37FF laat de assembler
 // een fout geven zodra de Core te groot wordt.
@@ -92,6 +93,7 @@ start:
 //--------------------------------------------------------
 .segment Files
         #import "apps/filemanager.asm"
+        #import "apps/ramdisk.asm"
 .segment Editor
         #import "apps/editor.asm"
 .segment Calc

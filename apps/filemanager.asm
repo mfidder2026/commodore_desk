@@ -14,8 +14,10 @@
 // van een venster = volgende drive; klik nog eens op een bestand = RUN.
 // Fouten van de drive worden als melding getoond.
 //
+// REU en GeoRAM verschijnen als RAM-drive R:30 / R:31 (apps/ramdisk.asm).
+//
 // Geheugen: vensters op $C500/$CA00 (niet in het PRG), kopieerbuffer
-// $4000-$6FFF.
+// $4000-$6BFF, RAM-drive directory $6C00-$6FFF.
 //========================================================
 
 .const FM_MAX   = 60             // bestanden per venster
@@ -34,9 +36,12 @@
 .label PANE0    = $c500
 .label PANE1    = $ca00
 .label FM_BUF   = $4000
-.const FM_BUFSZ = $3000
+.const FM_BUFSZ = $2c00           // $6C00-$6FFF: RAM-drive directory
 .const FM_TOPR  = 4              // eerste bestandsrij
 .const FM_VIS   = 15
+.const DRV_MAX  = 10             // 8-15 + REU + GeoRAM
+.const RD_REU   = 30             // RAM-drives (apps/ramdisk.asm)
+.const RD_GEO   = 31
 .const FM_FREER = 19
 .const FM_BTNR  = 20
 .const FM_KEYR  = 21
@@ -86,6 +91,7 @@ nx:     inc fmI
         lda fmI
         cmp #16
         bne lp
+        jsr rd_Detect            // REU / GeoRAM erachter
         lda drvCnt               // vensters: eerste en tweede drive
         bne s1
         lda #8                   // (niets gevonden: toch 8)
@@ -225,7 +231,10 @@ fm_Read: {
         ldy #PN_DEV
         lda (fmP),y
         sta fmDev
-        jsr cfg_io_begin
+        cmp #RD_REU
+        bcc dk
+        jmp rd_FillPane
+dk:     jsr cfg_io_begin
         lda #1
         ldx #<dl
         ldy #>dl
@@ -615,6 +624,11 @@ r:      rts
 fm_DevText: {
         sta fmV
         ldx #0
+        cmp #RD_REU              // RAM-drive: "R:REU"
+        bcc iec
+        lda #$12
+        jmp dg1
+iec:    lda fmV
         cmp #10
         bcc one
         lda #$31
@@ -626,7 +640,7 @@ fm_DevText: {
         jmp dg
 one:    lda fmV
 dg:     ora #$30
-        sta fmLbuf,x
+dg1:    sta fmLbuf,x
         inx
         lda #$3a
         sta fmLbuf,x
@@ -1003,7 +1017,10 @@ fm_Run: {
         jsr fm_Cur
         bcs h
         jmp fm_Say
-h:      lda fmTy
+h:      jsr fm_OnRam
+        bcc h2
+        rts
+h2:     lda fmTy
         bmi bad                  // niet gesloten
         cmp #$53                 // SEQ
         beq edit
@@ -1065,7 +1082,10 @@ fm_Edit: {
         jsr fm_Cur
         bcs h
         jmp fm_Say
-h:      lda #0
+h:      jsr fm_OnRam
+        bcc h2
+        rts
+h2:     lda #0
         ldx fmTy
         cpx #$50
         bne s
@@ -1075,6 +1095,18 @@ s:      sta fileSkip
         sta fileReq
         lda #1                   // TEXT EDITOR
         jmp openApp
+}
+
+// fm_OnRam - staat het bestand op een RAM-drive? Dan melding, carry=1.
+fm_OnRam: {
+        lda fileDev
+        cmp #RD_REU
+        bcc r
+        ldx #<sRdNoRun
+        ldy #>sRdNoRun
+        jsr fm_Say
+        sec
+r:      rts
 }
 
 //--------------------------------------------------------
@@ -1132,7 +1164,18 @@ n1:     lda fileName,x
         adc #4
         sta fmNLen
         jsr cfg_io_begin
-        lda fmNLen               // bron openen (kanaal 2)
+        lda #0
+        sta fmEof
+        sta rdErr+1
+        lda fileDev              // bron op een RAM-drive?
+        cmp #RD_REU
+        bcc sd
+        jsr rd_OpenSrc
+        bcs od
+        ldx #<sRdNoFile
+        ldy #>sRdNoFile
+        jmp er
+sd:     lda fmNLen               // bron openen (kanaal 2)
         ldx #<fmNameR
         ldy #>fmNameR
         jsr K_SETNAM
@@ -1141,7 +1184,15 @@ n1:     lda fileName,x
         ldy #2
         jsr K_SETLFS
         jsr K_OPEN
-        lda fmNLen               // doel openen (kanaal 3)
+od:     lda fmDst                // doel op een RAM-drive?
+        cmp #RD_REU
+        bcc dd
+        jsr rd_NewBegin
+        bcc blk
+er:     stx rdErr
+        sty rdErr+1
+        jmp fin
+dd:     lda fmNLen               // doel openen (kanaal 3)
         ldx #<fmNameW
         ldy #>fmNameW
         jsr K_SETNAM
@@ -1150,12 +1201,16 @@ n1:     lda fileName,x
         ldy #3
         jsr K_SETLFS
         jsr K_OPEN
-        lda #0
-        sta fmEof
-blk:    ldx #2                   // stuk lezen (tot 12 KB)
+blk:    lda fileDev
+        cmp #RD_REU
+        bcc bd
+        jsr rd_ReadChunk
+        jmp wr
+bd:     ldx #2                   // stuk lezen (tot 11 KB)
         jsr K_CHKIN
-        bcs fin
-        lda #<FM_BUF
+        bcc bi
+        jmp fin
+bi:     lda #<FM_BUF
         sta fmE
         lda #>FM_BUF
         sta fmE+1
@@ -1179,7 +1234,15 @@ r2:     lda $90
         jmp wr
 eof:    inc fmEof
 wr:     jsr K_CLRCHN
-        ldx #3                   // stuk schrijven
+        lda fmDst
+        cmp #RD_REU
+        bcc wk
+        jsr rd_WriteChunk
+        bcs wd
+        ldx #<sRdFull
+        ldy #>sRdFull
+        jmp er
+wk:     ldx #3                   // stuk schrijven
         jsr K_CHKOUT
         bcs fin
         lda #<FM_BUF
@@ -1210,7 +1273,18 @@ fin:    jsr K_CLRCHN
         lda #2
         jsr K_CLOSE
         jsr cfg_io_end
-        lda fmDst                // status van het doel
+        lda rdErr+1              // fout van een RAM-drive
+        beq ne
+        ldx rdErr
+        ldy rdErr+1
+        jsr fm_Say
+        jmp rr
+ne:     lda fmDst
+        cmp #RD_REU
+        bcc sk
+        jsr rd_NewEnd
+        jmp ok
+sk:     lda fmDst                // status van het doel
         jsr dsk_Status
         lda dsCode
         cmp #20
@@ -1246,7 +1320,13 @@ w:      jsr evt_Poll             // Y = wissen, al het andere = niet
         lda evtA
         cmp #$19                 // Y
         bne no
-        lda #$53                 // S0:
+        lda fileDev
+        cmp #RD_REU
+        bcc dk
+        jsr rd_Delete
+        jsr fm_Say
+        jmp rl
+dk:     lda #$53                 // S0:
         sta dsCmd
         lda #$30
         sta dsCmd+1
@@ -1267,7 +1347,7 @@ c:      lda fileName,x
         ldx #<dsText
         ldy #>dsText
         jsr fm_Say
-        lda fmAct
+rl:     lda fmAct
         jsr fm_Read
         jmp fm_Redraw
 no:     lda #0
@@ -1308,8 +1388,8 @@ fmLbuf:   .fill 40, $ff
 fmNameR:  .fill 22, 0
 fmNameW:  .fill 22, 0
 drvCnt:   .byte 0
-drvDev:   .fill 8, 0
-drvTyp:   .fill 8*8, $20
+drvDev:   .fill DRV_MAX, 0
+drvTyp:   .fill DRV_MAX*8, $20
 paneLo:   .byte <PANE0, <PANE1
 paneHi:   .byte >PANE0, >PANE1
 paneCol:  .byte 2, 20
