@@ -45,8 +45,10 @@ Ultimate-II+**.
 
 | Programs | | |
 |---|---|---|
-| ![File Manager](docs/screenshots/files.png) | ![Text editor](docs/screenshots/editor.png) | ![Paint](docs/screenshots/paint.png) |
-| File Manager | Text editor | Paint (multicolour bitmap) |
+| ![File Manager](docs/screenshots/files.png) | ![File Manager with a REU](docs/screenshots/files_reu.png) | ![File Manager help](docs/screenshots/help_files.png) |
+| File Manager: two drives side by side | Copying to the REU RAM drive | F1 in the File Manager |
+| ![Text editor](docs/screenshots/editor.png) | ![Editing a file](docs/screenshots/editor_file.png) | ![Paint](docs/screenshots/paint.png) |
+| Text editor | A SEQ file opened from the File Manager | Paint (multicolour bitmap) |
 | ![Calculator](docs/screenshots/calc.png) | ![Help](docs/screenshots/help.png) | ![About](docs/screenshots/about.png) |
 | Calculator | F1: context help | About |
 | ![SID Player](docs/screenshots/sidplayer.png) | ![Playing a tune](docs/screenshots/sidplayer_play.png) | ![Loading screen](docs/screenshots/loading.png) |
@@ -88,8 +90,7 @@ Ultimate-II+**.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
   BBS, EMAIL, SID PLAYER) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
-- **Starting a program from disk** (a game such as *C64 City* or *Pokémon
-  Red*) shows a calm screen in the theme colours with
+- **Starting a program from disk** (for example a game) shows a calm screen in the theme colours with
   `LOADING <name> please wait` while it loads. When the program ends (it
   returns to BASIC), or when you press RESTORE, you come back to the desktop.
 - **Status bar** (bottom): date and time from the C64's own clock (CIA TOD).
@@ -104,8 +105,29 @@ Ultimate-II+**.
 
 ## Programs
 
-- **File Manager**: the disk directory as a scrollable list.
-- **Text editor**: type, RETURN for a new line, DEL to delete.
+- **File Manager**: two panels side by side, like Norton Commander, each
+  showing a drive: its type (`8:1571`), disk name, files and free blocks.
+  - Drives 8–15 are found automatically (with their type, via the `UI`
+    command). **DRIVES** (F7) looks again, for example after you change
+    disks. Click a panel's header to switch it to the next drive.
+  - A **REU** shows up as RAM drive `R:30` and a **GeoRAM** as `R:31`. They
+    get a small file system of their own; you can copy files to and from
+    them and delete them. They are empty after power-off. GeoRAM is not
+    used together with an RR-Net or in the cartridge version, because they
+    share the same I/O addresses.
+  - **RUN** (RETURN, or click a selected file again) starts a PRG from any
+    drive, plays a `.SID` in the SID Player, and opens SEQ/USR files and
+    `.CFG`, `.INI` and `.TXT` files in the text editor. Anything else shows
+    `THIS FILE CANNOT BE STARTED`.
+  - **EDIT** (F3) opens the file in the text editor, **COPY** (F5) copies it
+    to the drive of the other panel, **DEL** (F8) deletes it after a `Y`.
+  - Cursor up/down selects a file, cursor right switches panels. Drive
+    errors (`63, FILE EXISTS`, `74, DRIVE NOT READY` …) appear on the last
+    line.
+- **Text editor**: type, RETURN for a new line, DEL to delete, cursor keys
+  to move. **LOAD** and **SAVE** read and write a text file (SEQ) by name;
+  **NEW** starts over. A file opened from the File Manager is saved under
+  its own name.
 - **Paint**: a full-screen **multicolour bitmap** (160×200) with all 16
   colours and an eraser. Hold the fire button or space to draw, ESC to leave.
 - **Calculator**: a 16-bit calculator (+ − × ÷).
@@ -363,11 +385,12 @@ on your PC through **Npcap**.
 
 Manual start (with a wired adapter, for example):
 ```bash
-x64sc -drive8type 1571 +georam +reu -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -ethernetioif "\Device\NPF_{GUID}" -autostart build/CD64.d71
+x64sc -drive8type 1571 +georam -reu -reusize 512 -ethernetcart -ethernetcartmode 1 -ethernetcartbase 0xDE00 -ethernetioif "\Device\NPF_{GUID}" -autostart build/CD64.d71
 ```
 List the adapter GUIDs with PowerShell:
 `Get-NetAdapter | Select-Object Name, InterfaceGuid`.
-GeoRAM must be off (it also uses `$DE00`). Drive 8 must be a 1571 for the D71,
+GeoRAM must be off (it also uses `$DE00`); the REU (`$DF00`) is fine and
+becomes RAM drive `R:30` in the File Manager. Drive 8 must be a 1571 for the D71,
 or a 1541 for the D64.
 
 **Check:** SYSTEM → NETWORK should show `PLATFORM: RR-NET` and
