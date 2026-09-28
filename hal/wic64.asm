@@ -186,6 +186,7 @@ wcPtr:  .word 0
 wcLen:  .word 0
 wcN:    .word 0
 wcSize: .word 0
+.align 2                         // jmp (wcVec) niet op $xxFF
 wcVec:  .word wcDrop
 wcTmo:  .byte WC_TMO
 wcC1:   .byte 0                  // 0 = 256 (lang), kleiner bij het zoeken

@@ -62,6 +62,8 @@ Ultimate-II+** or a **WiC64** (WiFi on the userport).
 | E-mail: mailbox | Reading a message | Writing a reply |
 | ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | ![Add BBS](docs/screenshots/bbs_add.png) |
 | AI chat | Ping | Adding your own BBS |
+| ![SID Radio](docs/screenshots/radio.png) | ![SID Radio playing](docs/screenshots/radio_play.png) | |
+| SID Radio | Playing a tune from the HVSC | |
 
 | Settings | | |
 |---|---|---|
@@ -90,7 +92,7 @@ Ultimate-II+** or a **WiC64** (WiFi on the userport).
   - **SYSTEM**: SETTINGS, NETWORK, EMAIL and TIME. These are the only way to
     reach settings, the same everywhere.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
-  BBS, EMAIL, SID PLAYER) and your own programs, for example games. Click one to start it.
+  BBS, EMAIL, SID PLAYER, RADIO) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
 - **Starting a program from disk** (for example a game) shows a calm screen in the theme colours with
   `LOADING <name> please wait` while it loads. When the program ends (it
@@ -204,6 +206,30 @@ POP3 and SMTP **without SSL/TLS** (you need a mailbox that allows that).
 - The desktop charset has only capital letters, so received text is shown in
   capitals. Letters typed with SHIFT show as reversed letters and are sent as
   capitals; the rest is sent as lower case.
+
+### SID Radio
+
+Endless SID music from the internet: RADIO picks a random tune from the
+**High Voltage SID Collection** (HVSC), downloads it and plays it with the
+SID Player.
+
+- **PLAY** starts the radio. **SPACE** skips to the next tune; after 3
+  minutes the next one starts by itself. **RUN/STOP** stops the radio.
+- The tunes come from `http://hvsc.brona.dk`, an HVSC mirror that still
+  works without HTTPS (a C64 has no TLS).
+- The playlist is `RADIO.LST` on the disk. Line 1 is the server and base
+  path (`hvsc.brona.dk/HVSC/C64Music/MUSICIANS/`, optionally `host:port/...`),
+  then one tune per line (`H/Hubbard_Rob/Commando.sid`). The default list
+  has 79 tunes by Rob Hubbard, Martin Galway, Ben Daglish, Jeroen Tel, Chris
+  Hülsbeck, Tim Follin and others. [`tools/make_radio_list.py`](tools/make_radio_list.py)
+  builds it and checks every tune against the player's limits (PSID with a
+  play address, 50 Hz, a memory area the player supports). You can edit the
+  list in the TEXT EDITOR (the File Manager opens `.LST` files there), or
+  point line 1 at your own web server. Your own `RADIO.LST` is kept when the
+  disks are rebuilt.
+- Works on the RR-Net, the Ultimate and the WiC64.
+- The WiC64 has its own "SID Radio" in its portal. Its source code is not
+  public, so this is a separate implementation.
 
 ### AI chat
 
@@ -365,7 +391,7 @@ python tools/make_fremenfont.py
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
-DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME) and the fonts, and writes everything to
+DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO) and the fonts, and writes everything to
 `build\CD64.d71` and `build\CD64.d64`.
 
 Games and other programs you want on the desktop go into `build\` as well
@@ -463,6 +489,7 @@ apps/     files (+ RAM drives) · editor · paint · calc · settings · network
 apps/bbs/ BBS client: directory, session, terminal, Telnet
 apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
 apps/time/   date and time: NTP client, time zones, summer time
+apps/radio/  SID Radio: playlist, HTTP download, plays with the SID player
 net/      network stack: CS8900, Ultimate UCI, WiC64, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
 include/  palette · layout · memory map · ABI · hardware
 ```
@@ -489,7 +516,7 @@ include/  palette · layout · memory map · ABI · hardware
 | `disk_main.asm` | the core for the disk version |
 | `main_cart.asm` | the EasyFlash cartridge version |
 | `boot_main.asm` | boot loader with the splash screen |
-| `bbs_main.asm`, `email_main.asm`, `time_main.asm` | the BBS, EMAIL and TIME overlays |
+| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm` | the BBS, EMAIL, TIME and RADIO overlays |
 | `build_disk.bat`, `build_cart.bat` | build scripts |
 | `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
 | `tools/export_core_syms.py` | core addresses for the separately built overlays |

@@ -15,6 +15,10 @@
 //   + / - = volgende / vorige song.
 // Tunes van $0800-$3FFF, $4000-$7FFF, $C000-$CFFF en $E000-$FFF9 kunnen
 // spelen; tunes zonder play-adres (eigen IRQ, RSID) niet.
+// RADIO (apps/radio) gebruikt dit afspelen ook: spRadio = 1, het bestand
+// staat al op $4000 (spEnd = einde) -> sp_Play.ld. Dan is SPATIE de
+// volgende tune, RUN/STOP stopt de radio (spRes 1 / 2), en na RADIO_T
+// beelden gaat hij vanzelf door (spRes 1).
 //========================================================
 
 .const SP_MAX   = 16             // .SID-bestanden in de lijst
@@ -23,6 +27,7 @@
 .label SP_STAGE = $4000          // hier wordt het bestand geladen
 .label SP_HDR   = SP_STAGE - 2   // (LOAD slaat de eerste 2 bytes over: "PS")
 .const SP_MAXBLK = 63            // 63 blokken ~ 16 KB ($4000-$7EFF)
+.const RADIO_T  = 50*60*3        // RADIO: 3 minuten per tune (50 Hz)
 .label spPtr  = r3               // zeropage (alleen buiten het afspelen)
 .label spPtr2 = r6
 
@@ -567,16 +572,35 @@ cp:     lda spSrc                // tune op zijn plaats
         lda #0
         sta $dc03
         jsr sp_Keys              // huidige stand = "al ingedrukt"
+        lda #0
+        sta spFrames
+        sta spFrames+1
+        sta spRes
         cli
         // ---- afspelen: toetsen ----
-kl:     jsr sp_Keys              // A = nieuw ingedrukte toetsen
+kl:     lda spRadio              // RADIO: na RADIO_T beelden door
+        beq kk
+        lda spFrames+1
+        cmp #>RADIO_T
+        bcc kk
+        lda #1
+        sta spRes
+        jmp stop
+kk:     jsr sp_Keys              // A = nieuw ingedrukte toetsen
         lsr
-        bcs stop                 // bit 0: SPATIE / RUN/STOP
+        bcs sp0                  // bit 0: SPATIE
         lsr
         bcs nx                   // bit 1: +
         lsr
         bcs pv                   // bit 2: -
+        lsr
+        bcs rs                   // bit 3: RUN/STOP
         jmp kl
+sp0:    lda #1                   // SPATIE: stoppen (RADIO: volgende)
+        .byte $2c
+rs:     lda #2                   // RUN/STOP: stoppen (RADIO: radio uit)
+        sta spRes
+        jmp stop
 nx:     lda spSong
         clc
         adc #1
@@ -664,7 +688,10 @@ sp_Irq:
         lda #$ff
         sta $d019
         lda $dc0d
-        jsr sp_PlayJ
+        inc spFrames
+        bne !+
+        inc spFrames+1
+!:      jsr sp_PlayJ
         pla
         tay
         pla
@@ -683,9 +710,16 @@ sp_Keys: {
         sta $dc00
         lda $dc01
         eor #$ff
-        and #%10010000
-        beq k1
+        tax
+        and #%00010000
+        beq k0
         lda #1
+        sta spT
+k0:     txa
+        and #%10000000
+        beq k1
+        lda spT
+        ora #8
         sta spT
 k1:     lda #%11011111           // kolom 5: + (rij 0), - (rij 3)
         sta $dc00
@@ -814,15 +848,27 @@ cl:     lda #$20
         bne cl
         ldx #<tTitle             // vaste teksten
         ldy #>tTitle
-        lda #3
+        lda spRadio
+        beq t0
+        ldx #<tRadio
+        ldy #>tRadio
+t0:     lda #3
         jsr sp_Center
         ldx #<tKeys1
         ldy #>tKeys1
-        lda #18
+        lda spRadio
+        beq t1
+        ldx #<tRKeys1
+        ldy #>tRKeys1
+t1:     lda #18
         jsr sp_Center
         ldx #<tKeys2
         ldy #>tKeys2
-        lda #20
+        lda spRadio
+        beq t2
+        ldx #<tRKeys2
+        ldy #>tRKeys2
+t2:     lda #20
         jsr sp_Center
         // titel, maker, jaar uit de header (ASCII, 32 tekens)
         lda #$16
@@ -1008,6 +1054,9 @@ spMode:   .byte 0
 spSongs:  .byte 0
 spSong:   .byte 0
 spKeys:   .byte 0
+spRadio:  .byte 0                // 1 = RADIO speelt (zie boven)
+spRes:    .byte 0                // na het afspelen: 1 SPATIE/tijd, 2 RUN/STOP
+spFrames: .word 0
 spCount:  .byte 0
 spSel:    .byte 0
 spDev:    .byte 8
@@ -1047,6 +1096,12 @@ tTitle:   .text "SID PLAYER"
 tKeys1:   .text "+ / -   next / previous song"
           .byte 0
 tKeys2:   .text "SPACE or RUN/STOP   stop"
+          .byte 0
+tRadio:   .text "SID RADIO"
+          .byte 0
+tRKeys1:  .text "SPACE   next tune (or after 3 min.)"
+          .byte 0
+tRKeys2:  .text "RUN/STOP   stop the radio"
           .byte 0
 tSong:    .text "Song "
           .byte 0

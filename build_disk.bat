@@ -34,6 +34,10 @@ if errorlevel 1 ( echo BBS build failed. & exit /b 1 )
 if errorlevel 1 ( echo EMAIL build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" time_main.asm -odir build
 if errorlevel 1 ( echo TIME build failed. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" radio_main.asm -odir build
+if errorlevel 1 ( echo RADIO build failed. & exit /b 1 )
+python tools\make_radio_seq.py
+if errorlevel 1 ( echo RADIO.LST mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" cowboy_main.asm -o build\cowboy.prg -odir build
@@ -51,6 +55,8 @@ set "KEEP=%~dp0..\cd64_userfiles"
 set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps"
 if not exist "%KEEP%" mkdir "%KEEP%"
 for %%U in (%USERFILES%) do call :keepfile %%U
+:: RADIO.LST (de afspeellijst, ook te bewerken) blijft ook bewaard
+call :keepfile radio.lst
 
 echo [3/3] D71 maken en PRG's erop schrijven (BOOT start eerst)...
 if exist build\CD64.d71 del build\CD64.d71
@@ -69,6 +75,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\bbs.prg bbs ^
   -write build\email.prg email ^
   -write build\time.prg time ^
+  -write build\radio.prg radio ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
@@ -99,6 +106,7 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\bbs.prg bbs ^
   -write build\email.prg email ^
   -write build\time.prg time ^
+  -write build\radio.prg radio ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
@@ -131,6 +139,12 @@ for %%U in (%USERFILES%) do (
   )
 )
 
+:: RADIO.LST als SEQ: de eigen versie als die er is, anders de standaardlijst
+set "RLST=build\radio.lst"
+if exist "%KEEP%\radio.lst" set "RLST=%KEEP%\radio.lst"
+"%C1541%" -attach build\CD64.d71 -write "%RLST%" "radio.lst,s" >nul 2>&1
+"%C1541%" -attach build\CD64.d64 -write "%RLST%" "radio.lst,s" >nul 2>&1
+echo   radio.lst (%RLST%)
 echo.
 echo Klaar: build\CD64.d71 en build\CD64.d64
 echo Inhoud:

@@ -570,6 +570,7 @@ arpTry:     .byte 0
 udpCall:    jmp (udpVec)
 udpNone:    clc
             rts
+.align 2                         // jmp (udpVec) niet op $xxFF
 udpVec:     .word udpNone
 netFlag:    .byte 0              // gezet door net_Handle: antwoord binnen
 netAbort:   .byte 0              // ESC tijdens net_Wait

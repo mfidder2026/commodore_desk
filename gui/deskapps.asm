@@ -201,10 +201,17 @@ da_draw2x2:
         sec
         sbc #1
         sta a1
-        txa
+        lda deIcon               // RADIO (2x2 op 252-255): bovenste rij leeg
+        cmp #ICO_RADIO_D
+        bne !n+
+        cpx #2
+        bcs !n+
+        lda #$20
+        bne !s+
+!n:     txa
         clc
         adc deIcon
-        sta a2
+!s:     sta a2
         lda deIcoC
         sta a3
         jsr gfx_PutChar

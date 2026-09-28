@@ -1004,10 +1004,10 @@ fm_Ext: {
         and #$7f
         cmp extC,x
 no:     rts
-//              SID  CFG  INI  TXT
-extA:   .byte $53, $43, $49, $54
-extB:   .byte $49, $46, $4e, $58
-extC:   .byte $44, $47, $49, $54
+//              SID  CFG  INI  TXT  LST
+extA:   .byte $53, $43, $49, $54, $4c
+extB:   .byte $49, $46, $4e, $58, $53
+extC:   .byte $44, $47, $49, $54, $54
 }
 
 //--------------------------------------------------------
@@ -1038,6 +1038,9 @@ h2:     lda fmTy
         jsr fm_Ext
         beq edit
         ldx #3
+        jsr fm_Ext
+        beq edit
+        ldx #4                   // .LST (RADIO.LST)
         jsr fm_Ext
         beq edit
         // PRG starten: naam naar $03C0, lengte $03BF, drive $03BE

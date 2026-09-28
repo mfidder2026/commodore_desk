@@ -60,6 +60,10 @@
 .const ICO_CITY   = ICON3_BASE + 7*6
 .const POKE_GLYPH = ICON3_BASE + 8*6   // Pokéball
 .const ICO_SID    = ICON3_BASE + 9*6   // muzieknoot (SID PLAYER), t/m 251
+// RADIO: de laatste 4 codes (252-255), een 2x2-icoon zonder bovenste rij;
+// op het bureaublad staat ICO_RADIO_D (zie da_draw2x2 in deskapps.asm).
+.const ICO_RADIO   = 252
+.const ICO_RADIO_D = ICO_RADIO - 2
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
 // font_Init - de System-charset staat al op $3800 (cd64.prg laadt hem
@@ -216,6 +220,11 @@ nc:     ldx ibI
         inx
         cpx #ICON3_N
         bne ic
+        ldx #31                  // RADIO: 2x2 op 252-255
+rg:     lda radioGlyphs,x
+        sta CHARSET_BASE+ICO_RADIO*8,x
+        dex
+        bpl rg
         rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
@@ -360,6 +369,12 @@ frameGlyphs:
         .byte $53,$72,$53,$72,$53,$ff,$00,$00   // BL
         .byte $9c,$94,$9c,$94,$9c,$ff,$00,$00   // BR
 
+// Radio met antenne 16x16 (TL, TR, BL, BR): SID RADIO.
+radioGlyphs:
+        .byte $00,$00,$00,$7f,$80,$be,$aa,$be   // TL
+        .byte $10,$20,$40,$fe,$01,$7d,$45,$7d   // TR
+        .byte $aa,$be,$80,$80,$7f,$20,$00,$00   // BL
+        .byte $01,$6d,$6d,$01,$fe,$04,$00,$00   // BR
 // Muzieknoot 16x16 (TL, TR, BL, BR): SID PLAYER.
 sidGlyphs:
         .byte $00,$07,$07,$04,$04,$04,$04,$04   // TL

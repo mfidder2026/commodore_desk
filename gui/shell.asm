@@ -237,11 +237,13 @@ drawContent:
 !e5:    cmp #8
         bne !e6+
         jmp BBS_DRAW
-!e6:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12):
-        beq !em+                 // sprongtabel op $8000
+!e6:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12),
+        beq !em+                 // RADIO (13): sprongtabel op $8000
         cmp #10
         beq !em+
         cmp #12
+        beq !em+
+        cmp #13
         bne !e7+
 !em:    jmp EMAIL_DRAW
 !e7:    cmp #11                  // SID PLAYER
@@ -662,6 +664,8 @@ appKey:
         cmp #10                  //  is $ff en heeft geen overlay)
         beq !em+
         cmp #12
+        beq !em+
+        cmp #13
         bne !n+
 !em:    lda evtA
         jmp EMAIL_KEY
@@ -856,7 +860,7 @@ menuBarClick:
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
-        ldx #13
+        ldx #14
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -997,11 +1001,13 @@ onMouseDown:
 !w7:    cmp #8
         bne !w8+
         jmp BBS_CLICK
-!w8:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12)
-        beq !em+
+!w8:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12),
+        beq !em+                 // RADIO (13)
         cmp #10
         beq !em+
         cmp #12
+        beq !em+
+        cmp #13
         bne !w9+
 !em:    jmp EMAIL_CLICK
 !w9:    cmp #11                  // SID PLAYER
@@ -1092,12 +1098,12 @@ deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
 // De gebruikersprogramma's staan als records in deskapps.asm.
-biCount:    .byte 8
-biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail, <nSid
-biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail, >nSid
-biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH, ICO_SID  // 2x3
-biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE, LIGHT_BLUE
-biApp:      .byte 1, 2, 3, 6, 7, 8, 9, 11  // app-id
+biCount:    .byte 9
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail, <nSid, <oRadio
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail, >nSid, >oRadio
+biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH, ICO_SID, ICO_RADIO_D  // 2x3
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE, LIGHT_BLUE, ORANGE
+biApp:      .byte 1, 2, 3, 6, 7, 8, 9, 11, 13  // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
@@ -1112,15 +1118,15 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <nTime
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >nTime
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <nTime, <nRadio
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >nTime, >nRadio
 // overlay (loadApp-index) per app-id: PING zit in de INET-overlay
-appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9, 10
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9, 10, 11
 
 dbI:       .byte 0
-// laadvenster-namen per app-id (13 = launcher-beheer)
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <oTime, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >oTime, >lTool
+// laadvenster-namen per app-id (14 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <oTime, <nRadio, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >oTime, >nRadio, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -1204,6 +1210,10 @@ nSid:   .text "SID PLAYER"
 oTime:  .text "TIME"
         .byte $ff
 nTime:  .text "DATE AND TIME"
+        .byte $ff
+oRadio: .text "RADIO"
+        .byte $ff
+nRadio: .text "SID RADIO"
         .byte $ff
 sF1Help: .text "F1=HELP"
         .byte $ff

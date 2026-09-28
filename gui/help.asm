@@ -88,15 +88,15 @@ c1:     sta hCtx
         lda #0
 c2:     asl
         tax
-        lda HELP_BASE+1,x
+        lda HELP_BASE+3,x
         sta r4
-        lda HELP_BASE+2,x
+        lda HELP_BASE+4,x
         sta r4+1
         ora r4
         bne c3
-        lda HELP_BASE+1          // geen tekst: die van het bureaublad
+        lda HELP_BASE+3          // geen tekst: die van het bureaublad
         sta r4
-        lda HELP_BASE+2
+        lda HELP_BASE+4
         sta r4+1
 c3:     lda r4                   // r4 = HELP_BASE + offset
         clc
@@ -109,18 +109,53 @@ c3:     lda r4                   // r4 = HELP_BASE + offset
         sta r5
         lda #>HELP_BUF
         sta r5+1
-        ldy #0
-        ldx #>HELP_MAXB+1
+        ldy #0                   // kopieren en woorden uitpakken
 cp:     lda (r4),y
-        sta (r5),y
-        cmp #$ff
-        beq cd
-        iny
-        bne cp
+        inc r4
+        bne c4
         inc r4+1
-        inc r5+1
+c4:     cmp #$40                 // $40-$FD: woord uit het woordenboek
+        bcc lit
+        cmp #$fe
+        bcs lit
+        sbc #$3f                 // (carry=0: -$40)
+        tax
+        lda HELP_BASE+1          // $fb = woordenboek
+        clc
+        adc #<HELP_BASE
+        sta $fb
+        lda HELP_BASE+2
+        adc #>HELP_BASE
+        sta $fc
+sk:     cpx #0                   // X woorden overslaan
+        beq wd
+sw:     lda ($fb),y
+        inc $fb
+        bne s1
+        inc $fc
+s1:     asl
+        bcc sw
         dex
+        jmp sk
+wd:     lda ($fb),y              // woord uitschrijven (bit 7 = laatste)
+        inc $fb
+        bne w1
+        inc $fc
+w1:     pha
+        and #$7f
+        jsr put
+        pla
+        bpl wd
+        jmp cp
+lit:    jsr put
+        cmp #$ff
         bne cp
+        jmp cd
+put:    sta (r5),y
+        inc r5
+        bne p1
+        inc r5+1
+p1:     rts
 cd:     pla
         sta $01
         cli
