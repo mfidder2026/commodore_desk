@@ -845,21 +845,21 @@ da_pickUser:
 //--------------------------------------------------------
 // da_removeRec - verwijder record daU (schuif de rest naar beneden).
 //--------------------------------------------------------
-da_removeRec:
+da_removeRec:                    // (eigen teller: da_recPtr gebruikt daTmp)
         lda daU
-        sta daTmp
-!lp:    lda daTmp
+        sta rmI
+!lp:    lda rmI
         clc
         adc #1
         cmp DA_count
         bcs !done+
-        lda daTmp
+        lda rmI
         jsr da_recPtr            // dst
         lda $fb
         sta $fd
         lda $fc
         sta $fe
-        lda daTmp
+        lda rmI
         clc
         adc #1
         jsr da_recPtr            // src
@@ -869,9 +869,10 @@ da_removeRec:
         iny
         cpy #REC_STRIDE
         bne !cp-
-        inc daTmp
+        inc rmI
         jmp !lp-
 !done:  rts
+rmI:    .byte 0
 
 //--------------------------------------------------------
 // da_saveDisp - inBuf (screencode,$ff) -> dispTmp.
