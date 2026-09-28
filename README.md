@@ -303,7 +303,8 @@ the C64's clock.
   Zealand, or none. The change-over is calculated for the current year.
 - **TIME SERVER**: `pool.ntp.org` by default; any name or IP address works.
 - **SYNC AT START**: get the time each time CD64 starts. This loads the
-  TIME program at start-up, so starting takes a little longer.
+  TIME program at start-up, so starting takes a little longer; a window
+  says `FETCHING SYSTEM TIME`, and the mouse appears when it is done.
 - **SYNC NOW** gets the time straight away.
 - **SAVE** keeps these settings in `CD64.CFG`.
 

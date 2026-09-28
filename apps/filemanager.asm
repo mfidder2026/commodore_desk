@@ -38,13 +38,12 @@
 .label FM_BUF   = $4000
 .const FM_BUFSZ = $2c00           // $6C00-$6FFF: RAM-drive directory
 .const FM_TOPR  = 4              // eerste bestandsrij
-.const FM_VIS   = 15
+.const FM_VIS   = 16
 .const DRV_MAX  = 10             // 8-15 + REU + GeoRAM
 .const RD_REU   = 30             // RAM-drives (apps/ramdisk.asm)
 .const RD_GEO   = 31
-.const FM_FREER = 19
-.const FM_BTNR  = 20
-.const FM_KEYR  = 21
+.const FM_FREER = 20
+.const FM_BTNR  = 21             // knoppen: [toets]functie op een regel
 .const FM_MSGR  = 22
 .label fmP = r3                  // zeropage: venster, entry
 .label fmE = r6
@@ -390,7 +389,7 @@ fm_Draw: {
         jsr fm_DrawPane
         lda #1
         jsr fm_DrawPane
-        lda #19                  // scheidingslijn tussen de vensters
+        lda #FM_FREER            // scheidingslijn tussen de vensters
         sta fmI
 sl:     lda #19
         sta a0
@@ -405,35 +404,36 @@ sl:     lda #19
         lda fmI
         cmp #1
         bne sl
-        ldx #0                   // knoppen: functie met de toets eronder
+        ldx #0                   // knoppen: toets (omgekeerd) + functie
 bl:     stx fmI
-        lda fbLo,x
-        sta r0
-        lda fbHi,x
-        sta r0+1
-        lda #FM_BTNR
-        jsr bt
-        ldx fmI
         lda fkLo,x
         sta r0
         lda fkHi,x
         sta r0+1
-        lda #FM_KEYR
-        jsr bt
+        lda fbCol,x
+        sta a0
+        lda #FM_BTNR
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawTextRev
+        ldx fmI
+        lda fbLo,x
+        sta r0
+        lda fbHi,x
+        sta r0+1
+        lda fnCol,x
+        sta a0
+        lda #FM_BTNR
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
         ldx fmI
         inx
         cpx #5
         bne bl
         jmp fm_ShowMsg
-bt:     sta a1
-        ldx fmI
-        lda fbCol,x
-        sta a0
-        lda fbW,x
-        sta a2
-        lda TH_accent
-        sta a3
-        jmp btn_Draw
 }
 
 // fm_DrawPane - venster A tekenen.
@@ -755,14 +755,10 @@ fm_Click: {
 bl:     stx fmI
         lda fbCol,x
         sta a0
-        lda #FM_BTNR             // functie of toets: allebei de knop
+        lda #FM_BTNR             // toets of functie: allebei de knop
         sta a1
         lda fbW,x
         sta a2
-        jsr btn_HitTest
-        bcs btn
-        lda #FM_KEYR
-        sta a1
         jsr btn_HitTest
         bcs btn
         ldx fmI
@@ -809,7 +805,8 @@ act:    lda fmK
         sta fmAct
         lda #0
         sta fmMsg+1
-        jmp fm_Redraw
+        jsr fm_ShowMsg
+        jmp fm_Panes
 run:    jmp fm_Run
 r:      rts
 btn:    lda #0
@@ -823,14 +820,22 @@ b1:     cmp #1
 b2:     cmp #2
         bne b3
         jmp fm_Copy
-b3:     cmp #3
+b3:     cmp #3                   // (volgorde: ... DRIVES F7, DEL F8)
         bne b4
-        jmp fm_Delete
-b4:     jmp fm_Drives
+        jmp fm_Drives
+b4:     jmp fm_Delete
 }
 
 fm_Redraw:
         jmp shell_DrawAll
+
+// fm_Panes - alleen de twee vensters opnieuw (bladeren, selecteren,
+//            wisselen): zonder het scherm te wissen, dus zonder knipperen.
+fm_Panes:
+        lda #0
+        jsr fm_DrawPane
+        lda #1
+        jmp fm_DrawPane
 
 // fm_NextDrive - actief venster naar de volgende gevonden drive.
 fm_NextDrive: {
@@ -888,7 +893,7 @@ k1:     cmp #KEY_CRSR_R          // links/rechts: ander venster
         lda fmAct
         eor #1
         sta fmAct
-        jmp fm_Redraw
+        jmp fm_Panes
 k2:     cmp #KEY_RETURN
         bne k3
         jmp fm_Run
@@ -929,7 +934,7 @@ fm_Down: {
         clc
         adc #1
         sta (fmP),y
-d:      jmp fm_Redraw
+d:      jmp fm_Panes
 r:      rts
 }
 
@@ -946,7 +951,7 @@ fm_Up: {
         cmp (fmP),y
         bcs d
         sta (fmP),y
-d:      jmp fm_Redraw
+d:      jmp fm_Panes
 r:      rts
 }
 
@@ -1398,34 +1403,35 @@ drvTyp:   .fill DRV_MAX*8, $20
 paneLo:   .byte <PANE0, <PANE1
 paneHi:   .byte >PANE0, >PANE1
 paneCol:  .byte 2, 20
-fbLo:     .byte <sFbRun, <sFbEdit, <sFbCopy, <sFbDel, <sFbDrv
-fbHi:     .byte >sFbRun, >sFbEdit, >sFbCopy, >sFbDel, >sFbDrv
-fkLo:     .byte <sFkRun, <sFkEdit, <sFkCopy, <sFkDel, <sFkDrv
-fkHi:     .byte >sFkRun, >sFkEdit, >sFkCopy, >sFkDel, >sFkDrv
-fbCol:    .byte 2, 9, 16, 23, 30
-fbW:      .byte 6, 6, 6, 6, 7
+// [RET]RUN [F3]EDIT [F5]COPY [F7]DRIVES [F8]DEL (kolom 2-36)
+fbLo:     .byte <sFbRun, <sFbEdit, <sFbCopy, <sFbDrv, <sFbDel
+fbHi:     .byte >sFbRun, >sFbEdit, >sFbCopy, >sFbDrv, >sFbDel
+fkLo:     .byte <sFkRun, <sFkEdit, <sFkCopy, <sFkDrv, <sFkDel
+fkHi:     .byte >sFkRun, >sFkEdit, >sFkCopy, >sFkDrv, >sFkDel
+fbCol:    .byte 2, 9, 16, 23, 32   // toets
+fnCol:    .byte 5, 11, 18, 25, 34  // functie
+fbW:      .byte 6, 6, 6, 8, 5     // klikbreedte (toets + functie)
 
 .encoding "screencode_upper"
-// (gecentreerd: btn_Draw zet de tekst op kolom+1)
-sFbRun:   .text " RUN"
+sFbRun:   .text "RUN"
           .byte $ff
 sFbEdit:  .text "EDIT"
           .byte $ff
 sFbCopy:  .text "COPY"
           .byte $ff
-sFbDel:   .text " DEL"
+sFbDel:   .text "DEL"
           .byte $ff
 sFbDrv:   .text "DRIVES"
           .byte $ff
-sFkRun:   .text " RET"
+sFkRun:   .text "RET"
           .byte $ff
-sFkEdit:  .text " F3"
+sFkEdit:  .text "F3"
           .byte $ff
-sFkCopy:  .text " F5"
+sFkCopy:  .text "F5"
           .byte $ff
-sFkDel:   .text " F8"
+sFkDel:   .text "F8"
           .byte $ff
-sFkDrv:   .text "  F7"
+sFkDrv:   .text "F7"
           .byte $ff
 sFmFree:  .text " BLOCKS FREE"
           .byte $ff

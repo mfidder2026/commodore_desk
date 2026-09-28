@@ -86,11 +86,46 @@ time_Boot:
         beq !r+
         lda clkCold
         beq !r+
+        lda SPR_ENABLE           // muis weg tot alles klaar is
+        and #$fe
+        sta SPR_ENABLE
+        gfxDrawBoxM(5, 10, 30, 4, TH_text)   // "FETCHING SYSTEM TIME"
+        lda #<sFetch
+        sta r0
+        lda #>sFetch
+        sta r0+1
+        lda #7
+        sta a0
+        lda #11
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        lda #<sWait
+        sta r0
+        lda #>sWait
+        sta r0+1
+        lda #7
+        sta a0
+        lda #12
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
         ldx #10                  // TIME
         jsr loadApp
-        bcs !r+
+        bcs !d+
         jsr TIME_AUTO
+!d:     jsr shell_DrawAll        // venster weg
+        lda evtTail              // klikken van tijdens het wachten vergeten
+        sta evtHead
+        lda SPR_ENABLE           // muis terug
+        ora #$01
+        sta SPR_ENABLE
 !r:     rts
+.encoding "screencode_upper"
+sFetch: .text "FETCHING SYSTEM TIME"
+        .byte $ff
 
 // -----------------------------------------------------
 // clk_SetTime - A = uur (BCD 00-23), X = minuut (BCD). Seconden = 0.
