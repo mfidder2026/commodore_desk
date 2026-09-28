@@ -298,7 +298,7 @@ retNameEnd:
 // sysRunSrc: SYS-adresparser, geassembleerd voor $C040 (veilig RAM). Leest
 // de SYS-instructie uit de BASIC-regel van het geladen PRG op $0801 en
 // springt daarheen. Zo hoeft de launcher het startadres niet te hardcoden
-// (cowboy = SYS 2062, scrsaver kan anders zijn, enz.).
+// (het ene PRG heeft SYS 2061, een ander SYS 2062, enz.).
 sysRunSrc:
 .pseudopc $c040 {
 sysRun: ldx #0
