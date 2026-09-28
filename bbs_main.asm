@@ -10,6 +10,8 @@
 //
 // ABI met de Core: sprongtabel op $8000 (zie BBS_* in gui/shell.asm).
 //========================================================
+// zonder DHCP-client (instellen gebeurt in NETWORK), zoals EMAIL
+#define NO_DHCP
 #import "include/hardware.inc"
 #import "include/palette.inc"
 #import "include/layout.inc"
@@ -37,7 +39,6 @@
         #import "net/ip.asm"
         #import "net/tcp.asm"
         #import "net/dns.asm"
-        #import "net/dhcp.asm"
         #import "net/ultimate.asm"
         #import "net/wic64net.asm"
         #import "net/logpoints.asm"
@@ -48,3 +49,4 @@
         #import "apps/bbs/bbs.asm"
         #import "apps/bbs/bbs_telnet.asm"
         #import "apps/bbs/bbs_session.asm"
+        #import "apps/bbs/bbs_xmodem.asm"

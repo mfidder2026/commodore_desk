@@ -190,12 +190,17 @@ lp:     lda frameLo              // klok: elke 50 beelden = 1 seconde
         bne !+
         inc tmSecs+1
 !:      lda tmMenu
+        ora xmOn                 // (XMODEM toont zijn eigen status)
         bne lp0
         jsr tm_StatInfo
 lp0:    jsr evt_Poll
         cmp #EVT_KEY
         bne net
         lda evtA
+        ldx xmOn                 // XMODEM: alleen RUN/STOP (afbreken)
+        beq fb2672_0
+        jmp xk
+fb2672_0:
         ldx tmMenu               // sessiemenu open?
         bne menu
         cmp #KEY_F7              // F7: sessiemenu (lokaal, nooit verstuurd)
@@ -210,13 +215,20 @@ key:    ldx evtB                 // SHIFT/CTRL/C= (ruwe toetsenbordmodus)
         jmp lp                   // eerst alle wachtende toetsen
 menu:   ldx #0
         stx tmMenu
-        cmp #$04                 // D = verbreken
+        cmp #$18                 // X = XMODEM-download
+        bne mn
+        jsr xm_Start
+        jmp lp
+mn:     cmp #$04                 // D = verbreken
         beq disc
         cmp #$11                 // Q = verbreken + desktop
         beq quit
         jsr tm_StatOnline        // al het andere: verder
         jmp lp
-net:    lda tmTxLen              // verzamelde toetsen versturen
+net:    lda xmOn                 // XMODEM: pakketten en time-outs
+        beq n0
+        jsr xm_Tick
+n0:     lda tmTxLen              // verzamelde toetsen versturen
         beq rx
         jsr tm_Flush
         bcs rx
@@ -241,6 +253,12 @@ ut:     lda frameLo              // de Ultimate één keer per beeld vragen
         cmp #$ff
         beq closed
 lp2:    jmp lp
+xk:     cmp #$82
+        bne lp2
+        ldx #<sXmStop
+        ldy #>sXmStop
+        jsr xm_Abort
+        jmp lp
 disc:   jsr tm_Close
         ldx #<sBbDiscd
         ldy #>sBbDiscd
@@ -274,7 +292,12 @@ back:   jsr tm_Leave
 
 // tm_Close - verbinding sluiten (RR-Net: FIN; Ultimate: handle dicht).
 tm_Close:
+        lda xmOn                 // download bezig: bestand dicht
+        beq !+
         lda #0
+        sta xmOn
+        jsr xm_CloseFile
+!:      lda #0
         sta netNoKeys
         jsr net_Fw              // Ultimate of WiC64: TCP in de firmware
         bne !+
@@ -792,7 +815,15 @@ tm_Rx:
         inc tmRxN+1
         bne !+
         inc tmRxN+2
-!:      jsr tn_Byte              // Telnet-commando's eruit
+!:      ldx xmOn                 // XMODEM: data naar de ontvanger
+        beq tn
+        ldx tnSeen               // (rauwe TCP: $FF is gewoon data)
+        beq xm
+        jsr tn_Byte
+        bcs xm
+        rts
+xm:     jmp xm_Byte
+tn:     jsr tn_Byte              // Telnet-commando's eruit
         bcs tm_Show
         rts
 // tm_Show - databyte A tonen (PETSCII of ASCII).
@@ -1199,7 +1230,7 @@ sTmBlank:   .byte $ff
 sTmOnStat:  .byte $ff
 sTmF7:      .text "F7=MENU"
             .byte $ff
-sTmMenu:    .text "D=DISCONNECT Q=DESKTOP OTHER=RESUME"
+sTmMenu:    .text "D=HANG UP  X=XMODEM DOWNLOAD  Q=DESKTOP"
             .byte $ff
 sTmClosed:  .text "CONNECTION CLOSED - PRESS RETURN"
             .byte $ff

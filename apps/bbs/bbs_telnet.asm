@@ -46,6 +46,7 @@
 tn_Reset: {
         lda #TS_DATA
         sta tnState
+        sta tnSeen
         ldx #TN_OPTS-1
         lda #0
 lp:     sta tnHim,x
@@ -64,7 +65,8 @@ tn_Byte: {
         beq iac
         sec
         rts
-iac:    lda #TS_IAC
+iac:    sta tnSeen               // de BBS spreekt Telnet (voor XMODEM)
+        lda #TS_IAC
         sta tnState
         clc
         rts
@@ -271,6 +273,7 @@ ttDumb: .text "DUMB"
 
 //--------------------------------------------------------
 tnState: .byte 0
+tnSeen:  .byte 0                 // 0 = nog geen IAC gezien (rauwe TCP)
 tnVerb:  .byte 0
 tnOpt:   .byte 0
 tnSbLen: .byte 0

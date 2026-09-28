@@ -183,7 +183,16 @@ Zone, C64 Ultimate Club, …). Click one to make it your default (saved in
 - **Keys**: cursor keys, F1–F6, CLR/HOME, INST/DEL, CTRL/C= plus 1–8 for
   colours and C= plus a letter for graphics are all sent to the BBS.
   RUN/STOP sends an abort. **F7** opens the session menu: D = disconnect,
-  Q = back to the desktop.
+  Q = back to the desktop, X = XMODEM download.
+- **XMODEM download**: start the download on the BBS, then press F7 and X
+  and type a file name. The file is saved as a PRG on drive 8.
+  - XMODEM-CRC and XMODEM-1K, with a fallback to the old checksum mode.
+  - Every block is on disk before the BBS gets its ACK, so the network and
+    the disk drive never get in each other's way.
+  - The padding of the last block (`$1A`) is removed.
+  - RUN/STOP cancels the download.
+  - A `$FF` byte only counts as a Telnet command when the BBS actually
+    speaks Telnet; with a raw TCP board the data passes through untouched.
 - **LOCAL ECHO** can be switched on for boards that don't echo your typing.
 
 ### E-mail

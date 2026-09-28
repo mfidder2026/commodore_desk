@@ -138,6 +138,7 @@ lg_DnsNf:
         jsr log_Begin
         LOGS(tDnsNf)
         jmp log_End
+#if !NO_DHCP                     // (overlays zonder DHCP-client)
 lg_DhSend:
         jsr log_Begin
         LOGS(tDhcp)
@@ -172,6 +173,7 @@ lg_DhIn:
         jsr log_Sp
         LOGIP(RX+BOOTP+16)
         jmp log_End
+#endif
 lg_Uci:
         jsr log_Begin
         LOGS(tUci)
