@@ -69,6 +69,15 @@
 .const ICO_RADIO_D = ICO_RADIO - 2
 // GEOS-stijl: titelstrepen en knoppenpatroon, na icon_Build op 82-83
 // (net als 80-81 alleen bron van het BBS-icoon)
+// GEOS-stijl: 24x24-iconen (GEOSICON, tools/make_geosicons.py) op codes
+// 128-253, 9 per icoon; de ingebouwde programma's hebben icoon 0-8 in de
+// volgorde van biIcon, daarna deze:
+.const GI_BASE     = 128
+.const GI_APP      = 9
+.const GI_DRIVE    = 10
+.const GI_PRINTER  = 11
+.const GI_TRASH    = 12
+.const GI_TRASHF   = 13
 .const GL_STRIPE   = 82
 .const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
@@ -170,7 +179,7 @@ font_OverlayUI:
         pla
         sta $01
         plp
-        rts
+        jmp geos_Icons           // GEOS-stijl: de grote iconen erover
 fo_Ov:
         // Reverse-helft (codes 128-255) = de omgekeerde normale helft, voor
         // elk font opnieuw: menubalk, titels en statusbalk (reverse tekst)
@@ -263,7 +272,14 @@ sg:     lda styleGlyphs,x
         sta CHARSET_BASE+GL_STRIPE*8,x
         dex
         bpl sg
-        rts
+        lda stGeos               // GEOS: dunner vensterkader (91-95)
+        beq tr
+        ldx #39
+tf:     lda thinFrame,x
+        sta CHARSET_BASE+W_L*8,x
+        dex
+        bpl tf
+tr:     rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
         .byte $ff,$ff,$ff,$ff, 8, 9,10,11        // TR'
@@ -279,6 +295,30 @@ ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*
          .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
          .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs, >sidGlyphs
 }
+
+// geos_Icons - in de GEOS-stijl GEOSICON laden: codes 128-253.
+geos_Icons: {
+        lda stGeos
+        beq r
+        jsr cfg_io_begin
+        lda #nmE-nm
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #1
+        jsr K_SETLFS
+        lda #0
+        jsr K_LOAD
+        jsr cfg_io_end
+r:      rts
+.encoding "petscii_upper"
+nm:     .text "GEOSICON"
+nmE:
+.encoding "screencode_upper"
+}
+
 ibI:    .byte 0
 
 //--------------------------------------------------------

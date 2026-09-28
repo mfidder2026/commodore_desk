@@ -468,7 +468,7 @@ lp:     lda ckTpl,x
         ora #$30
         cpy ckPos
         bne nrm
-        ora #$80                 // cursor = reverse
+        jsr gfx_CurChar          // cursor = reverse
 nrm:    iny
 put:    sta ckLine,x
         inx

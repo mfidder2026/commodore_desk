@@ -243,7 +243,7 @@ cc:     sta (edPtr2),y
         ldy edX
         lda (edPtr),y
         jsr sc_Disp
-        eor #$80
+        jsr gfx_CurChar          // cursor (GEOS: zonder omgekeerde tekens)
         sta a2
         lda edX
         clc

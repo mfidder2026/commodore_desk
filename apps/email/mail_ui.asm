@@ -840,7 +840,7 @@ b:      jsr cp_Lines
         ldy cpX
         lda (r6),y
         jsr em_Disp
-        eor #$80
+        jsr gfx_CurChar          // cursor (GEOS: zonder omgekeerde tekens)
         sta a2
         lda cpX
         clc

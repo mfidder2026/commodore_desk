@@ -28,6 +28,9 @@
 .label DA_count = $c100
 .label DA_recs  = $c101
 .const DA_end   = DA_recs + DESK_MAXUSER*REC_STRIDE
+// Prullenbak (GEOS): de weggegooide records staan achteraan in de tabel
+// (plek 11, 10, ...), hun aantal direct achter de tabel.
+.label DA_trashN = DA_end
 
 .const REC_ICON = 0
 .const REC_COL  = 1
@@ -123,6 +126,10 @@ da_Style:
         sta daRow0
         lda dsColOff,x
         sta daColOff
+        lda dsScrCol,x
+        sta daScrCol
+        lda dsClrW,x
+        sta daClrW
         cpx daLastSt             // andere stijl: bovenaan beginnen
         beq !+
         stx daLastSt
@@ -135,7 +142,9 @@ dsVisR:   .byte 7, 4
 dsVis:    .byte 14, 12
 dsRow0:   .byte 3, 4
 dsColOff: .byte 0, 2
-daColX:   .byte 3, 21, 6, 17, 28 // Win95: kol 3/21; GEOS: iconen op 6/17/28
+dsScrCol: .byte 37, 32           // scrollbalk (GEOS: smaller venster)
+dsClrW:   .byte 35, 30           // breedte van de vensterinhoud
+daColX:   .byte 3, 21, 5, 15, 25 // Win95: kol 3/21; GEOS: 3x3-iconen op 5/15/25
 
 // da_div - A / daCols -> X = quotient, A = rest.
 da_div:
@@ -149,7 +158,10 @@ da_div:
 
 // da_drawOne - teken entry daEnt op (deCol,deRow).
 da_drawOne:
-        lda daEnt
+        lda stGeos               // GEOS: 3x3-iconen, naam eronder
+        beq !w95+
+        jmp da_drawGeos
+!w95:   lda daEnt
         cmp biCount
         bcs !user+
         tax
@@ -282,17 +294,29 @@ da_drawLabel:
         cmp #$ff
         beq !le+
         iny
-        cpy #11
+        cpy #10
         bne !l-
-!le:    sty daTmp                // kolom = cel + (11 - lengte) / 2
-        lda #11
+!le:    sty daTmp                // (naam afkappen op 10 tekens)
+        lda #$ff
+        sta daLbl,y
+!lc:    dey
+        bmi !lk+
+        lda (r0),y
+        sta daLbl,y
+        jmp !lc-
+!lk:    lda #<daLbl
+        sta r0
+        lda #>daLbl
+        sta r0+1
+                                 // kolom = cel + (10 - lengte) / 2
+        lda #10
         sec
         sbc daTmp
         lsr
         clc
         adc deCol
         sec
-        sbc #4
+        sbc #3
         sta a0
         lda deRow
         clc
@@ -345,7 +369,7 @@ da_drawScrollbar:
         lda daScroll             // rij van de bovenste entry
         jsr da_div
         stx a3
-        lda #DA_SCR_COL
+        lda daScrCol
         sta a0
         lda #DA_SCR_TOP
         sta a1
@@ -360,7 +384,7 @@ da_Redraw:
         sta a0
         lda #2
         sta a1
-        lda #35
+        lda daClrW
         sta a2
         lda #WIN_BODY_BOT-1
         sta a3
@@ -375,10 +399,20 @@ da_Redraw:
 // Klik-afhandeling
 //========================================================
 da_Click:
+        jsr da_Style
         lda evtA
-        cmp #DA_SCR_COL
+        cmp daScrCol
         beq da_scrollClick       // scrollbalk-kolom
-        jmp da_gridClick
+        lda stGeos               // GEOS: de strook rechts
+        beq !g+
+        lda evtA
+        cmp #34
+        bcc !g+
+        jsr da_StripHit
+        bcc !r+
+        jmp da_StripAct
+!g:     jmp da_gridClick
+!r:     rts
 
 // da_scrollClick - pijl = 1 rij, track boven/onder de thumb = 1 pagina.
 da_scrollClick:
@@ -420,7 +454,25 @@ da_scrollClick:
 da_gridClick:
         jsr da_hitEntry
         bcc !r+
-        cmp biCount
+        ldx stGeos               // GEOS: slepen
+        beq !open+
+        sta daDrag
+        jsr da_Ghost             // muispijl = het icoon
+!w:     lda crsBtn               // tot de knop los is
+        bne !w-
+        lda #13
+        sta $07f8
+        lda evtTail              // (het MOUSEUP-bericht vergeten)
+        sta evtHead
+        jsr cursorToCell
+        lda evtA
+        cmp #34
+        bcs !drop+
+        jsr da_hitEntry          // losgelaten op hetzelfde icoon = starten
+        bcc !r+
+        cmp daDrag
+        bne !r+
+!open:  cmp biCount
         bcs !user+
         tax
         lda biApp,x
@@ -428,6 +480,20 @@ da_gridClick:
 !user:  sec
         sbc biCount
         jmp da_Launch
+!drop:  jsr da_StripHit          // op de strook losgelaten
+        bcc !r+
+        cpx #2
+        bne !sa+
+        lda daDrag               // prullenbak: alleen eigen programma's
+        sec
+        sbc biCount
+        bcs !us+
+        ldx #6
+        jmp tool_Run
+!us:    sta toolArg
+        ldx #3
+        jmp tool_Run
+!sa:    jmp da_StripAct
 !r:     rts
 
 //--------------------------------------------------------
@@ -446,14 +512,14 @@ da_hitEntry:
         jmp !cp+
 !lc:    lda #0
         beq !cp+
-!g:     lda evtA                 // GEOS: kolommen van 11 vanaf kol 2
+!g:     lda evtA                 // GEOS: kolommen van 10 vanaf kol 2
         sec
         sbc #2
         bcc !no+
         ldx #0
-!gc:    cmp #11
+!gc:    cmp #10
         bcc !gd+
-        sbc #11
+        sbc #10
         inx
         bne !gc-
 !gd:    cpx #3
@@ -497,6 +563,253 @@ da_hitEntry:
         rts
 !no:    clc
         rts
+
+//========================================================
+// GEOS-stijl (stGeos): 3x3-iconen, strook met DRIVE / PRINTER / TRASH,
+// slepen naar de strook.
+//========================================================
+// da_drawGeos - entry daEnt: icoon (deCol = linkerkolom, deRow = midden)
+//               en de naam eronder.
+da_drawGeos:
+        lda daEnt
+        cmp biCount
+        bcs !u+
+        tax
+        lda biIcoCol,x
+        sta deIcoC
+        lda biNameLo,x
+        sta r0
+        lda biNameHi,x
+        sta r0+1
+        lda daEnt                // ingebouwd programma i = GEOS-icoon i
+        jmp !d+
+!u:     sec
+        sbc biCount
+        jsr da_recPtr
+        ldy #REC_COL
+        lda ($fb),y
+        and #$0f
+        sta deIcoC
+        lda $fb
+        clc
+        adc #REC_DISP
+        sta r0
+        lda $fc
+        adc #0
+        sta r0+1
+        lda #GI_APP
+!d:     jsr da_giCode
+        sta deIcon
+        dec deRow
+        jsr da_draw3x3
+        inc deRow
+        jmp da_drawLabel
+
+// da_giCode - GEOS-icoon A -> eerste charset-code (128 + 9*A).
+da_giCode:
+        sta daT
+        asl
+        asl
+        asl
+        clc
+        adc daT
+        clc
+        adc #GI_BASE
+        rts
+
+// da_draw3x3 - icoon deIcon (9 codes) op kolom deCol, rij deRow en verder.
+da_draw3x3:
+        lda deIcoC
+        jsr da_icoCol
+        sta a3
+        lda #0
+        sta daIc
+        lda deRow
+        sta daR
+!rl:    lda deCol
+        sta daC
+!cl:    lda daC
+        sta a0
+        lda daR
+        sta a1
+        lda deIcon
+        clc
+        adc daIc
+        sta a2
+        jsr gfx_PutChar
+        inc daIc
+        inc daC
+        lda daC
+        sec
+        sbc deCol
+        cmp #3
+        bne !cl-
+        inc daR
+        lda daIc
+        cmp #9
+        bne !rl-
+        rts
+
+// da_Strip - rechts van het venster: geruit, met DRIVE, PRINTER, TRASH.
+da_Strip:
+        lda #34
+        sta a0
+        lda #1
+        sta a1
+        lda #5
+        sta a2
+        lda #23
+        sta a3
+        lda stDeskFill
+        sta a4
+        lda TH_desktop
+        sta a5
+        jsr gfx_FillRect
+        ldx #0
+!lp:    stx daSI
+        lda gsIco,x
+        cpx #2                   // volle prullenbak?
+        bne !n+
+        ldy DA_trashN
+        beq !n+
+        lda #GI_TRASHF
+!n:     jsr da_giCode
+        sta deIcon
+        lda #35
+        sta deCol
+        ldx daSI
+        lda gsRow,x
+        sta deRow
+        lda TH_text
+        sta deIcoC
+        jsr da_draw3x3
+        ldx daSI
+        lda gsLo,x
+        sta r0
+        lda gsHi,x
+        sta r0+1
+        lda #34
+        sta a0
+        lda gsRow,x
+        clc
+        adc #3
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldx daSI
+        inx
+        cpx #3
+        bne !lp-
+        rts
+
+// da_StripHit - (evtA,evtB) op de strook: X = 0 DRIVE, 1 PRINTER,
+//               2 TRASH (carry=1), anders carry=0.
+da_StripHit:
+        ldx #0
+!l:     lda evtB
+        sec
+        sbc gsRow,x
+        bcc !nx+
+        cmp #4
+        bcs !nx+
+        sec
+        rts
+!nx:    inx
+        cpx #3
+        bne !l-
+        clc
+        rts
+
+// da_StripAct - klik op DRIVE (FILES), PRINTER of TRASH (X).
+da_StripAct:
+        cpx #0
+        bne !p+
+        lda #0                   // DRIVE = de File Manager
+        jmp openApp
+!p:     inx                      // 1 -> 4 (printer), 2 -> 5 (prullenbak)
+        inx
+        inx
+        jmp tool_Run
+
+// da_Ghost - muispijl = icoon van entry A (sprite-blok 14, $0380).
+da_Ghost:
+        cmp biCount
+        bcc !b+
+        lda #GI_APP
+!b:     jsr da_giCode
+        sta $fb                  // $fb = charset + code*8
+        lda #0
+        sta $fc
+        asl $fb
+        rol $fc
+        asl $fb
+        rol $fc
+        asl $fb
+        rol $fc
+        lda $fb
+        clc
+        adc #<CHARSET_BASE
+        sta $fb
+        lda $fc
+        adc #>CHARSET_BASE
+        sta $fc
+        ldx #0
+        lda #0
+        sta daR
+!rl:    lda daR                  // bytes van rij r: (r/8)*24 + r%8 (+8, +16)
+        lsr
+        lsr
+        lsr
+        sta daT
+        asl
+        clc
+        adc daT
+        asl
+        asl
+        asl
+        sta daT
+        lda daR
+        and #7
+        clc
+        adc daT
+        tay
+        lda ($fb),y
+        sta $0380,x
+        inx
+        tya
+        clc
+        adc #8
+        tay
+        lda ($fb),y
+        sta $0380,x
+        inx
+        tya
+        clc
+        adc #8
+        tay
+        lda ($fb),y
+        sta $0380,x
+        inx
+        inc daR
+        lda daR
+        cmp #21
+        bne !rl-
+        lda #14
+        sta $07f8
+        rts
+
+gsRow:  .byte 3, 9, 15
+gsIco:  .byte GI_DRIVE, GI_PRINTER, GI_TRASH
+gsLo:   .byte <sgDrive, <sgPrint, <sgTrash
+gsHi:   .byte >sgDrive, >sgPrint, >sgTrash
+.encoding "screencode_upper"
+sgDrive: .text "DRIVE"
+        .byte $ff
+sgPrint: .text "PRINT"
+        .byte $ff
+sgTrash: .text "TRASH"
+        .byte $ff
 
 //--------------------------------------------------------
 // da_Launch - start gebruikersrecord A.
@@ -549,8 +862,8 @@ da_Save: {
         lda #>DA_count
         sta $fc
         lda #$fb
-        ldx #<DA_end
-        ldy #>DA_end
+        ldx #<[DA_end+1]         // (+ DA_trashN)
+        ldy #>[DA_end+1]
         jsr K_SAVE
         php
         jsr cfg_io_end
@@ -571,11 +884,19 @@ da_Load: {
         ldx #8
         ldy #1
         lda #0
+        sta DA_trashN            // (oudere DESK.APPS: lege prullenbak)
         ldx #<DA_count
         ldy #>DA_count
         jsr K_LOAD
         jsr cfg_io_end
         bcs !seed+
+        lda DA_count
+        clc
+        adc DA_trashN
+        cmp #DESK_MAXUSER+1
+        bcc !ok+
+        lda #0
+        sta DA_trashN
         lda DA_count
         cmp #DESK_MAXUSER+1
         bcc !ok+
@@ -687,6 +1008,14 @@ daVis:   .byte 14
 daRow0:  .byte 3
 daColOff:.byte 0
 daLastSt:.byte 0
+daScrCol:.byte 37
+daClrW:  .byte 35
+daDrag:  .byte 0
+daR:     .byte 0
+daC:     .byte 0
+daT:     .byte 0
+daSI:    .byte 0
+daLbl:   .fill 11, $ff
 daU:     .byte 0
 daOff:   .byte 0
 daLen:   .byte 0

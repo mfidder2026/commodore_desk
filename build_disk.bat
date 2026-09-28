@@ -38,6 +38,8 @@ if errorlevel 1 ( echo TIME build failed. & exit /b 1 )
 if errorlevel 1 ( echo RADIO build failed. & exit /b 1 )
 python tools\make_radio_seq.py
 if errorlevel 1 ( echo RADIO.LST mislukt. & exit /b 1 )
+python tools\make_geosicons.py
+if errorlevel 1 ( echo GEOSICON mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 :: Plaatsvervangers voor de spellen (de echte staan in ..\cd64_parked)
@@ -74,6 +76,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\email.prg email ^
   -write build\time.prg time ^
   -write build\radio.prg radio ^
+  -write build\geosicon.prg geosicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^
@@ -104,6 +107,7 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\email.prg email ^
   -write build\time.prg time ^
   -write build\radio.prg radio ^
+  -write build\geosicon.prg geosicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
   -write build\fremen.prg fremen ^

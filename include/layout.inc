@@ -111,7 +111,7 @@
 .const PROFILE_FREMEN   = 3
 .const PROFILE_GEOS     = 4      // GEOS-stijl: licht, strepen, ruitjes
 .const NUM_PROFILES     = 5
-.const ST_N             = 6      // stijlwaarden per profiel (kernel.asm: stTab)
+.const ST_N             = 7      // stijlwaarden per profiel (kernel.asm: stTab)
 .const DEFAULT_PROFILE  = PROFILE_C64
 
 // Vast UI-glyphblok binnen elke charset (identiek in alle fonts).

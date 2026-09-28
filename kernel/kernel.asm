@@ -177,11 +177,14 @@ profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE
 // de "omgekeerde" tekens (128-255). GEOS: niet omgekeerd, dus tekst op
 // balken en knoppen wordt gewone donkere tekst op de lichte achtergrond.
 // (laatste waarde: 1 = GEOS-indeling van het bureaublad en de menubalk)
-stTab:  .byte $a0, $a0,      $a0,     $a0,      $ff, 0
-        .byte $20, GL_STRIPE, GL_DOTS, GL_TRACK, $00, 1
+// (en de waarde die gfx_DrawTextRev bij de tekens optelt: in GEOS staan
+// op 128-253 de 24x24-iconen, dus daar gewone tekens)
+stTab:  .byte $a0, $a0,      $a0,     $a0,      $ff, 0, $80
+        .byte $20, GL_STRIPE, GL_DOTS, GL_TRACK, $00, 1, $00
 stBarFill:   .byte $a0
 stTitleFill: .byte $a0
 stBtnFill:   .byte $a0
 stDeskFill:  .byte $a0
 stRevMask:   .byte $ff
 stGeos:      .byte 0
+stRevOr:     .byte $80

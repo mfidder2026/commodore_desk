@@ -588,7 +588,9 @@ da_prgFromDir:
 //========================================================
 // da_AddProgram - nieuw gebruikersprogramma toevoegen.
 da_AddProgram:
-        lda DA_count
+        lda DA_count             // (de prullenbak telt mee)
+        clc
+        adc DA_trashN
         cmp #DESK_MAXUSER
         bcc !ok+
         jmp da_showFull
@@ -677,7 +679,11 @@ da_DeleteProgram:
 !ok:    jsr da_hintDelete
         jsr da_pickUser
         bcs !done+
-        jsr da_confirm           // bevestiging vragen
+        lda #<sConfirm           // bevestiging vragen
+        sta daConfTxt
+        lda #>sConfirm
+        sta daConfTxt+1
+        jsr da_confirm
         bcs !done+
         jsr da_removeRec
         dec DA_count
@@ -701,9 +707,9 @@ da_confirm:
         lda #7
         sta a3
         jsr dlg_Draw             // rijen 9-15
-        lda #<sConfirm
+        lda daConfTxt
         sta r0
-        lda #>sConfirm
+        lda daConfTxt+1
         sta r0+1
         lda #9
         sta a0
@@ -845,21 +851,21 @@ da_pickUser:
 //--------------------------------------------------------
 // da_removeRec - verwijder record daU (schuif de rest naar beneden).
 //--------------------------------------------------------
-da_removeRec:
+da_removeRec:                    // (eigen teller: da_recPtr gebruikt daTmp)
         lda daU
-        sta daTmp
-!lp:    lda daTmp
+        sta rmI
+!lp:    lda rmI
         clc
         adc #1
         cmp DA_count
         bcs !done+
-        lda daTmp
+        lda rmI
         jsr da_recPtr            // dst
         lda $fb
         sta $fd
         lda $fc
         sta $fe
-        lda daTmp
+        lda rmI
         clc
         adc #1
         jsr da_recPtr            // src
@@ -869,9 +875,10 @@ da_removeRec:
         iny
         cpy #REC_STRIDE
         bne !cp-
-        inc daTmp
+        inc rmI
         jmp !lp-
 !done:  rts
+rmI:    .byte 0
 
 //--------------------------------------------------------
 // da_saveDisp - inBuf (screencode,$ff) -> dispTmp.
@@ -1036,6 +1043,275 @@ da_showFull:
         jsr dlg_WaitClose
         jmp shell_DrawAll
 
+
+//========================================================
+// GEOS-strook: prullenbak, printer (tool_Run 3-6)
+//========================================================
+// da_ToolMore - A = toolFn: 3 naar de prullenbak (toolArg), 4 printer,
+//               5 prullenbak openen, 6 ingebouwd programma.
+da_ToolMore:
+        cmp #3
+        bne !n3+
+        jmp da_TrashDrop
+!n3:    cmp #5
+        bne !n5+
+        jmp da_TrashOpen
+!n5:    ldx #<sNoPrinter
+        ldy #>sNoPrinter
+        cmp #4
+        beq !m+
+        ldx #<sBuiltIn
+        ldy #>sBuiltIn
+!m:     jmp da_Msg
+
+// da_TrashDrop - eigen programma toolArg naar de prullenbak: uit de lijst,
+//                achteraan in de tabel (plek 11 - aantal in de prullenbak).
+da_TrashDrop:
+        lda toolArg
+        jsr da_recPtr
+        jsr trToBuf
+        lda toolArg
+        sta daU
+        jsr da_removeRec
+        dec DA_count
+        lda #DESK_MAXUSER-1
+        sec
+        sbc DA_trashN
+        jsr da_recPtr
+        jsr trFromBuf
+        inc DA_trashN
+        jsr da_Save
+        jmp shell_DrawAll
+
+// da_TrashOpen - wat zit er in de prullenbak? RESTORE / EMPTY.
+da_TrashOpen:
+        lda DA_trashN
+        bne !go+
+        ldx #<sTrEmpty
+        ldy #>sTrEmpty
+        jmp da_Msg
+!go:    lda #0
+        sta trSel
+!dr:    lda #<sgTrash
+        sta r0
+        lda #>sgTrash
+        sta r0+1
+        lda #6
+        sta a0
+        lda #4
+        sta a1
+        lda #28
+        sta a2
+        lda #17
+        sta a3
+        jsr dlg_Draw             // rijen 4-20
+        lda #0
+        sta trK
+!ls:    lda trK                  // namen, de gekozen in de selectiekleur
+        cmp DA_trashN
+        bcs !bt+
+        lda #DESK_MAXUSER-1
+        sec
+        sbc trK
+        jsr da_recPtr
+        lda $fb
+        clc
+        adc #REC_DISP
+        sta r0
+        lda $fc
+        adc #0
+        sta r0+1
+        lda #9
+        sta a0
+        lda trK
+        clc
+        adc #6
+        sta a1
+        lda TH_text
+        sta a2
+        lda trK
+        cmp trSel
+        bne !pl+
+        lda TH_select
+        sta a2
+        jsr gfx_DrawTextRev
+        jmp !nl+
+!pl:    jsr gfx_DrawText
+!nl:    inc trK
+        jmp !ls-
+!bt:    lda #<sBtnRestore
+        sta r0
+        lda #>sBtnRestore
+        sta r0+1
+        lda #8
+        sta a0
+        lda #18
+        sta a1
+        lda #9
+        sta a2
+        lda TH_menubg
+        sta a3
+        jsr btn_Draw
+        lda #<sBtnEmpty
+        sta r0
+        lda #>sBtnEmpty
+        sta r0+1
+        lda #19
+        sta a0
+        lda #18
+        sta a1
+        lda #7
+        sta a2
+        lda TH_menubg
+        sta a3
+        jsr btn_Draw
+!w:     jsr da_pollClick         // (sluitknop / ESC: carry=1)
+        bcs !cl+
+        lda evtB                 // een naam gekozen
+        sec
+        sbc #6
+        bcc !b+
+        cmp DA_trashN
+        bcs !b+
+        sta trSel
+        jmp !dr-
+!b:     lda #8
+        sta a0
+        lda #18
+        sta a1
+        lda #9
+        sta a2
+        jsr btn_HitTest
+        bcs !rs+
+        lda #19
+        sta a0
+        lda #7
+        sta a2
+        jsr btn_HitTest
+        bcc !w-
+        lda #<sEmptyQ            // EMPTY: eerst vragen
+        sta daConfTxt
+        lda #>sEmptyQ
+        sta daConfTxt+1
+        jsr da_confirm
+        bcs !cl+
+        lda #0
+        sta DA_trashN
+        jmp !sv+
+!rs:    jsr trRestore
+!sv:    jsr da_Save
+!cl:    jmp shell_DrawAll
+
+// trRestore - trSel uit de prullenbak terug achteraan in de lijst.
+trRestore:
+        lda #DESK_MAXUSER-1
+        sec
+        sbc trSel
+        jsr da_recPtr
+        jsr trToBuf
+        lda trSel                // gat dichten: plek 11-j <- plek 10-j
+        sta trK
+!lp:    lda trK
+        clc
+        adc #1
+        cmp DA_trashN
+        bcs !d+
+        lda #DESK_MAXUSER-1
+        sec
+        sbc trK
+        jsr da_recPtr
+        lda $fb
+        sta $fd
+        lda $fc
+        sta $fe
+        lda #DESK_MAXUSER-2
+        sec
+        sbc trK
+        jsr da_recPtr
+        ldy #REC_STRIDE-1
+!cp:    lda ($fb),y
+        sta ($fd),y
+        dey
+        bpl !cp-
+        inc trK
+        jmp !lp-
+!d:     dec DA_trashN
+        lda DA_count
+        jsr da_recPtr
+        jsr trFromBuf
+        inc DA_count
+        rts
+
+// trToBuf / trFromBuf - record ($fb) <-> trBuf.
+trToBuf:
+        ldy #REC_STRIDE-1
+!c:     lda ($fb),y
+        sta trBuf,y
+        dey
+        bpl !c-
+        rts
+trFromBuf:
+        ldy #REC_STRIDE-1
+!c:     lda trBuf,y
+        sta ($fb),y
+        dey
+        bpl !c-
+        rts
+
+// da_Msg - melding X/Y met OK (titel: COMMODORE DESK 64).
+da_Msg:
+        stx daMsgP
+        sty daMsgP+1
+        lda #<nDesk
+        sta r0
+        lda #>nDesk
+        sta r0+1
+        lda #6
+        sta a0
+        lda #8
+        sta a1
+        lda #28
+        sta a2
+        lda #7
+        sta a3
+        jsr dlg_Draw             // rijen 8-14
+        lda daMsgP
+        sta r0
+        lda daMsgP+1
+        sta r0+1
+        lda #9
+        sta a0
+        lda #10
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        lda #18
+        sta a0
+        lda #12
+        sta a1
+        jsr dlg_OkButton
+        jsr dlg_WaitClose
+        jmp shell_DrawAll
+
+trSel:   .byte 0
+trK:     .byte 0
+daMsgP:  .word 0
+daConfTxt: .word sConfirm        // vraag van da_confirm
+trBuf:   .fill REC_STRIDE, 0
+.encoding "screencode_upper"
+sNoPrinter: .text "NO PRINTER CONNECTED"
+         .byte $ff
+sBuiltIn: .text "THIS PROGRAM MUST STAY"
+         .byte $ff
+sTrEmpty: .text "THE TRASH IS EMPTY"
+         .byte $ff
+sEmptyQ: .text "EMPTY THE TRASH?"
+         .byte $ff
+sBtnRestore: .text "RESTORE"
+         .byte $ff
+sBtnEmpty: .text "EMPTY"
+         .byte $ff
 
 //--------------------------------------------------------
 // Data (alleen gebruikt door de overlay)

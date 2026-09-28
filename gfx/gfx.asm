@@ -189,6 +189,18 @@ gfx_BarRow:
 // In: r0=pointer, a0=kol, a1=rij, a2=kleur (van het blok)
 // Klobbert: A,X,Y, r4, r5
 //--------------------------------------------------------
+// gfx_CurChar - teken A als cursor: omgekeerd, of in de GEOS-stijl (geen
+//               omgekeerde tekens) een vol blok op een spatie.
+gfx_CurChar:
+        bit stRevOr
+        bpl !g+
+        eor #$80
+        rts
+!g:     cmp #$20
+        bne !r+
+        lda #GL_SOLID
+!r:     rts
+
 gfx_DrawTextRev:
         ldx a1
         lda screenLo,x
@@ -208,7 +220,7 @@ gfx_DrawTextRev:
 !lp:    lda (r0),y
         cmp #$ff
         beq !done+
-        ora #$80                 // reverse-video
+        ora stRevOr              // reverse-video (GEOS: gewone tekens)
         sta (r4),y
         lda a2
         sta (r5),y

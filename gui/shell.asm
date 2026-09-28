@@ -110,7 +110,13 @@ drawDesktopBg:
         inx
         cpx #STATUS_ROW
         bne !lp-
-        rts
+        lda activeApp            // GEOS-bureaublad: de strook rechts
+        cmp #$ff
+        bne !r+
+        lda stGeos
+        beq !r+
+        jmp da_Strip
+!r:     rts
 
 // drawStatus - statusbalk (rij 24) met datum en tijd rechts.
 drawStatus:
@@ -156,8 +162,14 @@ win_Main:
         sta a0
         lda #1
         sta a1
-        lda #38
-        sta a2
+        ldx #38                  // GEOS-bureaublad: smaller, rechts de
+        lda activeApp            // iconen DRIVE/PRINTER/TRASH
+        cmp #$ff
+        bne !w+
+        lda stGeos
+        beq !w+
+        ldx #33
+!w:     stx a2
         lda #WIN_FRAME_BOT
         sta a3
         jsr dlg_Draw
@@ -875,7 +887,9 @@ menuBarClick:
 
 //--------------------------------------------------------
 // tool_Run - launcher-beheer (overlay DESKTOOL) laden en starten.
-//            X = 0 toevoegen, 1 bewerken, 2 verwijderen.
+//            X = 0 toevoegen, 1 bewerken, 2 verwijderen; GEOS-strook:
+//            3 naar de prullenbak (toolArg = programma), 4 printer,
+//            5 prullenbak openen, 6 "ingebouwd programma".
 //--------------------------------------------------------
 tool_Run:
         stx toolFn
@@ -890,10 +904,14 @@ tool_Run:
         beq !add+
         cmp #1
         beq !edit+
-        jmp da_DeleteProgram
+        cmp #3
+        bcc !del+
+        jmp da_ToolMore
+!del:   jmp da_DeleteProgram
 !add:   jmp da_AddProgram
 !edit:  jmp da_EditProgram
 toolFn: .byte 0
+toolArg: .byte 0
 
 // menubalk: knoppen, kolommen, klikzones (einde, exclusief) en app-id
 mbStrLo: .byte <mbCd, <oDesk, <lFiles, <mbSys
