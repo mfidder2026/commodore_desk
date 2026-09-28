@@ -60,9 +60,12 @@
 .const ICO_CITY   = ICON3_BASE + 7*6
 .const POKE_GLYPH = ICON3_BASE + 8*6   // Pokéball
 .const ICO_SID    = ICON3_BASE + 9*6   // muzieknoot (SID PLAYER), t/m 251
-// RADIO: de laatste 4 codes (252-255), een 2x2-icoon zonder bovenste rij;
-// op het bureaublad staat ICO_RADIO_D (zie da_draw2x2 in deskapps.asm).
+// RADIO: net als de andere 2x3, maar op codes 252-255 (boven, midden) en
+// 80-81 (onder): 80-83 zijn alleen de bron van het BBS-icoon en worden
+// bij elke font-wissel eerst teruggezet (font_OverlayUI). Op het
+// bureaublad staat ICO_RADIO_D (zie da_draw2x2 in deskapps.asm).
 .const ICO_RADIO   = 252
+.const ICO_RADIO_B = 80          // onderste rij
 .const ICO_RADIO_D = ICO_RADIO - 2
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
 
@@ -220,11 +223,20 @@ nc:     ldx ibI
         inx
         cpx #ICON3_N
         bne ic
-        ldx #31                  // RADIO: 2x2 op 252-255
-rg:     lda radioGlyphs,x
+        ldx #0                   // RADIO: zelfde omzetting, andere codes
+rg:     ldy ibMap,x
+        lda #0
+        cpy #$ff
+        beq rs
+        lda radioGlyphs,y
+rs:     cpx #32
+        bcs rb
         sta CHARSET_BASE+ICO_RADIO*8,x
-        dex
-        bpl rg
+        bcc rn
+rb:     sta CHARSET_BASE+ICO_RADIO_B*8-32,x
+rn:     inx
+        cpx #48
+        bne rg
         rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3

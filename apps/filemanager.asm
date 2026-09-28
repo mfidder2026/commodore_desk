@@ -405,37 +405,35 @@ sl:     lda #19
         lda fmI
         cmp #1
         bne sl
-        ldx #0
+        ldx #0                   // knoppen: functie met de toets eronder
 bl:     stx fmI
         lda fbLo,x
         sta r0
         lda fbHi,x
         sta r0+1
-        lda fbCol,x
-        sta a0
         lda #FM_BTNR
-        sta a1
-        lda fbW,x
-        sta a2
-        lda TH_accent
-        sta a3
-        jsr btn_Draw
+        jsr bt
+        ldx fmI
+        lda fkLo,x
+        sta r0
+        lda fkHi,x
+        sta r0+1
+        lda #FM_KEYR
+        jsr bt
         ldx fmI
         inx
         cpx #5
         bne bl
-        lda #<sFmKeys
-        sta r0
-        lda #>sFmKeys
-        sta r0+1
-        lda #2
-        sta a0
-        lda #FM_KEYR
-        sta a1
-        lda TH_text
-        sta a2
-        jsr gfx_DrawText
         jmp fm_ShowMsg
+bt:     sta a1
+        ldx fmI
+        lda fbCol,x
+        sta a0
+        lda fbW,x
+        sta a2
+        lda TH_accent
+        sta a3
+        jmp btn_Draw
 }
 
 // fm_DrawPane - venster A tekenen.
@@ -757,10 +755,14 @@ fm_Click: {
 bl:     stx fmI
         lda fbCol,x
         sta a0
-        lda #FM_BTNR
+        lda #FM_BTNR             // functie of toets: allebei de knop
         sta a1
         lda fbW,x
         sta a2
+        jsr btn_HitTest
+        bcs btn
+        lda #FM_KEYR
+        sta a1
         jsr btn_HitTest
         bcs btn
         ldx fmI
@@ -1398,21 +1400,32 @@ paneHi:   .byte >PANE0, >PANE1
 paneCol:  .byte 2, 20
 fbLo:     .byte <sFbRun, <sFbEdit, <sFbCopy, <sFbDel, <sFbDrv
 fbHi:     .byte >sFbRun, >sFbEdit, >sFbCopy, >sFbDel, >sFbDrv
-fbCol:    .byte 2, 8, 15, 22, 28
-fbW:      .byte 5, 6, 6, 5, 8
+fkLo:     .byte <sFkRun, <sFkEdit, <sFkCopy, <sFkDel, <sFkDrv
+fkHi:     .byte >sFkRun, >sFkEdit, >sFkCopy, >sFkDel, >sFkDrv
+fbCol:    .byte 2, 9, 16, 23, 30
+fbW:      .byte 6, 6, 6, 6, 7
 
 .encoding "screencode_upper"
-sFbRun:   .text "RUN"
+// (gecentreerd: btn_Draw zet de tekst op kolom+1)
+sFbRun:   .text " RUN"
           .byte $ff
 sFbEdit:  .text "EDIT"
           .byte $ff
 sFbCopy:  .text "COPY"
           .byte $ff
-sFbDel:   .text "DEL"
+sFbDel:   .text " DEL"
           .byte $ff
 sFbDrv:   .text "DRIVES"
           .byte $ff
-sFmKeys:  .text "RET RUN F3 EDT F5 CPY F7 DRV F8 DEL"
+sFkRun:   .text " RET"
+          .byte $ff
+sFkEdit:  .text " F3"
+          .byte $ff
+sFkCopy:  .text " F5"
+          .byte $ff
+sFkDel:   .text " F8"
+          .byte $ff
+sFkDrv:   .text "  F7"
           .byte $ff
 sFmFree:  .text " BLOCKS FREE"
           .byte $ff

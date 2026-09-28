@@ -201,12 +201,15 @@ da_draw2x2:
         sec
         sbc #1
         sta a1
-        lda deIcon               // RADIO (2x2 op 252-255): bovenste rij leeg
+        lda deIcon               // RADIO: 252-255, dan 80-81 (zie font.asm)
         cmp #ICO_RADIO_D
         bne !n+
-        cpx #2
-        bcs !n+
-        lda #$20
+        txa
+        cmp #4
+        bcs !b+
+        adc #ICO_RADIO
+        bne !s+
+!b:     adc #ICO_RADIO_B-4-1     // (carry=1)
         bne !s+
 !n:     txa
         clc
