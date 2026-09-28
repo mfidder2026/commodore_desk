@@ -175,21 +175,27 @@ fm_PaneP:
 
 // fm_EntP - fmE = entry A van venster fmP.
 fm_EntP: {
+        sta fmE                  // *20 = *16 + *4, in 16 bits (vanaf
+        lda #0                   // entry 32 past het niet in een byte)
+        sta fmE+1
+        asl fmE
+        rol fmE+1
+        asl fmE
+        rol fmE+1
+        lda fmE                  // *4 bewaren
         sta fmT
-        lda #0
+        lda fmE+1
         sta fmT+1
-        lda fmT                  // *20 = *16 + *4
-        asl
-        asl
-        sta fmT2
-        asl
-        asl
-        rol fmT+1
+        asl fmE
+        rol fmE+1
+        asl fmE
+        rol fmE+1
         clc
-        adc fmT2
+        lda fmE
+        adc fmT
         sta fmE
-        lda fmT+1
-        adc #0
+        lda fmE+1
+        adc fmT+1
         sta fmE+1
         lda fmE
         clc
