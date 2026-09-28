@@ -100,6 +100,7 @@ dTz:    .text "+0200"
 
 // mc_Save - "@0:MAIL.CFG". Carry=1 bij een fout.
 mc_Save: {
+        jsr save_Begin           // "SETTINGS ARE BEING SAVED"
         jsr cfg_io_begin
         lda #[nEnd-nm]
         ldx #<nm
@@ -120,7 +121,7 @@ mc_Save: {
         php
         jsr cfg_io_end
         plp
-        rts
+        jmp save_End             // scherm terug (carry blijft)
 nm:     .encoding "petscii_upper"
         .text "@0:MAIL.CFG"
 nEnd:   .encoding "screencode_upper"

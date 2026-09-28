@@ -119,6 +119,7 @@ bk_Ptr:
 
 // bb_BookSave - "@0:BBS.BOOK". Carry=1 bij een fout.
 bb_BookSave: {
+        jsr save_Begin           // "SETTINGS ARE BEING SAVED"
         jsr cfg_io_begin
         lda #[nEnd-nm]
         ldx #<nm
@@ -139,7 +140,7 @@ bb_BookSave: {
         php
         jsr cfg_io_end
         plp
-        rts
+        jmp save_End             // scherm terug (carry blijft)
 nm:     .encoding "petscii_upper"
         .text "@0:BBS.BOOK"
 nEnd:   .encoding "screencode_upper"

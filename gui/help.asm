@@ -203,6 +203,43 @@ hx:     inc hEnd
         jmp he
 }
 
+// save_Begin / save_End - om elke SAVE van instellingen heen: tijdens het
+//   schrijven staan de interrupts uit (ook de muis), dus eerst een venster
+//   "SETTINGS ARE BEING SAVED / PLEASE WAIT". save_End zet het scherm
+//   terug en laat de carry (fout van de SAVE) staan.
+save_Begin:
+        jsr hs_Save
+        gfxDrawBoxM(5, 10, 30, 4, TH_text)     // rijen 10-13
+        lda #<sSaving
+        sta r0
+        lda #>sSaving
+        sta r0+1
+        lda #7
+        sta a0
+        lda #11
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        lda #<sWait
+        sta r0
+        lda #>sWait
+        sta r0+1
+        lda #7
+        sta a0
+        lda #12
+        sta a1
+        lda TH_text
+        sta a2
+        jmp gfx_DrawText
+save_End:
+        php
+        jsr hs_Restore
+        plp
+        rts
+sSaving: .text "SETTINGS ARE BEING SAVED"
+        .byte $ff
+
 // hs_Save / hs_Restore - scherm + kleuren-RAM naar/van HELP_SCR.
 hs_Save:
         ldx #0

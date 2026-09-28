@@ -240,6 +240,7 @@ nEnd:   .encoding "screencode_upper"
 // cfg_Save - schrijf het config-blok naar "@0:CD64.CFG".
 //--------------------------------------------------------
 cfg_Save: {
+        jsr save_Begin           // "SETTINGS ARE BEING SAVED"
         jsr cfg_io_begin
         lda #[nameSaveEnd - nameSave]
         ldx #<nameSave
@@ -257,8 +258,10 @@ cfg_Save: {
         ldx #<CFG_END
         ldy #>CFG_END
         jsr K_SAVE
+        php
         jsr cfg_io_end
-        rts
+        plp
+        jmp save_End             // scherm terug (carry blijft)
 nameSave: .encoding "petscii_upper"
           .text "@0:CD64.CFG"
 nameSaveEnd:

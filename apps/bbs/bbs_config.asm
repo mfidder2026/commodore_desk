@@ -56,6 +56,7 @@ nEnd:   .encoding "screencode_upper"
 
 // bb_CfgSave - "@0:BBS.CFG". Carry=1 bij een fout.
 bb_CfgSave: {
+        jsr save_Begin           // "SETTINGS ARE BEING SAVED"
         jsr bb_CfgSum
         jsr cfg_io_begin
         lda #[nEnd-nm]
@@ -77,7 +78,7 @@ bb_CfgSave: {
         php
         jsr cfg_io_end
         plp
-        rts
+        jmp save_End             // scherm terug (carry blijft)
 nm:     .encoding "petscii_upper"
         .text "@0:BBS.CFG"
 nEnd:   .encoding "screencode_upper"

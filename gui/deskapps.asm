@@ -424,6 +424,7 @@ da_Launch:
 // Persistentie (DESK.APPS)
 //========================================================
 da_Save: {
+        jsr save_Begin           // "SETTINGS ARE BEING SAVED"
         jsr cfg_io_begin
         lda #[nEnd-nm]
         ldx #<nm
@@ -441,8 +442,10 @@ da_Save: {
         ldx #<DA_end
         ldy #>DA_end
         jsr K_SAVE
+        php
         jsr cfg_io_end
-        rts
+        plp
+        jmp save_End             // scherm terug (carry blijft)
 nm:     .encoding "petscii_upper"
         .text "@0:DESK.APPS"
 nEnd:   .encoding "screencode_upper"
