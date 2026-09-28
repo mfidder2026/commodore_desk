@@ -319,7 +319,7 @@ protocol, RFC 868), which gives the same UTC seconds.
 
 ## Themes and fonts
 
-Five colour themes. Each has its own mouse pointer colour (you can change it
+Six colour themes. Each has its own mouse pointer colour (you can change it
 under SETTINGS → MOUSE), and desktop icons that would be hard to see get a
 darker or lighter variant.
 
@@ -332,13 +332,18 @@ darker or lighter variant.
 | **PAPER** | black on white |
 | **FREMEN** | the GEOS colours: dark grey on light grey |
 | **GEOS** | the look of the GEOS deskTop (see below) |
+| **DESK64** | the default: the GEOS layout in the colours of the boot screen — blue windows with white text and lines, yellow accents, a light grey dotted desktop; with the TINY font |
 
 ### The GEOS theme
 
 ![The GEOS theme](docs/screenshots/geos_desk.png)
 
 SETTINGS → THEME → GEOS changes more than the colours; any other theme
-brings the normal look back at once.
+brings the normal look back at once. **DESK64**, the default theme on a new
+disk, has the same layout in blue (on an existing disk your own `CD64.CFG`
+keeps your theme; pick DESK64 under SETTINGS → THEME, and TINY under FONT).
+
+![The DESK64 theme](docs/screenshots/desk64.png)
 
 - Light grey with black text; the menu bar and status bar have no coloured
   bar, window titles are striped, buttons dotted and the desktop edge is

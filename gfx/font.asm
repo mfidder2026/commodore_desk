@@ -272,6 +272,16 @@ sg:     lda styleGlyphs,x
         sta CHARSET_BASE+GL_STRIPE*8,x
         dex
         bpl sg
+        lda CFG_profile          // DESK64: stippen omgekeerd (grijs vlak met
+        cmp #PROFILE_DESK64      // stippen in de blauwe achtergrondkleur)
+        bne !d+
+        ldx #7
+!i:     lda CHARSET_BASE+GL_DOTS*8,x
+        eor #$ff
+        sta CHARSET_BASE+GL_DOTS*8,x
+        dex
+        bpl !i-
+!d:
         lda stGeos               // GEOS: dunner vensterkader (91-95)
         beq tr
         ldx #39

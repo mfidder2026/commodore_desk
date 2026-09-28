@@ -60,7 +60,7 @@
 .const FONT_CASUAL  = 8    // rond/speels (van disk)
 .const FONT_HEAVY   = 9    // zwaar display (van disk)
 .const NUM_FONTS    = 10
-.const DEFAULT_FONT = FONT_SYSTEM
+.const DEFAULT_FONT = FONT_TINY
 
 .label CFG_fontId   = $0207   // actieve font (0..NUM_FONTS-1)
 
@@ -110,9 +110,10 @@
 .const PROFILE_PAPER    = 2
 .const PROFILE_FREMEN   = 3
 .const PROFILE_GEOS     = 4      // GEOS-stijl: licht, strepen, ruitjes
-.const NUM_PROFILES     = 5
+.const PROFILE_DESK64   = 5      // GEOS-stijl met blauwe vensters (bootscherm)
+.const NUM_PROFILES     = 6
 .const ST_N             = 7      // stijlwaarden per profiel (kernel.asm: stTab)
-.const DEFAULT_PROFILE  = PROFILE_C64
+.const DEFAULT_PROFILE  = PROFILE_DESK64
 
 // Vast UI-glyphblok binnen elke charset (identiek in alle fonts).
 // Reserveer bijv. de bovenste tekens voor frames/iconen; tekst-glyphs

@@ -77,18 +77,18 @@ osvars_Init:
         sta CFG_profile
         lda #DEFAULT_SOUND
         sta CFG_sound
-        // thema-kleuren defaults (profiel 0 = Commodore 64)
-        lda #THEME_BORDER
+        // thema-kleuren defaults (die van DEFAULT_PROFILE)
+        lda profBorder+DEFAULT_PROFILE
         sta TH_border
-        lda #THEME_DESKTOP_BG
+        lda profDesk+DEFAULT_PROFILE
         sta TH_deskbg
-        lda #THEME_MENUBAR_BG
+        lda profMenu+DEFAULT_PROFILE
         sta TH_menubg
-        lda #THEME_ACCENT
+        lda profAccent+DEFAULT_PROFILE
         sta TH_accent
-        lda #THEME_SELECT
+        lda profSelect+DEFAULT_PROFILE
         sta TH_select
-        lda #THEME_TEXT
+        lda profText+DEFAULT_PROFILE
         sta TH_text
         lda #$ff                 // muiskleur: nog niet gezet (zie profile_Derive)
         sta TH_mouse
@@ -136,8 +136,8 @@ profile_Derive:
         txa                      // stijl: vullingen + omgekeerde tekens
         pha
         ldy #0
-        cpx #PROFILE_GEOS
-        bne !st+
+        cpx #PROFILE_GEOS        // GEOS en DESK64: GEOS-stijl
+        bcc !st+
         ldy #ST_N
 !st:    ldx #0
 !sl:    lda stTab,y
@@ -161,16 +161,19 @@ profile_Derive:
 // (balktekst = achtergrondkleur, dus donkere balken voor het contrast).
 // GEOS = de look van de GEOS deskTop: lichtgrijs, zwarte tekst zonder
 // balken, gestreepte titels en een geruit bureaublad (zie stTab).
-//          C64/Win95     Matrix       Paper        Fremen       GEOS
-profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY,   BLACK
-profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY,  LIGHT_GREY
-profMenu:    .byte LIGHT_GREY, GREEN,       GREY,        DARK_GREY,   BLACK
-profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE,        BLACK,       BLUE
-profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE,  GREY,        BLUE
-profText:    .byte WHITE,      GREEN,       BLACK,       DARK_GREY,   BLACK
-profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY,        DARK_GREY
-profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY,   BLACK
-profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE
+// DESK64 = de GEOS-indeling in de kleuren van het bootscherm: blauwe vensters
+// met witte tekst en lijnen, lichtgrijs bureaublad (stippen omgekeerd, zie
+// icon_Build: de stippen zijn dan blauw).
+//          C64/Win95     Matrix       Paper        Fremen       GEOS         DESK64
+profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY,   BLACK,       BLACK
+profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY,  LIGHT_GREY,  BLUE
+profMenu:    .byte LIGHT_GREY, GREEN,       GREY,        DARK_GREY,   BLACK,       WHITE
+profAccent:  .byte YELLOW,     LIGHT_GREEN, BLUE,        BLACK,       BLUE,        YELLOW
+profSelect:  .byte CYAN,       DARK_GREY,   LIGHT_BLUE,  GREY,        BLUE,        CYAN
+profText:    .byte WHITE,      GREEN,       BLACK,       DARK_GREY,   BLACK,       WHITE
+profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY,        DARK_GREY,   LIGHT_GREY
+profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY,   BLACK,       WHITE
+profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE,        YELLOW
 
 // Stijl per profiel (Win95 / GEOS): vulteken van de balken (menu, status),
 // van titelbalken, van knoppen en van de desktoprand, en het masker voor

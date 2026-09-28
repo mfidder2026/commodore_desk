@@ -23,7 +23,10 @@ def sc(ch):
     if 0x20<=o<=0x3f: return o
     return 0x20
 
-grid=[[GREY]*320 for _ in range(200)]        # flat grey desktop
+# desktop: the dotted pattern of the GEOS theme (GL_DOTS in gfx/uiglyphs.asm:
+# dark grey dots on light grey)
+DOTS=[0x00,0x44,0x00,0x11,0x00,0x44,0x00,0x11]
+grid=[[DGREY if DOTS[y&7]&(0x80>>(x&7)) else LGREY for x in range(320)] for y in range(200)]
 
 def fill(x0,y0,x1,y1,c):
     for y in range(y0,y1):

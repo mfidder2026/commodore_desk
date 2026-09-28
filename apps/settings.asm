@@ -633,8 +633,8 @@ fontNameHi: .byte >fSystem, >fClassic, >fBold, >fLower, >fTiny, >fFremen, >fSeri
 menuNameLo: .byte <mClear, <mFilled
 menuNameHi: .byte >mClear, >mFilled
 
-profNameLo: .byte <pC64, <pMatrix, <pPaper, <pFremen, <pGeos
-profNameHi: .byte >pC64, >pMatrix, >pPaper, >pFremen, >pGeos
+profNameLo: .byte <pC64, <pMatrix, <pPaper, <pFremen, <pGeos, <pDesk
+profNameHi: .byte >pC64, >pMatrix, >pPaper, >pFremen, >pGeos, >pDesk
 
 soundNameLo: .byte <sNo, <sYes
 soundNameHi: .byte >sNo, >sYes
@@ -699,6 +699,8 @@ pPaper:  .text "PAPER  "
 pFremen: .text "FREMEN "
          .byte $ff
 pGeos:   .text "GEOS   "
+         .byte $ff
+pDesk:   .text "DESK64 "
          .byte $ff
 sSound:  .text "SOUND:"
          .byte $ff
