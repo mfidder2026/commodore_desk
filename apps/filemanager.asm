@@ -54,6 +54,8 @@ fm_Load: {
         inc fmScanned
         jsr fm_Scan
 rd:     jsr fm_ReadBoth
+        lda #0                   // scanmelding weg
+        sta fmMsg+1
         rts
 }
 
@@ -1327,7 +1329,7 @@ sFbDel:   .text "DEL"
           .byte $ff
 sFbDrv:   .text "DRIVES"
           .byte $ff
-sFmKeys:  .text "RET RUN F3 EDIT F5 COPY F8 DEL F7 DRV"
+sFmKeys:  .text "RET RUN F3 EDT F5 CPY F7 DRV F8 DEL"
           .byte $ff
 sFmFree:  .text " BLOCKS FREE"
           .byte $ff
