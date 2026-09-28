@@ -446,20 +446,51 @@ ok:     ldx #<sTiSet
 }
 
 // ti_Auto - na een koude start (Core): stil de tijd ophalen.
+// Alleen als er netwerk-hardware is: dan een venster "FETCHING SYSTEM
+// TIME / PLEASE WAIT" en de tijd ophalen. Uit: A = 1 als het venster er
+// staat (de Core tekent het scherm dan opnieuw), anders A = 0.
 ti_Auto:
-        lda #<sTiBoot            // "GETTING THE TIME..." in de statusbalk
+        jsr nc_Load
+        jsr net_Detect
+        lda netPlatform
+        bne go
+        rts                      // (A = 0: geen netwerk, geen venster)
+go:     lda #5                   // venster zoals "LOADING ... PLEASE WAIT"
+        sta a0
+        lda #10
+        sta a1
+        lda #30
+        sta a2
+        lda #4
+        sta a3
+        lda TH_text
+        sta a4
+        jsr gfx_DrawBox
+        lda #<sTiBoot
         sta r0
         lda #>sTiBoot
         sta r0+1
-        lda #10
+        lda #7
         sta a0
-        lda #STATUS_ROW
+        lda #11
         sta a1
-        lda TH_menubg
+        lda TH_accent
         sta a2
-        jsr gfx_DrawTextRev
+        jsr gfx_DrawText
+        lda #<sWait
+        sta r0
+        lda #>sWait
+        sta r0+1
+        lda #7
+        sta a0
+        lda #12
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
         jsr ti_Sync
-        jmp drawStatus
+        lda #1
+        rts
 
 // ti_Sync - netwerk klaarmaken, NTP vragen, klok zetten.
 //           Uit: carry=1 gelukt, carry=0 -> X/Y melding.
@@ -1226,7 +1257,7 @@ sTiZoneSet: .text "PRESS SYNC NOW, THEN SAVE"
           .byte $ff
 sTiBad:   .text "THE TIME SERVER SENT A WRONG TIME"
           .byte $ff
-sTiBoot:  .text "GETTING THE TIME..."
+sTiBoot:  .text "FETCHING SYSTEM TIME"
           .byte $ff
 sDstNone: .text "NONE"
           .byte $ff
