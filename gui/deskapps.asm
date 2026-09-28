@@ -294,7 +294,7 @@ da_drawLabel:
         cmp #$ff
         beq !le+
         iny
-        cpy #10
+        cpy #9                   // (max. 9: altijd ruimte tussen de namen)
         bne !l-
 !le:    sty daTmp                // (naam afkappen op 10 tekens)
         lda #$ff
@@ -581,7 +581,13 @@ da_drawGeos:
         sta r0
         lda biNameHi,x
         sta r0+1
-        lda daEnt                // ingebouwd programma i = GEOS-icoon i
+        cpx #7                   // SID PLAYER past niet in 9 tekens
+        bne !sn+
+        lda #<sgSid
+        sta r0
+        lda #>sgSid
+        sta r0+1
+!sn:    lda daEnt                // ingebouwd programma i = GEOS-icoon i
         jmp !d+
 !u:     sec
         sbc biCount
@@ -809,6 +815,8 @@ sgDrive: .text "DRIVE"
 sgPrint: .text "PRINT"
         .byte $ff
 sgTrash: .text "TRASH"
+        .byte $ff
+sgSid:  .text "SIDPLAYER"
         .byte $ff
 
 //--------------------------------------------------------

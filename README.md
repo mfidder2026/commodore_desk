@@ -319,7 +319,7 @@ protocol, RFC 868), which gives the same UTC seconds.
 
 ## Themes and fonts
 
-Four colour themes. Each has its own mouse pointer colour (you can change it
+Five colour themes. Each has its own mouse pointer colour (you can change it
 under SETTINGS → MOUSE), and desktop icons that would be hard to see get a
 darker or lighter variant.
 
@@ -331,6 +331,31 @@ darker or lighter variant.
 | **MATRIX** | green on black |
 | **PAPER** | black on white |
 | **FREMEN** | the GEOS colours: dark grey on light grey |
+| **GEOS** | the look of the GEOS deskTop (see below) |
+
+### The GEOS theme
+
+![The GEOS theme](docs/screenshots/geos_desk.png)
+
+SETTINGS → THEME → GEOS changes more than the colours; any other theme
+brings the normal look back at once.
+
+- Light grey with black text; the menu bar and status bar have no coloured
+  bar, window titles are striped, buttons dotted and the desktop edge is
+  checkered. The menus are separated by thin lines.
+- The desktop shows large 24×24 icons in three columns with the name
+  underneath (own drawings in GEOS style, in the file `GEOSICON`).
+- To the right of the window: **DRIVE** (opens FILES), **PRINT** (no printer
+  support yet, it says so) and **TRASH**.
+- **Drag** an icon with the mouse button held: the pointer becomes the icon.
+  Drop it on TRASH to throw one of your own programs away (built-in
+  programs stay). TRASH shows what is in it: **RESTORE** puts a program
+  back on the desktop, **EMPTY** removes them for good (it asks first). The
+  trash is kept in `DESK.APPS`.
+- A drop on the same icon starts it, a drop on DRIVE or PRINT is a click
+  there.
+
+![The trash](docs/screenshots/geos_trash.png)
 
 Ten fonts. Five are built in: SYSTEM, CLASSIC (italic), BOLD, LOWER (lower
 case) and TINY. Five are loaded from disk: FREMEN, SERIF, MONO, CASUAL and

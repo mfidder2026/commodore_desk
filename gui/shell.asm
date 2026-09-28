@@ -605,7 +605,20 @@ showLoadName:
         pha
         lda r0+1
         pha
-        gfxDrawBoxM(4, 10, 32, 4, TH_text)     // rijen 10-13 (2 tekstregels)
+        lda #4                   // rijen 10-13 (2 tekstregels)
+        sta a0
+        lda #10
+        sta a1
+        lda #32
+        ldx stGeos               // GEOS: binnen het smallere venster
+        beq !w+                  // (da_Redraw wist het dan weer)
+        lda #28
+!w:     sta a2
+        lda #4
+        sta a3
+        lda TH_text
+        sta a4
+        jsr gfx_DrawBox
         lda #<sLoad
         sta r0
         lda #>sLoad

@@ -1096,7 +1096,7 @@ da_TrashOpen:
         sta r0
         lda #>sgTrash
         sta r0+1
-        lda #6
+        lda #3                   // (binnen het GEOS-bureaubladvenster)
         sta a0
         lda #4
         sta a1
@@ -1104,7 +1104,7 @@ da_TrashOpen:
         sta a2
         lda #17
         sta a3
-        jsr dlg_Draw             // rijen 4-20
+        jsr dlg_Draw             // rijen 4-20, kolom 3-30
         lda #0
         sta trK
 !ls:    lda trK                  // namen, de gekozen in de selectiekleur
@@ -1121,7 +1121,7 @@ da_TrashOpen:
         lda $fc
         adc #0
         sta r0+1
-        lda #9
+        lda #6
         sta a0
         lda trK
         clc
@@ -1143,7 +1143,7 @@ da_TrashOpen:
         sta r0
         lda #>sBtnRestore
         sta r0+1
-        lda #8
+        lda #5
         sta a0
         lda #18
         sta a1
@@ -1156,7 +1156,7 @@ da_TrashOpen:
         sta r0
         lda #>sBtnEmpty
         sta r0+1
-        lda #19
+        lda #16
         sta a0
         lda #18
         sta a1
@@ -1175,7 +1175,7 @@ da_TrashOpen:
         bcs !b+
         sta trSel
         jmp !dr-
-!b:     lda #8
+!b:     lda #5
         sta a0
         lda #18
         sta a1
@@ -1183,7 +1183,7 @@ da_TrashOpen:
         sta a2
         jsr btn_HitTest
         bcs !rs+
-        lda #19
+        lda #16
         sta a0
         lda #7
         sta a2
