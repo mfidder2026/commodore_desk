@@ -8,7 +8,7 @@ network programs: a **BBS terminal**, **e-mail**, an **AI chat** and **ping**,
 all running on the C64 itself over its own TCP/IP stack. A **SID player**
 plays the music files on the disk.
 
-It runs from a **D71/D64 disk** or an **EasyFlash cartridge** (instant boot),
+It runs from a **D81, D71 or D64 disk** or an **EasyFlash cartridge** (instant boot),
 in VICE or on real hardware with an **RR-Net**, an **Ultimate 64 / 1541
 Ultimate-II+** or a **WiC64** (WiFi on the userport).
 
@@ -408,10 +408,18 @@ C64. The cursor keys move the text cursor there, not the pointer.
 | `BBS.BOOK` | your own BBSes |
 | `DESK.APPS` | your own programs on the desktop |
 
-`build_disk.bat` formats a fresh disk image on every build. So that you never
-lose your settings, it first copies these files from the old disk image
-to `..\cd64_userfiles` (next to the repository, never committed) and then
-puts them back on the new D71 and D64.
+`build_disk.bat` formats fresh disk images on every build. So that you never
+lose your settings, it first copies these files from the old disk image you
+used last (D81, D71 or D64) to `..\userfiles` (next to the repository, never
+committed) and then puts them back on the new disks.
+
+The folder layout:
+```
+commodore_desk\
+  development\   this repository (source, tools, build\)
+  userfiles\     your settings from the disks (never committed)
+  parked\        the real games C64 CITY and POKEMON RED (third party)
+```
 
 ---
 
@@ -433,20 +441,23 @@ python tools/make_fonts.py
 python tools/make_fremenfont.py
 ```
 
-**Disk (D71 and D64):**
+**Disks (D81, D71 and D64):**
 ```bat
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
 DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO) and the fonts, and writes everything to
-`build\CD64.d71` and `build\CD64.d64`.
+`build\CD64.d81`, `build\CD64.d71` and `build\CD64.d64`.
 
-Games and other programs you want on the desktop go into `build\` as well
-(for example `c64cdesk.prg` and `c64rdesk.prg`), and SID music files go into
-`sid\`. `build_disk.bat` writes them to the disks. Third-party programs and
-music are not part of this repository.
+The real games (`c64cdesk.prg` = C64 CITY, `c64rdesk.prg` = POKEMON RED) go
+into `..\parked`, SID music files into `sid\`. Third-party programs and music
+are not part of this repository; without them the disks get small
+placeholders for the games.
 
-- **D71** (1571, double-sided): everything fits. At start-up CD64 switches
+- **D81** (1581, 800 KB): **everything**, including the real games, the SID
+  files and your settings, with about 2300 blocks to spare. This is the main
+  disk.
+- **D71** (1571, double-sided): the system with placeholder games. At start-up CD64 switches
   the 1571 to double-sided mode (`U0>M1`), because a 1571 on a C64 starts
   as a 1541 and cannot read the second side.
 - **D64** (1541): the system and all programs always go on it. The extras
@@ -473,7 +484,9 @@ on your PC through **Npcap**.
 
 1. **Install Npcap** from <https://npcap.com> as administrator and tick
    **"Install Npcap in WinPcap API-compatible Mode"**. VICE needs `wpcap.dll`.
-2. **Double-click `start_cd64.bat`** (or `start_cd64.bat build\CD64.d64`).
+2. **Double-click `start_cd64.bat`** (the D81 if it is there, otherwise the
+   D71; or name one: `start_cd64.bat build\CD64.d64`). For a D81 drive 8
+   becomes a 1581.
    It starts WSL, looks up the `vEthernet (WSL)` adapter, writes the matching
    IP, mask and gateway into `NET.CFG` on the disk (the other settings stay)
    and starts VICE with the RR-Net on that adapter.
@@ -492,8 +505,8 @@ x64sc -drive8type 1571 +georam -reu -reusize 512 -ethernetcart -ethernetcartmode
 List the adapter GUIDs with PowerShell:
 `Get-NetAdapter | Select-Object Name, InterfaceGuid`.
 GeoRAM must be off (it also uses `$DE00`); the REU (`$DF00`) is fine and
-becomes RAM drive `R:30` in the File Manager. Drive 8 must be a 1571 for the D71,
-or a 1541 for the D64.
+becomes RAM drive `R:30` in the File Manager. Drive 8 must be a 1581 for the D81,
+a 1571 for the D71, or a 1541 for the D64.
 
 **Check:** SYSTEM → NETWORK should show `PLATFORM: RR-NET` and
 `STATUS: READY`.

@@ -90,10 +90,12 @@ for ($i = 0; $i -lt 4; $i++) {
 & $c1541 -attach $Disk -write $tmp net.cfg *> $null
 if ($NoStart) { Stop-Process -Id $keep.Id -ErrorAction SilentlyContinue; exit 0 }
 
-# 4. VICE with the RR-Net on the WSL adapter (a 1571 reads both D64 and D71).
+# 4. VICE with the RR-Net on the WSL adapter (a 1571 reads both D64 and D71,
+#    a D81 needs a 1581).
 #    A 512 KB REU ($DF00) is the RAM drive R:30 in the File Manager; GeoRAM
 #    stays off because it shares $DE00 with the RR-Net.
-$viceArgs = @("-drive8type", "1571", "+georam", "-reu", "-reusize", "512",
+$drive = if ($Disk -match '\.d81$') { "1581" } else { "1571" }
+$viceArgs = @("-drive8type", $drive, "+georam", "-reu", "-reusize", "512",
               "-ethernetcart", "-ethernetcartmode", "1", "-ethernetcartbase", "0xDE00",
               "-ethernetioif", "`"$iface`"", "-autostart", "`"$Disk`"")
 $vice = Start-Process $x64sc -ArgumentList $viceArgs -PassThru

@@ -1,9 +1,14 @@
 @echo off
 setlocal
 :: ======================================================
-:: Commodore Desk 64 - D71 disk build (voorlopige uitlevering)
-:: Assembleert disk_main.asm -> build\cd64.prg en zet die op
-:: een geformatteerde D71 (dubbelzijdig 1571, ~340 KB).
+:: Commodore Desk 64 - disk build
+:: Assembleert disk_main.asm -> build\cd64.prg en zet alles op
+::   build\CD64.d81  1581 (800 KB): ALLES, ook de echte spellen en de SID's
+::   build\CD64.d71  1571 (340 KB): het systeem, spellen als plaatsvervanger
+::   build\CD64.d64  1541 (170 KB): het systeem, extra's alleen als ze passen
+:: Mappen naast deze repo (buiten git):
+::   ..\userfiles  instellingen van de gebruiker (ook het mailwachtwoord!)
+::   ..\parked     de echte spellen (C64 CITY, POKEMON RED): van derden
 :: ======================================================
 
 set "JAVA_EXE=C:\Users\aegwh\OneDrive\dev\c64\java\bin\java.exe"
@@ -42,18 +47,25 @@ python tools\make_geosicons.py
 if errorlevel 1 ( echo GEOSICON mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
-:: Plaatsvervangers voor de spellen (de echte staan in ..\cd64_parked)
+:: Plaatsvervangers voor de spellen (de echte staan in ..\parked)
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 CITY" -o build\c64cdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=POKEMON RED" -o build\c64rdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 
 :: Gebruikersbestanden (instellingen, ook het mailwachtwoord!) gaan niet
-:: verloren: ze worden van de oude disk naar ..\cd64_userfiles gekopieerd
+:: verloren: ze worden van de oude disk naar ..\userfiles gekopieerd
 :: (buiten de repo, nooit committen) en na het formatteren teruggezet.
-set "KEEP=%~dp0..\cd64_userfiles"
+:: De disk waarmee het laatst gewerkt is (D81, D71 of D64) gaat voor.
+set "KEEP=%~dp0..\userfiles"
+if not exist "%KEEP%" if exist "%~dp0..\..\cd64_userfiles" set "KEEP=%~dp0..\..\cd64_userfiles"
+if not exist "%KEEP%" if exist "%~dp0..\cd64_userfiles" set "KEEP=%~dp0..\cd64_userfiles"
+set "PARKED=%~dp0..\parked"
+if not exist "%PARKED%" if exist "%~dp0..\cd64_parked" set "PARKED=%~dp0..\cd64_parked"
 set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps"
 if not exist "%KEEP%" mkdir "%KEEP%"
+set "DISKS="
+for /f "delims=" %%D in ('python tools\disks_by_age.py build') do call set "DISKS=%%DISKS%% %%D"
 for %%U in (%USERFILES%) do call :keepfile %%U
 :: RADIO.LST (de afspeellijst, ook te bewerken) blijft ook bewaard
 call :keepfile radio.lst
@@ -147,12 +159,56 @@ if exist "%KEEP%\radio.lst" set "RLST=%KEEP%\radio.lst"
 "%C1541%" -attach build\CD64.d64 -write "%RLST%" "radio.lst,s" >nul 2>&1
 echo   radio.lst (%RLST%)
 echo.
-echo Klaar: build\CD64.d71 en build\CD64.d64
-echo Inhoud:
-"%C1541%" -attach build\CD64.d71 -dir
+echo [4/3] D81 maken: alles bij elkaar (1581, 3160 blokken)...
+:: de echte spellen uit %PARKED% als ze er zijn, anders de plaatsvervangers
+set "GAME_C=build\c64cdesk.prg"
+set "GAME_R=build\c64rdesk.prg"
+if exist "%PARKED%\c64cdesk.prg" set "GAME_C=%PARKED%\c64cdesk.prg"
+if exist "%PARKED%\c64rdesk.prg" set "GAME_R=%PARKED%\c64rdesk.prg"
+if exist build\CD64.d81 del build\CD64.d81
+"%C1541%" -format "commodore desk,cd" d81 build\CD64.d81 ^
+  -write build\boot.prg boot ^
+  -write build\cd64.prg cd64 ^
+  -write build\helptext.prg helptext ^
+  -write build\files.prg files ^
+  -write build\editor.prg editor ^
+  -write build\paint.prg paint ^
+  -write build\calc.prg calc ^
+  -write build\setup.prg setup ^
+  -write build\desktool.prg desktool ^
+  -write build\sidplay.prg sidplay ^
+  -write build\inet.prg inet ^
+  -write build\bbs.prg bbs ^
+  -write build\email.prg email ^
+  -write build\time.prg time ^
+  -write build\radio.prg radio ^
+  -write build\geosicon.prg geosicon ^
+  -write build\lower.prg lower ^
+  -write build\tiny.prg tiny ^
+  -write build\fremen.prg fremen ^
+  -write build\serif.prg serif ^
+  -write build\mono.prg mono ^
+  -write build\casual.prg casual ^
+  -write build\heavy.prg heavy ^
+  -write build\scrsaver.prg scrsaver ^
+  -write "%GAME_C%" c64cdesk ^
+  -write "%GAME_R%" c64rdesk
+if errorlevel 1 ( echo c1541 D81 failed. & exit /b 1 )
+echo   spellen: %GAME_C% en %GAME_R%
+if exist sid\*.sid (
+  for %%S in (sid\*.sid) do "%C1541%" -attach build\CD64.d81 -write "%%S" %%~nxS >nul 2>&1
+)
+for %%U in (%USERFILES%) do (
+  if exist "%KEEP%\%%U" "%C1541%" -attach build\CD64.d81 -write "%KEEP%\%%U" %%U >nul 2>&1
+)
+"%C1541%" -attach build\CD64.d81 -write "%RLST%" "radio.lst,s" >nul 2>&1
+
+echo Klaar: build\CD64.d81, build\CD64.d71 en build\CD64.d64
+echo Inhoud van de D81:
+"%C1541%" -attach build\CD64.d81 -dir
 echo.
 echo Testen in VICE:
-echo   "%VICE_EXE%" -autostart build\CD64.d71
+echo   start_cd64.bat build\CD64.d81
 echo.
 
 :: Optioneel automatisch starten (haal de :: weg om te activeren):
@@ -160,12 +216,12 @@ echo.
 
 goto :eof
 
-:: keepfile <naam> - bestand van de oude D71 (anders de D64) naar %KEEP%.
-:: Alleen als het echt op de disk staat; anders blijft de bewaarde kopie.
+:: keepfile <naam> - bestand van de oude disks (de laatst gebruikte eerst,
+:: zie tools\disks_by_age.py) naar %KEEP%. Alleen als het echt op een disk
+:: staat; anders blijft de bewaarde kopie.
 :keepfile
 set "FOUND="
-if exist build\CD64.d71 call :keepfrom build\CD64.d71 %1
-if not defined FOUND if exist build\CD64.d64 call :keepfrom build\CD64.d64 %1
+for %%D in (%DISKS%) do if not defined FOUND call :keepfrom %%D %1
 goto :eof
 
 :keepfrom
