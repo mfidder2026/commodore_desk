@@ -58,10 +58,7 @@ if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 :: (buiten de repo, nooit committen) en na het formatteren teruggezet.
 :: De disk waarmee het laatst gewerkt is (D81, D71 of D64) gaat voor.
 set "KEEP=%~dp0..\userfiles"
-if not exist "%KEEP%" if exist "%~dp0..\..\cd64_userfiles" set "KEEP=%~dp0..\..\cd64_userfiles"
-if not exist "%KEEP%" if exist "%~dp0..\cd64_userfiles" set "KEEP=%~dp0..\cd64_userfiles"
 set "PARKED=%~dp0..\parked"
-if not exist "%PARKED%" if exist "%~dp0..\cd64_parked" set "PARKED=%~dp0..\cd64_parked"
 set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps"
 if not exist "%KEEP%" mkdir "%KEEP%"
 set "DISKS="

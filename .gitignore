@@ -1,9 +1,11 @@
 # Build-uitvoer
-/build/
+/development/build/
 *.prg
 *.bin
 *.crt
 *.d64
+*.d71
+*.d81
 *.vs
 *.sym
 
@@ -13,4 +15,10 @@ Thumbs.db
 .DS_Store
 
 # SID-tunes (muziek van derden): alleen lokaal, build_disk.bat zet ze op de disk
-/sid/*.sid
+/development/sid/*.sid
+
+# Naast de broncode, NOOIT in git:
+#   userfiles/  instellingen van de gebruiker (ook het mailwachtwoord!)
+#   parked/     de echte spellen (van derden)
+/userfiles/
+/parked/
