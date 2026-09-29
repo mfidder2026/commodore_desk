@@ -332,15 +332,15 @@ darker or lighter variant.
 | **C64** | the classic blue C64 screen with grey bars |
 | **MATRIX** | green on black |
 | **PAPER** | black on white |
-| **FREMEN** | the GEOS colours: dark grey on light grey |
-| **GEOS** | the look of the GEOS deskTop (see below) |
-| **DESK64** | the default: the GEOS layout in the colours of the boot screen — blue windows with white text and lines, yellow accents, a light grey dotted desktop; with the TINY font |
+| **FREMEN** | shades of grey: dark grey on light grey |
+| **STONE** | a classic 8-bit desktop look, inspired by GEOS (see below) |
+| **DESK64** | the default: the STONE layout in the colours of the boot screen — blue windows with white text and lines, yellow accents, a light grey dotted desktop; with the TINY font |
 
-### The GEOS theme
+### The STONE and DESK64 themes
 
-![The GEOS theme](docs/screenshots/geos_desk.png)
+![The STONE theme](docs/screenshots/geos_desk.png)
 
-SETTINGS → THEME → GEOS changes more than the colours; any other theme
+SETTINGS → THEME → STONE changes more than the colours; any other theme
 brings the normal look back at once. **DESK64**, the default theme on a new
 disk, has the same layout in blue (on an existing disk your own `CD64.CFG`
 keeps your theme; pick DESK64 under SETTINGS → THEME, and TINY under FONT).
@@ -351,7 +351,7 @@ keeps your theme; pick DESK64 under SETTINGS → THEME, and TINY under FONT).
   bar, window titles are striped, buttons dotted and the desktop edge is
   checkered. The menus are separated by thin lines.
 - The desktop shows large 24×24 icons in three columns with the name
-  underneath (own drawings in GEOS style, in the file `GEOSICON`).
+  underneath (own drawings, in the file `GEOSICON`).
 - To the right of the window: **DRIVE** (opens FILES), **PRINT** (no printer
   support yet, it says so) and **TRASH**. These three icons are there in
   every theme (in the other themes as small icons in their style). Each can

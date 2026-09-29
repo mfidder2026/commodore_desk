@@ -757,7 +757,7 @@ pPaper:  .text "PAPER  "
          .byte $ff
 pFremen: .text "FREMEN "
          .byte $ff
-pGeos:   .text "GEOS   "
+pGeos:   .text "STONE  "
          .byte $ff
 pDesk:   .text "DESK64 "
          .byte $ff
