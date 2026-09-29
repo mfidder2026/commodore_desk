@@ -325,7 +325,7 @@ Six colour themes. Each has its own mouse pointer colour (you can change it
 under SETTINGS → MOUSE), and desktop icons that would be hard to see get a
 darker or lighter variant.
 
-![The four themes](docs/screenshots/themes.png)
+![The six themes](docs/screenshots/themes.png)
 
 | Theme | Look |
 |---|---|
