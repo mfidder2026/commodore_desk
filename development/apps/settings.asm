@@ -8,6 +8,7 @@
 // naar een TH_*-runtime-variabele; een klik op een kleurstaal zet
 // de kleur en past hem meteen toe.
 //========================================================
+.const SV_N      = 8              // SAVER-waarden (svList)
 .const NUM_ROLES = 6            // BORDER..SELECT + MOUSE
 
 .const CLK_ROW = 17
@@ -268,6 +269,55 @@ swn:    ldy #0
         lda setI
         cmp #3
         bne sw
+        // SAVER (rij 6, rechts): screensaver na zoveel minuten, of OFF
+        lda #<swSaver
+        sta r0
+        lda #>swSaver
+        sta r0+1
+        lda #23
+        sta a0
+        lda #6
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldx #0                   // "OFF   " of "NN MIN"
+        lda CFG_saver
+        bne sm
+sf:     lda sSvOff,x
+        sta svTxt,x
+        inx
+        cpx #7
+        bne sf
+        beq sd
+sm:     ldy #$30                 // tientallen
+st:     cmp #10
+        bcc su
+        sbc #10
+        iny
+        bne st
+su:     ora #$30
+        sta svTxt+1
+        cpy #$30
+        bne s2
+        ldy #$20                 // (geen voorloopnul)
+s2:     sty svTxt
+        ldx #4
+sn:     lda sMin,x
+        sta svTxt+2,x
+        dex
+        bpl sn
+sd:     lda #<svTxt
+        sta r0
+        lda #>svTxt
+        sta r0+1
+        lda #30
+        sta a0
+        lda #6
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
         jmp clk_Row
 }
 
@@ -284,12 +334,30 @@ set_Click: {
         lda evtB
         sec
         sbc #3
-        cmp #3
+        cmp #4
         bcs chkRole
+        cmp #3                   // rij 6: SAVER -> volgende waarde
+        beq saver
         tax
         lda swBit,x
         eor CFG_strip
         sta CFG_strip
+        jsr sid_Click
+        jmp set_Draw
+saver:  ldx #0                   // huidige waarde in de lijst zoeken
+sv1:    lda svList,x
+        cmp CFG_saver
+        beq sv2
+        inx
+        cpx #SV_N
+        bne sv1
+        ldx #SV_N-1              // (onbekende waarde: dan OFF)
+sv2:    inx
+        cpx #SV_N
+        bcc sv3
+        ldx #0
+sv3:    lda svList,x
+        sta CFG_saver
         jsr sid_Click
         jmp set_Draw
 chkRole: // rollen (rijen 5-10, kol 4-20)
@@ -778,5 +846,13 @@ swTrash: .text "TRASH:"
 swLo:    .byte <swDrive, <swPrint, <swTrash
 swHi:    .byte >swDrive, >swPrint, >swTrash
 swBit:   .byte 1, 2, 4
+svList:  .byte 0, 1, 2, 5, 10, 15, 30, 60   // minuten (0 = OFF)
+svTxt:   .fill 7, $ff
+swSaver: .text "SAVER:"
+         .byte $ff
+sSvOff:  .text "OFF   "
+         .byte $ff
+sMin:    .text " MIN"
+         .byte $ff
 sYes:    .text "YES"
          .byte $ff

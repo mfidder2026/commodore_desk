@@ -101,6 +101,9 @@
 // ---- Printer (PRINT-icoon op het bureaublad, ook opgeslagen) ----
 .label CFG_printer  = $0237   // bit 0-1: 0 EPSON, 1 STAR, 2 HP LASERJET;
                               // bit 7: 0 serieel device 4, 1 userport
+// ---- Screensaver (SETTINGS -> SAVER, ook opgeslagen) ----
+.label CFG_saver    = $0238   // minuten zonder muis/toets, 0 = uit
+.const DEFAULT_SAVER = 10
 
 // ---- Venster-layout (Win95-stijl, vast) ----
 //   rij 0      menubalk          rij 1      titelbalk

@@ -1059,9 +1059,46 @@ da_ToolMore:
 !n5:    cmp #4
         bne !n4+
         jmp da_Printer
-!n4:    ldx #<sBuiltIn
+!n4:    cmp #7
+        bne !n7+
+        jmp da_Saver
+!n7:    ldx #<sBuiltIn
         ldy #>sBuiltIn
 !m:     jmp da_Msg
+
+// da_Saver - screensaver (ss_Poll): het eigen programma SCRSAVER starten
+//            als het op het bureaublad staat, anders niets doen.
+da_Saver: {
+        lda #0
+        sta svI
+lp:     lda svI
+        cmp DA_count
+        bcs no
+        jsr da_recPtr
+        ldy #REC_PLEN
+        lda ($fb),y
+        cmp #8
+        bne nx
+        ldx #7
+cp:     txa
+        clc
+        adc #REC_PRG
+        tay
+        lda ($fb),y
+        cmp nm,x
+        bne nx
+        dex
+        bpl cp
+        lda svI
+        jmp da_Launch
+nx:     inc svI
+        jmp lp
+no:     rts
+.encoding "petscii_upper"
+nm:     .text "SCRSAVER"
+.encoding "screencode_upper"
+}
+svI:    .byte 0
 
 // da_TrashDrop - eigen programma toolArg naar de prullenbak: uit de lijst,
 //                achteraan in de tabel (plek 11 - aantal in de prullenbak).

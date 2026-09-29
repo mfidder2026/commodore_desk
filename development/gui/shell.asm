@@ -25,6 +25,7 @@ shell_Run:
         jsr paint_Live           // sleep-tekenen zolang de knop ingedrukt is
         jmp !ev+
 !bars:  jsr clk_Poll             // statusbalk: datum/tijd bijwerken
+        jsr ss_Poll              // screensaver
 !ev:    jsr evt_Poll
         cmp #EVT_MOUSEDOWN
         bne !k+
@@ -911,6 +912,36 @@ menuBarClick:
 //            3 naar de prullenbak (toolArg = programma), 4 printer,
 //            5 prullenbak openen, 6 "ingebouwd programma".
 //--------------------------------------------------------
+// ss_Poll - screensaver: CFG_saver minuten geen muis of toets (ssIdle telt
+//           de minuten in clk_Poll) en het bureaublad zelf staat open ->
+//           SCRSAVER starten (via DESKTOOL, zoals een klik op het icoon).
+//           In een programma, menu of dialoog nooit: niets gaat verloren.
+ss_Poll:
+        lda crsXlo               // muis bewogen?
+        eor crsY
+        cmp ssPos
+        sta ssPos
+        bne !act+
+        lda evtHead              // toets of klik?
+        cmp evtTail
+        bne !act+
+        lda CFG_saver
+        beq !r+
+        cmp ssIdle
+        beq !go+
+        bcs !r+
+!go:    lda activeApp            // alleen het bureaublad ($ff)
+        bpl !r+
+        lda #0
+        sta ssIdle
+        ldx #7
+        jmp tool_Run
+!act:   lda #0
+        sta ssIdle
+!r:     rts
+ssIdle: .byte 0
+ssPos:  .byte 0
+
 tool_Run:
         stx toolFn
         ldx #14

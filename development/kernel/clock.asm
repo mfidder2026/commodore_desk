@@ -182,8 +182,10 @@ clk_Poll: {
         jsr clk_NextDay
 same:   lda clkMin
         cmp clkShown
-        bne clk_Draw
+        bne nm
         rts
+nm:     inc ssIdle               // een minuut verder (screensaver, ss_Poll)
+        jmp clk_Draw
 }
 
 // clk_NextDay - datum een dag verder (BCD, met schrikkeljaren).

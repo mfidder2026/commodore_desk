@@ -46,13 +46,21 @@ help_Load: {
         pha
         lda #$34
         sta $01
-        ldx #0
-lp:
-    .for (var p=0; p<16; p++) {
-        lda $4000 + p*$100,x
-        sta HELP_BASE + p*$100,x
-    }
-        inx
+        ldy #0                   // (lus i.p.v. uitgerold: Core-ruimte)
+        sty r5
+        sty r6
+        lda #$40
+        sta r5+1
+        lda #>HELP_BASE
+        sta r6+1
+        ldx #16
+lp:     lda (r5),y
+        sta (r6),y
+        iny
+        bne lp
+        inc r5+1
+        inc r6+1
+        dex
         bne lp
         pla
         sta $01

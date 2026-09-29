@@ -298,6 +298,10 @@ waits, the C64 answers pings itself.
 - **SOUND**: a click sound on or off.
 - **DRIVE / PRINT / TRASH** (top right): the icons to the right of the
   desktop window, each on or off; all off gives a full-width desktop.
+- **SAVER**: start the screensaver (your `SCRSAVER` desktop program) after
+  1, 2, 5, 10 (default), 15, 30 or 60 minutes without mouse or key, or
+  OFF. It only starts from the desktop itself, never inside a program, a
+  menu or a dialog, so no unsaved work is lost.
 - **CLOCK**: set the date and time.
 - **SAVE** writes `CD64.CFG`, which is loaded again at start-up.
 

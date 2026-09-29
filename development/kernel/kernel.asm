@@ -99,6 +99,8 @@ osvars_Init:
         sta CFG_strip
         lda #0                   // printer: EPSON op device 4
         sta CFG_printer
+        lda #DEFAULT_SAVER       // screensaver na 10 minuten
+        sta CFG_saver
         lda #0
         sta CFG_timeAuto
         rts
@@ -187,7 +189,7 @@ profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE,     
 // (en de waarde die gfx_DrawTextRev bij de tekens optelt: in STONE staan
 // op 128-253 de 24x24-iconen, dus daar gewone tekens)
 stTab:  .byte $a0, $a0,      $a0,     $a0,      $ff, 0, $80
-        .byte $20, GL_STRIPE, GL_DOTS, GL_TRACK, $00, 1, $00
+        .byte $20, GL_STRIPE, GL_DOTS, $20,      $00, 1, $00
 stBarFill:   .byte $a0
 stTitleFill: .byte $a0
 stBtnFill:   .byte $a0

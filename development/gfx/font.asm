@@ -81,6 +81,10 @@
 // Win95-stijl: DRIVE, PRINTER, TRASH, TRASH (vol) als 2x3 op 102-125: dat
 // zijn na icon_Build vrije codes (alleen bron van de 2x3-iconen).
 .const STRIP_BASE  = 102
+// STONE-stijl: knoppen als [LABEL] met eigen haakjes (op het laatste deel
+// van de Win95-strookiconen, die de STONE-stijl niet gebruikt)
+.const GL_BTNL     = 124
+.const GL_BTNR     = 125
 .const GL_STRIPE   = 82
 .const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
@@ -305,6 +309,11 @@ tf:     lda thinFrame,x
         sta CHARSET_BASE+W_L*8,x
         dex
         bpl tf
+        ldx #15                  // knophaakjes [ ] op 124-125
+tb:     lda btnGlyphs,x
+        sta CHARSET_BASE+GL_BTNL*8,x
+        dex
+        bpl tb
 tr:     rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
