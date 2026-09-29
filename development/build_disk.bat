@@ -8,7 +8,7 @@ setlocal
 ::   build\CD64.d64  1541 (170 KB): het systeem, extra's alleen als ze passen
 :: Mappen naast deze repo (buiten git):
 ::   ..\userfiles  instellingen van de gebruiker (ook het mailwachtwoord!)
-::   ..\parked     de echte spellen (C64 CITY, POKEMON RED): van derden
+::   ..\parked     de echte spellen (C64 CITY, C64 RED): van derden
 :: ======================================================
 
 set "JAVA_EXE=C:\Users\aegwh\OneDrive\dev\c64\java\bin\java.exe"
@@ -50,7 +50,7 @@ if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
 :: Plaatsvervangers voor de spellen (de echte staan in ..\parked)
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 CITY" -o build\c64cdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
-"%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=POKEMON RED" -o build\c64rdesk.prg -odir build
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 RED" -o build\c64rdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 
 :: Gebruikersbestanden (instellingen, ook het mailwachtwoord!) gaan niet

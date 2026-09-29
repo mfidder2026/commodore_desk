@@ -24,7 +24,7 @@
 .const DESK_MAXUSER  = 12
 .const NUM_USERICONS = 16        // kiesbare 1-cel-iconen (codes 64-79)
 .const BIG_ICON_BASE = 20        // icoon >= 20 = groot 2x2-icoon (bigIcon)
-.const NUM_SEED      = 3         // standaard-programma's (SCRSAVER, C64 CITY, POKEMON RED)
+.const NUM_SEED      = 3         // standaard-programma's (SCRSAVER, C64 CITY, C64 RED)
 .label DA_count = $c100
 .label DA_recs  = $c101
 .const DA_end   = DA_recs + DESK_MAXUSER*REC_STRIDE
@@ -999,7 +999,7 @@ nEnd:   .encoding "screencode_upper"
 }
 
 //--------------------------------------------------------
-// da_Seed - standaardlijst (SCRSAVER, C64 CITY, POKEMON RED).
+// da_Seed - standaardlijst (SCRSAVER, C64 CITY, C64 RED).
 //--------------------------------------------------------
 da_Seed:
         lda #0
@@ -1115,7 +1115,7 @@ daIc:    .byte 0
 
 .encoding "screencode_upper"
 
-seedIcon: .byte 7, BIG_ICON_BASE+0, BIG_ICON_BASE+1   // CITY: skyline, POKEMON: Pokéball
+seedIcon: .byte 7, BIG_ICON_BASE+0, BIG_ICON_BASE+1   // CITY: skyline, C64 RED: Pokéball
 seedCol:  .byte PURPLE, ORANGE, RED
 seedDispLo: .byte <sdScr, <sdCity, <sdPoke
 seedDispHi: .byte >sdScr, >sdCity, >sdPoke
@@ -1128,7 +1128,7 @@ sdScr:  .text "SCRSAVER"
         .byte $ff
 sdCity: .text "C64 CITY"
         .byte $ff
-sdPoke: .text "POKEMON RED"
+sdPoke: .text "C64 RED"
         .byte $ff
 .encoding "petscii_upper"
 spScr:  .text "SCRSAVER"

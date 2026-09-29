@@ -42,7 +42,7 @@
 .const W_B  = 93         // onderrand
 .const W_BL = 94         // hoek linksonder
 .const W_BR = 95         // hoek rechtsonder
-// Pokéball (groot 2x2-icoon, POKEMON RED): in de reverse-helft, op de
+// Pokéball (groot 2x2-icoon, C64 RED): in de reverse-helft, op de
 // codes van de omgekeerde iconen 120-123 (die worden nooit reverse getoond).
 // Bureaublad-iconen (16x16) worden 2 breed x 3 hoog getekend, 4 pixels
 // omlaag geschoven: zo staat het label (1 rij) precies naast het midden.

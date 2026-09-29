@@ -418,7 +418,7 @@ The folder layout:
 commodore_desk\
   development\   this repository (source, tools, build\)
   userfiles\     your settings from the disks (never committed)
-  parked\        the real games C64 CITY and POKEMON RED (third party)
+  parked\        the real games C64 CITY and C64 RED (third party)
 ```
 
 ---
@@ -449,7 +449,7 @@ This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
 DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO) and the fonts, and writes everything to
 `build\CD64.d81`, `build\CD64.d71` and `build\CD64.d64`.
 
-The real games (`c64cdesk.prg` = C64 CITY, `c64rdesk.prg` = POKEMON RED) go
+The real games (`c64cdesk.prg` = C64 CITY, `c64rdesk.prg` = C64 RED) go
 into `..\parked`, SID music files into `sid\`. Third-party programs and music
 are not part of this repository; without them the disks get small
 placeholders for the games.
