@@ -109,6 +109,27 @@ devEnd: jsr lb_Show
         ldy #>utIp
         jsr lb_IpAt
 stS:    jsr lb_Show
+.if (PLATFORM != PLATFORM_RRNET) {
+        // niets gevonden: tip voor de Ultimate. Zonder Command Interface
+        // (standaard uit) is hij vanaf de C64 onzichtbaar.
+        lda netPlatform
+        bne noTip
+        lda netError
+        cmp #NET_ERR_IO_BUSY     // cartridge: UCI niet gescand
+        beq noTip
+        lda #<sUltTip
+        sta r0
+        lda #>sUltTip
+        sta r0+1
+        lda #IN_COL
+        sta a0
+        lda #6
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+noTip:
+}
 
         // alle instelvelden
         ldx #0
@@ -1155,6 +1176,8 @@ eOk:       .text "READY"
 eNoDev:    .text "NO NETWORK HARDWARE"
            .byte $ff
 eBusy:     .text "NOT SCANNED"
+           .byte $ff
+sUltTip:   .text "ULTIMATE? ENABLE COMMAND INTERFACE"
            .byte $ff
 sChatHdr:  .text "CHAT SERVER (OPENAI API)"
            .byte $ff

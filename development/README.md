@@ -308,7 +308,8 @@ waits, the C64 answers pings itself.
 ### NETWORK
 
 - The network hardware found: RR-Net, Ultimate or WiC64 (with its own IP
-  address).
+  address). When nothing is found, it shows the tip
+  `ULTIMATE? ENABLE COMMAND INTERFACE` (see [Real hardware](#real-hardware)).
 - **IP, mask, gateway and DNS**, or **DHCP** to get them from the network.
 - **The chat server**: host (IP address or name), port, API key and model.
   **MODELS** fetches the server's model list to pick from.
@@ -559,9 +560,23 @@ wsl python3 tools/mailtest_server.py 1110 1587
 
 - **RR-Net** (or a compatible CS8900a cartridge at `$DE00`): works like in
   VICE. Set the IP address in SYSTEM → NETWORK, or use DHCP.
-- **Ultimate 64 / 1541 Ultimate-II+**: enable the **Command Interface**. The
-  Ultimate's own network connection is used, and its firmware handles TCP/IP
-  and DNS. VICE cannot emulate this, so it can only be tested on the real thing.
+- **Ultimate 64 / 1541 Ultimate-II+ / Commodore 64 Ultimate**: enable the
+  **Command Interface**. It is off by default, and then the C64 cannot see the
+  Ultimate at all: SYSTEM → NETWORK shows `PLATFORM: NONE`,
+  `NO NETWORK HARDWARE` and the tip `ULTIMATE? ENABLE COMMAND INTERFACE`, even
+  when the Ultimate itself is on the network (reachable from another computer).
+  1. Open the Ultimate menu and press **F2** for the settings.
+  2. **C64 and Cartridge Settings → Command Interface → Enabled**.
+  3. Save the settings to flash, reset the C64 and start CD64 again.
+
+  The menu can also be reached over the network with `telnet <ultimate-ip>`.
+  SYSTEM → NETWORK then shows `PLATFORM: ULTIMATE` and the Ultimate's own IP
+  address. The Ultimate's own network connection is used, and its firmware
+  handles TCP/IP and DNS, so the IP, mask, gateway and DNS fields in NETWORK
+  are not used (they are for the RR-Net). The chat server must be reachable
+  from the Ultimate's network, so use its LAN address (a VPN address such as
+  Tailscale's `100.x.x.x` usually is not). VICE cannot emulate the Command
+  Interface, so this can only be tested on the real thing.
 - **WiC64** (WiFi module on the userport, firmware 2.x): set up the WiFi
   connection with the WiC64's own tools first. CD64 then finds it by itself;
   BBS, EMAIL, CHAT and TIME work through it (its firmware does TCP and DNS).
