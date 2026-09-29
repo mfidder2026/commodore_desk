@@ -16,6 +16,11 @@ Ultimate-II+** or a **WiC64** (WiFi on the userport).
 |---|---|
 | ![Commodore Desk 64 — boot screen](docs/screenshots/boot.png) | ![Commodore Desk 64 — the desktop](docs/screenshots/theme_c64.png) |
 
+**Try it:** download [`release/CD64.d81`](release/CD64.d81) and start it in
+VICE (`x64sc -drive8type 1581 -autostart CD64.d81`) or on a real C64 with a
+1581 or an Ultimate. The disk has no settings on it, and the games C64 CITY and
+C64 RED are placeholders.
+
 ---
 
 ## Contents
@@ -446,15 +451,16 @@ C64. The cursor keys move the text cursor there, not the pointer.
 
 `build_disk.bat` formats fresh disk images on every build. So that you never
 lose your settings, it first copies these files from the old disk image you
-used last (D81, D71 or D64) to `..\userfiles` (next to the repository, never
-committed) and then puts them back on the new disks.
+used last (D81, D71 or D64) to `userfiles\` (never committed) and then puts
+them back on the new disks.
 
 The folder layout:
 ```
-commodore_desk\
-  development\   this repository (source, tools, build\)
-  userfiles\     your settings from the disks (never committed)
-  parked\        the real games C64 CITY and C64 RED (third party)
+commodore_desk\     this repository (source, tools)
+  build\            build output (not committed)
+  release\          CD64.d81, the clean test disk (committed)
+  userfiles\        your settings from the disks (never committed)
+  parked\           the real games C64 CITY and C64 RED (third party, never committed)
 ```
 
 ---
@@ -483,10 +489,12 @@ build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
 DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO) and the fonts, and writes everything to
-`build\CD64.d81`, `build\CD64.d71` and `build\CD64.d64`.
+`build\CD64.d81`, `build\CD64.d71` and `build\CD64.d64`. It also makes
+`release\CD64.d81`, the clean test disk that is committed: without your
+settings, the real games or the SID files.
 
 The real games (`c64cdesk.prg` = C64 CITY, `c64rdesk.prg` = C64 RED) go
-into `..\parked`, SID music files into `sid\`. Third-party programs and music
+into `parked\`, SID music files into `sid\`. Third-party programs and music
 are not part of this repository; without them the disks get small
 placeholders for the games.
 

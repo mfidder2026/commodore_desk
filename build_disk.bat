@@ -6,9 +6,11 @@ setlocal
 ::   build\CD64.d81  1581 (800 KB): ALLES, ook de echte spellen en de SID's
 ::   build\CD64.d71  1571 (340 KB): het systeem, spellen als plaatsvervanger
 ::   build\CD64.d64  1541 (170 KB): het systeem, extra's alleen als ze passen
-:: Mappen naast deze repo (buiten git):
-::   ..\userfiles  instellingen van de gebruiker (ook het mailwachtwoord!)
-::   ..\parked     de echte spellen (C64 CITY, C64 RED): van derden
+::   release\CD64.d81 schone D81 voor git (om te testen): geen instellingen,
+::                    geen spellen of SID's van derden
+:: Mappen in de repo die NOOIT in git gaan (.gitignore):
+::   userfiles\  instellingen van de gebruiker (ook het mailwachtwoord!)
+::   parked\     de echte spellen (C64 CITY, C64 RED): van derden
 :: ======================================================
 
 set "JAVA_EXE=C:\Users\aegwh\OneDrive\dev\c64\java\bin\java.exe"
@@ -47,18 +49,18 @@ python tools\make_stoneicons.py
 if errorlevel 1 ( echo STONEICON mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
 if errorlevel 1 ( echo Boot build failed. & exit /b 1 )
-:: Plaatsvervangers voor de spellen (de echte staan in ..\parked)
+:: Plaatsvervangers voor de spellen (de echte staan in parked\)
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 CITY" -o build\c64cdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" dummy_main.asm ":name=C64 RED" -o build\c64rdesk.prg -odir build
 if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 
 :: Gebruikersbestanden (instellingen, ook het mailwachtwoord!) gaan niet
-:: verloren: ze worden van de oude disk naar ..\userfiles gekopieerd
-:: (buiten de repo, nooit committen) en na het formatteren teruggezet.
+:: verloren: ze worden van de oude disk naar userfiles\ gekopieerd
+:: (niet in git, nooit committen) en na het formatteren teruggezet.
 :: De disk waarmee het laatst gewerkt is (D81, D71 of D64) gaat voor.
-set "KEEP=%~dp0..\userfiles"
-set "PARKED=%~dp0..\parked"
+set "KEEP=%~dp0userfiles"
+set "PARKED=%~dp0parked"
 set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps"
 if not exist "%KEEP%" mkdir "%KEEP%"
 set "DISKS="
@@ -200,7 +202,42 @@ for %%U in (%USERFILES%) do (
 )
 "%C1541%" -attach build\CD64.d81 -write "%RLST%" "radio.lst,s" >nul 2>&1
 
-echo Klaar: build\CD64.d81, build\CD64.d71 en build\CD64.d64
+echo [5/3] release\CD64.d81: schone D81 voor git (om te testen)...
+:: Alleen eigen bestanden: GEEN instellingen uit userfiles\ (mailwachtwoord!),
+:: geen echte spellen uit parked\ en geen SID's (van derden).
+if not exist release mkdir release
+if exist release\CD64.d81 del release\CD64.d81
+"%C1541%" -format "commodore desk,cd" d81 release\CD64.d81 ^
+  -write build\boot.prg boot ^
+  -write build\cd64.prg cd64 ^
+  -write build\helptext.prg helptext ^
+  -write build\files.prg files ^
+  -write build\editor.prg editor ^
+  -write build\paint.prg paint ^
+  -write build\calc.prg calc ^
+  -write build\setup.prg setup ^
+  -write build\desktool.prg desktool ^
+  -write build\sidplay.prg sidplay ^
+  -write build\inet.prg inet ^
+  -write build\bbs.prg bbs ^
+  -write build\email.prg email ^
+  -write build\time.prg time ^
+  -write build\radio.prg radio ^
+  -write build\stoneicon.prg stoneicon ^
+  -write build\lower.prg lower ^
+  -write build\tiny.prg tiny ^
+  -write build\fremen.prg fremen ^
+  -write build\serif.prg serif ^
+  -write build\mono.prg mono ^
+  -write build\casual.prg casual ^
+  -write build\heavy.prg heavy ^
+  -write build\scrsaver.prg scrsaver ^
+  -write build\c64cdesk.prg c64cdesk ^
+  -write build\c64rdesk.prg c64rdesk ^
+  -write build\radio.lst "radio.lst,s"
+if errorlevel 1 ( echo c1541 release-D81 failed. & exit /b 1 )
+
+echo Klaar: build\CD64.d81, build\CD64.d71, build\CD64.d64 en release\CD64.d81
 echo Inhoud van de D81:
 "%C1541%" -attach build\CD64.d81 -dir
 echo.

@@ -1,5 +1,5 @@
 # Build-uitvoer
-/development/build/
+/build/
 *.prg
 *.bin
 *.crt
@@ -8,16 +8,19 @@
 *.d81
 *.vs
 *.sym
+# ...behalve de schone test-D81 (build_disk.bat: geen instellingen, niets van derden)
+!/release/CD64.d81
 
 # Editor / OS
 *.swp
 Thumbs.db
 .DS_Store
+__pycache__/
 
 # SID-tunes (muziek van derden): alleen lokaal, build_disk.bat zet ze op de disk
-/development/sid/*.sid
+/sid/*.sid
 
-# Naast de broncode, NOOIT in git:
+# In de repo-map, maar NOOIT in git:
 #   userfiles/  instellingen van de gebruiker (ook het mailwachtwoord!)
 #   parked/     de echte spellen (van derden)
 /userfiles/
