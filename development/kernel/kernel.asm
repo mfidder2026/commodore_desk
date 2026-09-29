@@ -97,6 +97,8 @@ osvars_Init:
         sta CFG_tz
         lda #DEFAULT_STRIP       // (oudere CD64.CFG: blijft zo staan)
         sta CFG_strip
+        lda #0                   // printer: EPSON op device 4
+        sta CFG_printer
         lda #0
         sta CFG_timeAuto
         rts

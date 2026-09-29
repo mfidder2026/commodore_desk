@@ -37,70 +37,14 @@ paint_Enter:
         sta paintSpace
         lda #0
         sta plValid
-        // 1) bitmap wissen ($6000-$7FFF = 32 pagina's) -> alles achtergrond
-        lda #<BITMAP
-        sta pnPtr
-        lda #>BITMAP
-        sta pnPtr+1
-        ldx #$20
-        lda #0
-        ldy #0
-!pg:    sta (pnPtr),y
-        iny
-        bne !pg-
-        inc pnPtr+1
-        dex
-        bne !pg-
-        // 2) video-matrix $4000-$43FF: beide slots = achtergrond
-        lda #PN_MINIT
-        ldx #0
-!m:     sta VMATRIX + $000,x
-        sta VMATRIX + $100,x
-        sta VMATRIX + $200,x
-        sta VMATRIX + $300,x
-        inx
-        bne !m-
-        // 3) kleuren-RAM (slot 11) = achtergrond
-        lda #PN_BG
-        ldx #0
-!c:     sta COLOR_RAM + $000,x
-        sta COLOR_RAM + $100,x
-        sta COLOR_RAM + $200,x
-        sta COLOR_RAM + $300,x
-        inx
-        bne !c-
-        // 4) achtergrond wit, rand zwart
-        lda #PN_BG
-        sta BG_COL0
-        lda #BLACK
-        sta BORDER_COL
-        // 5) cursor-sprite in bank 1: data op $4400 (blok 16), pointer $43F8
-        ldx #0
-!sp:    lda arrowData,x
-        sta $4400,x
-        inx
-        cpx #63
-        bne !sp-
-        lda #16
-        sta $43f8
-        lda #BLACK               // zwarte cursor (zichtbaar op witte canvas)
-        sta SPR0_COL
-        // 6) VIC-bank 1 ($4000-$7FFF)
-        lda CIA2_PRA
-        and #$fc
-        ora #%10
-        sta CIA2_PRA
-        // 7) $D018 = $08 -> matrix $4000, bitmap $6000
-        lda #$08
-        sta VIC_MEM
-        // 8) bitmap + multicolor AAN, met VASTE waarden (bit7 nooit terugschrijven)
-        lda #$3b                 // bitmapmodus, DEN, 25 rijen, yscroll 3
-        sta VIC_CTRL1
-        lda #$d8                 // multicolor aan, 40 kolommen
-        sta VIC_CTRL2
+        ldx #<COLOR_RAM          // lege tekening (kleuren direct in het
+        ldy #>COLOR_RAM          // kleuren-RAM)
+        jsr pn_Clear
+        jsr pn_Video             // multicolor-bitmapmodus aan
         // 9) palet + gum-knop tekenen, startkleur ZWART
         jsr paint_DrawPalette
         jsr paint_DrawEraser
+        jsr paint_DrawMenuBtn
         lda #BLACK
         sta pnCurrent
         rts
@@ -182,7 +126,7 @@ pickColor:
         cmp #136
         bcc pkColors
         cmp #152
-        bcs pcDone               // rechtermarge -> negeren
+        bcs pcMenu               // rechts: MENU (NEW / LOAD / SAVE / PRINT)
         lda #PN_BG               // gum-vakje -> wis (teken achtergrond)
         sta pnCurrent
         rts
@@ -194,6 +138,7 @@ pkColors:
         bcs pcDone
         sta pnCurrent
 pcDone: rts
+pcMenu: jmp paint_Menu
 
 //--------------------------------------------------------
 // paint_DrawEraser - duidelijk gum-vakje (lichtgrijs blok + zwart
@@ -594,3 +539,857 @@ pnT1:      .byte 0
 pnPalSw:   .byte 0
 pnPalFx0:  .byte 0
 pnPalDx:   .byte 0
+
+//--------------------------------------------------------
+// paint_DrawMenuBtn - MENU-knop rechts in de paletbalk (fatx 152-159):
+//                     lichtgrijs vlak met drie zwarte streepjes.
+//--------------------------------------------------------
+paint_DrawMenuBtn: {
+        lda #PN_PALTOP
+        sta pnPy
+y:      lda #152
+        sta pnFx
+x:      lda #LIGHT_GREY
+        ldy pnPy
+        cpy #PN_PALTOP+4
+        beq ln
+        cpy #PN_PALTOP+8
+        beq ln
+        cpy #PN_PALTOP+12
+        bne pl
+ln:     ldy pnFx                 // streepje: fatx 153-158
+        cpy #153
+        bcc pl
+        cpy #159
+        bcs pl
+        lda #BLACK
+pl:     sta pnCurrent
+        jsr paint_Plot
+        inc pnFx
+        lda pnFx
+        cmp #160
+        bne x
+        inc pnPy
+        lda pnPy
+        cmp #200
+        bne y
+        rts
+}
+
+// paint_Key - toets in Paint: M = menu. Carry=1 = afgehandeld.
+paint_Key:
+        lda evtA
+        cmp #13                  // M (toetscodes = schermcodes)
+        bne !n+
+        jsr paint_Menu
+        sec
+        rts
+!n:     clc
+        rts
+
+//--------------------------------------------------------
+// paint_Menu - NEW / LOAD / SAVE / PRINT in een gewoon CD64-venster.
+//              De tekening blijft in het geheugen staan; alleen het
+//              kleuren-RAM (slot 11) moet opzij ($5000), want het
+//              tekstscherm gebruikt het ook.
+//--------------------------------------------------------
+.label PN_CBUF = $5000           // 1000 bytes kleuren-RAM van de tekening
+.const PM_ROW  = 7               // knoppenrij
+.const PM_NROW = 9               // naamveld
+.const PM_MROW = 11              // melding
+.const PM_BROW = 14              // BACK
+
+paint_Menu: {
+        ldx #0                   // kleuren-RAM opzij
+cs:     lda COLOR_RAM,x
+        sta PN_CBUF,x
+        lda COLOR_RAM+$100,x
+        sta PN_CBUF+$100,x
+        lda COLOR_RAM+$200,x
+        sta PN_CBUF+$200,x
+        lda COLOR_RAM+$300,x
+        sta PN_CBUF+$300,x
+        inx
+        bne cs
+        jsr paint_Exit           // tekstscherm (paintSpace = 0)
+        lda #0
+        sta pnMsg+1
+draw:   jsr pm_Draw
+        jmp wait
+bk:     jmp back
+wait:   jsr evt_Poll
+        cmp #EVT_MOUSEDOWN
+        beq click
+        cmp #EVT_KEY
+        bne wait
+        lda evtA
+        cmp #$82                 // ESC / RUN/STOP = terug naar de tekening
+        beq bk
+        cmp #$20
+        beq kc
+        cmp #$80
+        bne wait
+kc:     jsr cursorToCell
+click:  lda evtB
+        cmp #5                   // sluitknop van het venster
+        bne nc
+        lda evtA
+        cmp #35
+        beq bk
+nc:     ldx #0                   // NEW, LOAD, SAVE, PRINT
+bl:     stx pmI
+        lda pmCol,x
+        sta a0
+        lda #PM_ROW
+        sta a1
+        lda pmW,x
+        sta a2
+        jsr btn_HitTest
+        bcs btn
+        ldx pmI
+        inx
+        cpx #4
+        bne bl
+        lda #6                   // BACK
+        sta a0
+        lda #PM_BROW
+        sta a1
+        lda #6
+        sta a2
+        jsr btn_HitTest
+        bcs bk
+        lda evtB                 // naamveld
+        cmp #PM_NROW
+        bne wait
+        lda evtA
+        cmp #11
+        bcc wait
+        jsr pm_NameField
+        jsr li_Edit
+        bcc wait
+        jmp click
+btn:    lda #0
+        sta pnMsg+1
+        lda pmI
+        bne b1
+        jsr pn_New               // NEW
+        ldx #<sPmNew
+        ldy #>sPmNew
+        jmp msg
+b1:     cmp #3
+        beq pr
+        lda pnName               // LOAD / SAVE: eerst een naam
+        cmp #$ff
+        bne hn
+        ldx #<sPmAsk
+        ldy #>sPmAsk
+        stx pnMsg
+        sty pnMsg+1
+        jsr pm_Msg
+        jsr pm_NameField
+        jsr li_Edit
+        lda #0
+        sta pnMsg+1
+        lda pnName
+        cmp #$ff
+        bne hn
+        jmp draw
+hn:     lda pmI
+        cmp #1
+        bne sv
+        jsr pn_Load
+        jmp msg
+sv:     jsr pn_Save
+        jmp msg
+pr:     ldx #<sPmPrinting        // PRINT
+        ldy #>sPmPrinting
+        stx pnMsg
+        sty pnMsg+1
+        jsr pm_Msg
+        jsr pn_Print
+msg:    stx pnMsg
+        sty pnMsg+1
+        jmp draw
+back:   ldx #0                   // paletbalk (rij 23-24) leeg: een geladen
+        lda #0                   // plaatje heeft daar eigen kleuren
+cb:     sta BITMAP+7360,x        // bitmap 7360-7999 (640 bytes)
+        sta BITMAP+7360+256,x
+        inx
+        bne cb
+        ldx #127
+cc:     sta BITMAP+7360+512,x
+        dex
+        bpl cc
+        ldx #79                  // matrix en kleuren: cel 920-999
+cm:     lda #PN_MINIT
+        sta VMATRIX+920,x
+        lda #PN_BG
+        sta PN_CBUF+920,x
+        dex
+        bpl cm
+        ldx #0                   // kleuren-RAM terug, bitmapmodus aan
+cr:     lda PN_CBUF,x
+        sta COLOR_RAM,x
+        lda PN_CBUF+$100,x
+        sta COLOR_RAM+$100,x
+        lda PN_CBUF+$200,x
+        sta COLOR_RAM+$200,x
+        lda PN_CBUF+$300,x
+        sta COLOR_RAM+$300,x
+        inx
+        bne cr
+        jsr pn_Video
+        jsr paint_DrawPalette    // (na NEW / LOAD: de balk opnieuw)
+        jsr paint_DrawEraser
+        jsr paint_DrawMenuBtn
+        lda #1
+        sta paintSpace
+        lda #0
+        sta plValid
+        lda #BLACK
+        sta pnCurrent
+        rts
+}
+
+// pm_Draw - het menuvenster.
+pm_Draw: {
+        lda TH_deskbg
+        sta a2
+        jsr gfx_Cls
+        lda #<sPmTitle
+        sta r0
+        lda #>sPmTitle
+        sta r0+1
+        lda #4
+        sta a0
+        lda #5
+        sta a1
+        lda #32
+        sta a2
+        lda #12
+        sta a3
+        jsr dlg_Draw             // rijen 5-16
+        ldx #0
+bl:     stx pmI
+        lda pmLo,x
+        sta r0
+        lda pmHi,x
+        sta r0+1
+        lda pmCol,x
+        sta a0
+        lda #PM_ROW
+        sta a1
+        lda pmW,x
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr btn_Draw
+        ldx pmI
+        inx
+        cpx #4
+        bne bl
+        lda #<sPmBack
+        sta r0
+        lda #>sPmBack
+        sta r0+1
+        lda #6
+        sta a0
+        lda #PM_BROW
+        sta a1
+        lda #6
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr btn_Draw
+        lda #<sPmName
+        sta r0
+        lda #>sPmName
+        sta r0+1
+        lda #6
+        sta a0
+        lda #PM_NROW
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        lda #<sPmHint
+        sta r0
+        lda #>sPmHint
+        sta r0+1
+        lda #13
+        sta a0
+        lda #PM_BROW
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        jsr pm_NameField
+        lda #0
+        sta liOn
+        jsr li_Show
+        jmp pm_Msg
+}
+
+pm_NameField:
+        lda #<pnName
+        sta r3
+        lda #>pnName
+        sta r3+1
+        lda #16
+        sta liMax
+        sta liVis
+        lda #11
+        sta liCol
+        lda #PM_NROW
+        sta liRow
+        rts
+
+// pm_Msg - meldingsregel (pnMsg, 0 = leeg).
+pm_Msg: {
+        lda #6
+        sta a0
+        lda #PM_MROW
+        sta a1
+        lda #28
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        lda pnMsg+1
+        beq r
+        sta r0+1
+        lda pnMsg
+        sta r0
+        lda #6
+        sta a0
+        lda #PM_MROW
+        sta a1
+        lda TH_accent
+        sta a2
+        jmp gfx_DrawText
+r:      rts
+}
+
+//--------------------------------------------------------
+// pn_Clear - lege tekening: bitmap, matrix en (bewaard) kleuren-RAM.
+//            X/Y wijzen naar het kleuren-RAM of naar PN_CBUF.
+//--------------------------------------------------------
+pn_Clear: {
+        stx pnCPtr
+        sty pnCPtr+1
+        lda #<BITMAP
+        sta pnPtr
+        lda #>BITMAP
+        sta pnPtr+1
+        ldx #$20
+        lda #0
+        ldy #0
+pg:     sta (pnPtr),y
+        iny
+        bne pg
+        inc pnPtr+1
+        dex
+        bne pg
+        ldx #4
+m:      lda #PN_MINIT            // matrix en kleuren (4 pagina's)
+        sta VMATRIX-$400+$400,y
+        sta VMATRIX+$100,y
+        sta VMATRIX+$200,y
+        sta VMATRIX+$300,y
+        lda #PN_BG
+        sta (pnCPtr),y
+        iny
+        bne m
+        inc pnCPtr+1
+        dex
+        bne m
+        rts
+}
+
+// pn_New - lege tekening (vanuit het menu: kleuren in PN_CBUF).
+pn_New:
+        ldx #<PN_CBUF
+        ldy #>PN_CBUF
+        jmp pn_Clear
+
+// pn_Video - multicolor-bitmapmodus aan (tekening staat al klaar).
+pn_Video:
+        lda #PN_BG
+        sta BG_COL0
+        lda #BLACK
+        sta BORDER_COL
+        ldx #0                   // cursor-sprite in bank 1: $4400 (blok 16)
+!sp:    lda arrowData,x
+        sta $4400,x
+        inx
+        cpx #63
+        bne !sp-
+        lda #16
+        sta $43f8
+        lda #BLACK
+        sta SPR0_COL
+        lda CIA2_PRA             // VIC-bank 1 ($4000-$7FFF)
+        and #$fc
+        ora #%10
+        sta CIA2_PRA
+        lda #$08                 // matrix $4000, bitmap $6000
+        sta VIC_MEM
+        lda #$3b                 // bitmap, DEN, 25 rijen (VASTE waarden)
+        sta VIC_CTRL1
+        lda #$d8                 // multicolor aan, 40 kolommen
+        sta VIC_CTRL2
+        rts
+
+//--------------------------------------------------------
+// Bestanden: Koala Painter (PRG, laadadres $6000, 10003 bytes):
+//   8000 bitmap, 1000 matrix, 1000 kleuren-RAM, 1 achtergrond.
+// SAVE schrijft de paletbalk (rij 23-24) als lege achtergrond.
+//--------------------------------------------------------
+pn_Save: {
+        jsr pn_NameP
+        ldx #0                   // "@0:" + naam + ",P,W"
+        ldy #0
+p1:     lda pre,x
+        sta pnCmd,y
+        iny
+        inx
+        cpx #3
+        bne p1
+        ldx #0
+p2:     cpx pnPLen
+        bcs p3
+        lda pnPName,x
+        sta pnCmd,y
+        iny
+        inx
+        bne p2
+p3:     ldx #0
+p4:     lda suf,x
+        sta pnCmd,y
+        iny
+        inx
+        cpx #4
+        bne p4
+        tya
+        ldx #<pnCmd
+        ldy #>pnCmd
+        jsr pn_OpenF
+        bcs out
+        ldx #2
+        jsr K_CHKOUT
+        bcs out
+        lda #$00                 // laadadres $6000
+        jsr K_CHROUT
+        lda #$60
+        jsr K_CHROUT
+        lda #<BITMAP             // bitmap: 7360 echt, rest (palet) leeg
+        ldx #>BITMAP
+        jsr pn_SetP
+        lda #<7360
+        ldx #>7360
+        ldy #<8000
+        jsr pn_SetN
+        lda #>8000
+        sta pnTot+1
+        lda #0
+        jsr pn_Out
+        lda #<VMATRIX            // matrix: 920 echt
+        ldx #>VMATRIX
+        jsr pn_SetP
+        lda #<920
+        ldx #>920
+        ldy #<1000
+        jsr pn_SetN
+        lda #>1000
+        sta pnTot+1
+        lda #PN_MINIT
+        jsr pn_Out
+        lda #<PN_CBUF            // kleuren: 920 echt
+        ldx #>PN_CBUF
+        jsr pn_SetP
+        lda #<920
+        ldx #>920
+        ldy #<1000
+        jsr pn_SetN
+        lda #>1000
+        sta pnTot+1
+        lda #PN_BG
+        jsr pn_Out
+        lda #PN_BG               // achtergrond
+        jsr K_CHROUT
+out:    jsr pn_CloseF
+        lda #$ff
+        sta pnSaved
+        jmp pn_Result
+pre:    .byte $40, $30, $3a      // @0:
+suf:    .byte $2c, $50, $2c, $57 // ,P,W
+}
+
+pn_Load: {
+        jsr pn_NameP
+        lda pnPLen
+        ldx #<pnPName
+        ldy #>pnPName
+        jsr pn_OpenF
+        bcs out
+        ldx #2
+        jsr K_CHKIN
+        bcs out
+        jsr K_CHRIN              // laadadres overslaan
+        jsr K_CHRIN
+        lda #<BITMAP
+        ldx #>BITMAP
+        jsr pn_SetP
+        lda #<8000
+        ldx #>8000
+        jsr pn_In
+        bcs short
+        lda #<VMATRIX
+        ldx #>VMATRIX
+        jsr pn_SetP
+        lda #<1000
+        ldx #>1000
+        jsr pn_In
+        bcs short
+        lda #<PN_CBUF
+        ldx #>PN_CBUF
+        jsr pn_SetP
+        lda #<1000
+        ldx #>1000
+        jsr pn_In
+        bcs short
+out:    jsr pn_CloseF
+        lda #0
+        sta pnSaved
+        jmp pn_Result
+short:  jsr pn_CloseF            // te kort: geen Koala-plaatje (of fout)
+        lda pnDev
+        jsr dsk_Status
+        bcs nk
+        lda dsCode
+        cmp #20
+        bcc nk
+        ldx #<dsText
+        ldy #>dsText
+        rts
+nk:     ldx #<sPmNoKoala
+        ldy #>sPmNoKoala
+        rts
+}
+
+// pn_OpenF - bestand (A = lengte, X/Y = naam) openen als kanaal 2.
+pn_OpenF:
+        pha
+        txa
+        pha
+        tya
+        pha
+        jsr cfg_io_begin
+        pla
+        tay
+        pla
+        tax
+        pla
+        jsr K_SETNAM
+        lda #2
+        ldx pnDev
+        ldy #2
+        jsr K_SETLFS
+        lda #0
+        sta $90
+        jmp K_OPEN
+
+pn_CloseF:
+        jsr K_CLRCHN
+        lda #2
+        jsr K_CLOSE
+        jmp cfg_io_end
+
+pn_SetP:
+        sta pnPtr
+        stx pnPtr+1
+        rts
+// pn_SetN - pnKeep = A/X (echte bytes), pnTot = Y/(pnTot+1 los).
+pn_SetN:
+        sta pnKeep
+        stx pnKeep+1
+        sty pnTot
+        rts
+
+// pn_Out - pnTot bytes: de eerste pnKeep uit (pnPtr), daarna A.
+pn_Out: {
+        sta pnFill
+        lda #0
+        sta pnCnt
+        sta pnCnt+1
+lp:     lda pnCnt
+        cmp pnTot
+        lda pnCnt+1
+        sbc pnTot+1
+        bcs r
+        lda pnCnt
+        cmp pnKeep
+        lda pnCnt+1
+        sbc pnKeep+1
+        lda pnFill
+        bcs o
+        ldy #0
+        lda (pnPtr),y
+o:      jsr K_CHROUT
+        inc pnPtr
+        bne i
+        inc pnPtr+1
+i:      inc pnCnt
+        bne lp
+        inc pnCnt+1
+        jmp lp
+r:      rts
+}
+
+// pn_In - A/X bytes lezen naar (pnPtr). Carry=1: bestand te kort / fout.
+pn_In: {
+        sta pnTot
+        stx pnTot+1
+lp:     lda pnTot
+        ora pnTot+1
+        beq ok
+        lda $90
+        bne bad
+        jsr K_CHRIN
+        ldy #0
+        sta (pnPtr),y
+        inc pnPtr
+        bne d
+        inc pnPtr+1
+d:      lda pnTot
+        bne d2
+        dec pnTot+1
+d2:     dec pnTot
+        jmp lp
+ok:     clc
+        rts
+bad:    sec
+        rts
+}
+
+// pn_Result - melding na LOAD / SAVE (X/Y).
+pn_Result: {
+        lda pnDev
+        jsr dsk_Status
+        bcs nodrv
+        lda dsCode
+        cmp #20
+        bcs err
+        ldx #<sPmLoaded
+        ldy #>sPmLoaded
+        lda pnSaved
+        beq r
+        ldx #<sPmSaved
+        ldy #>sPmSaved
+r:      rts
+err:    ldx #<dsText
+        ldy #>dsText
+        rts
+nodrv:  ldx #<sPmNoDrv
+        ldy #>sPmNoDrv
+        rts
+}
+
+// pn_NameP - pnName (schermcodes) -> pnPName (PETSCII), pnPLen.
+pn_NameP: {
+        ldx #0
+lp:     lda pnName,x
+        cmp #$ff
+        beq e
+        cmp #$00
+        bne nl
+        lda #$40
+        bne s
+nl:     cmp #$1b
+        bcs s
+        ora #$40                 // A-Z
+s:      sta pnPName,x
+        inx
+        cpx #16
+        bne lp
+e:      stx pnPLen
+        rts
+}
+
+//--------------------------------------------------------
+// pn_Print - de tekening (zonder paletbalk) naar de printer.
+//--------------------------------------------------------
+pn_Print: {
+        lda #<pn_Ink
+        sta pnPr.prPixV
+        lda #>pn_Ink
+        sta pnPr.prPixV+1
+        jsr pnPr.pr_Open
+        bcs r
+        jsr pnPr.pr_Picture
+        bcs fail
+        jsr pnPr.pr_Close
+        bcs r
+        ldx #<sPmPrinted
+        ldy #>sPmPrinted
+r:      rts
+fail:   jmp pnPr.pr_Shut
+}
+
+// pn_Ink - dikke pixel (prX, prY) is inkt (carry=1) als hij niet de
+//          achtergrondkleur heeft. Kleuren-RAM uit PN_CBUF.
+pn_Ink: {
+        lda pnPr.prY
+        lsr
+        lsr
+        lsr
+        tay                      // celrij
+        lda pnPr.prX             // bitmap: rij*320 + (x/4)*8 + (y&7)
+        and #$fc
+        asl
+        sta pnPtr
+        lda #0
+        rol
+        sta pnPtr+1
+        lda pnPtr
+        clc
+        adc rowLo,y
+        sta pnPtr
+        lda pnPtr+1
+        adc rowHi,y
+        sta pnPtr+1
+        lda pnPtr
+        clc
+        adc #<BITMAP
+        sta pnPtr
+        lda pnPtr+1
+        adc #>BITMAP
+        sta pnPtr+1
+        lda pnPr.prY
+        and #7
+        sta pnIy
+        lda pnPr.prX
+        and #3
+        tax
+        lda shiftTab,x
+        tax
+        sty pnIr
+        ldy pnIy
+        lda (pnPtr),y
+sh:     cpx #0
+        beq sd
+        lsr
+        dex
+        jmp sh
+sd:     and #3
+        beq no                   // 00 = achtergrond
+        sta pnIc
+        ldy pnIr                 // cel = rij*40 + x/4
+        lda pnPr.prX
+        lsr
+        lsr
+        clc
+        adc mrowLo,y
+        sta pnIx
+        lda mrowHi,y
+        adc #0
+        sta pnIx+1
+        lda pnIc
+        cmp #3
+        beq cr
+        lda pnIx                 // matrix
+        clc
+        adc #<VMATRIX
+        sta pnMPtr
+        lda pnIx+1
+        adc #>VMATRIX
+        sta pnMPtr+1
+        ldy #0
+        lda (pnMPtr),y
+        ldx pnIc
+        cpx #1
+        bne lo
+        lsr
+        lsr
+        lsr
+        lsr
+lo:     and #$0f
+        jmp cmpc
+cr:     lda pnIx                 // kleuren-RAM (bewaard)
+        clc
+        adc #<PN_CBUF
+        sta pnMPtr
+        lda pnIx+1
+        adc #>PN_CBUF
+        sta pnMPtr+1
+        ldy #0
+        lda (pnMPtr),y
+        and #$0f
+cmpc:   cmp #PN_BG
+        beq no
+        sec
+        rts
+no:     clc
+        rts
+}
+
+pmI:      .byte 0
+pnMsg:    .word 0
+pnDev:    .byte 8
+pnSaved:  .byte 0
+pnPLen:   .byte 0
+pnKeep:   .word 0
+pnTot:    .word 0
+pnCnt:    .word 0
+pnFill:   .byte 0
+pnIx:     .word 0
+pnIy:     .byte 0
+pnIr:     .byte 0
+pnIc:     .byte 0
+pnName:   .fill 17, $ff
+pnPName:  .fill 16, 0
+pnCmd:    .fill 24, 0
+pmLo:     .byte <sPmNew0, <sPmLoad, <sPmSave, <sPmPrint
+pmHi:     .byte >sPmNew0, >sPmLoad, >sPmSave, >sPmPrint
+pmCol:    .byte 6, 12, 19, 26
+pmW:      .byte 5, 6, 6, 7
+
+pnPr: PrinterDriver()
+
+.encoding "screencode_upper"
+sPmTitle:   .text "PAINT"
+            .byte $ff
+sPmNew0:    .text "NEW"
+            .byte $ff
+sPmLoad:    .text "LOAD"
+            .byte $ff
+sPmSave:    .text "SAVE"
+            .byte $ff
+sPmPrint:   .text "PRINT"
+            .byte $ff
+sPmBack:    .text "BACK"
+            .byte $ff
+sPmName:    .text "NAME"
+            .byte $ff
+sPmHint:    .text "(M IN PAINT = THIS MENU)"
+            .byte $ff
+sPmAsk:     .text "TYPE A FILE NAME, THEN RETURN"
+            .byte $ff
+sPmNew:     .text "NEW PICTURE"
+            .byte $ff
+sPmSaved:   .text "SAVED (KOALA PAINTER)"
+            .byte $ff
+sPmLoaded:  .text "LOADED"
+            .byte $ff
+sPmNoKoala: .text "NOT A KOALA PICTURE"
+            .byte $ff
+sPmNoDrv:   .text "NO DRIVE"
+            .byte $ff
+sPmPrinting: .text "PRINTING... (RUN/STOP = STOP)"
+            .byte $ff
+sPmPrinted: .text "PRINTED"
+            .byte $ff

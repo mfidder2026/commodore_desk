@@ -552,7 +552,20 @@ zs:     lda $00,x
         sta spVic+3
         lda #0
         sta SPR_ENABLE
-        jsr sp_Screen            // eerst: leest de titel nog uit de header
+        lda #1                   // het gekozen font ($3800), tenzij de tune
+        sta spFont               // daar zelf komt te staan: dan de ROM-letters
+        lda spLoad+1
+        cmp #$40
+        bcs fk
+        lda spTEnd+1
+        cmp #$38
+        bcc fk
+        bne fr
+        lda spTEnd
+        beq fk
+fr:     lda #0
+        sta spFont
+fk:     jsr sp_Screen            // eerst: leest de titel nog uit de header
         lda spMode               // tune-geheugen bewaren
         beq cp
         lda spLoad
@@ -843,9 +856,11 @@ r:      rts
 // Afspeelscherm (ROM-letters, hoofd/kleine letters; geen Core-routines)
 //--------------------------------------------------------
 sp_Screen: {
+        lda spFont               // gekozen font: de VIC blijft op $3800
+        bne vf
         lda #$17                 // ROM-charset met kleine letters
         sta VIC_MEM
-        lda TH_border
+vf:     lda TH_border
         sta BORDER_COL
         lda TH_deskbg
         sta BG_COL0
@@ -1006,7 +1021,14 @@ lc:     sty spT
 cp:     ldy #0
 c1:     lda (spPtr),y
         beq r
-        sta (spPtr2),y
+        ldx spFont               // gekozen font: alleen hoofdletters
+        beq c2                   // ($41-$5A zijn daar UI-tekens)
+        cmp #$41
+        bcc c2
+        cmp #$5b
+        bcs c2
+        and #$3f
+c2:     sta (spPtr2),y
         iny
         bne c1
 r:      rts
@@ -1071,6 +1093,7 @@ spSongs:  .byte 0
 spSong:   .byte 0
 spKeys:   .byte 0
 spRadio:  .byte 0                // 1 = RADIO speelt (zie boven)
+spFont:   .byte 0                // 1 = gekozen font, 0 = ROM-letters
 spRes:    .byte 0                // na het afspelen: 1 SPATIE/tijd, 2 RUN/STOP
 spFrames: .word 0
 spCount:  .byte 0

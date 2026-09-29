@@ -698,10 +698,13 @@ appKey:
         sec
         rts
 !e:     cmp #1
-        bne !c+
+        bne !p+
         jsr ed_Key
         sec
         rts
+!p:     cmp #2                   // PAINT: M = menu (carry van paint_Key)
+        bne !c+
+        jmp paint_Key
 !c:     cmp #7
         bne !m+
         jsr chat_Key

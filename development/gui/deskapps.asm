@@ -674,7 +674,7 @@ da_Strip:
         sta a0
         lda #1
         sta a1
-        lda #5
+        lda #6                   // kol 34-39
         sta a2
         lda #23
         sta a3
@@ -701,7 +701,7 @@ da_Strip:
         ldy DA_trashN
         beq !n+
         inx
-!n:     lda #35
+!n:     lda #36                  // (kol 34: ruimte tot het venster)
         sta deCol
         lda TH_text
         sta deIcoC
@@ -722,7 +722,7 @@ da_Strip:
         sta r0
         lda gsHi,x
         sta r0+1
-        lda #34
+        lda #35
         sta a0
         lda deRow
         clc

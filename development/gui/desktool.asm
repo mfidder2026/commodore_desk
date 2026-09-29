@@ -1056,11 +1056,10 @@ da_ToolMore:
 !n3:    cmp #5
         bne !n5+
         jmp da_TrashOpen
-!n5:    ldx #<sNoPrinter
-        ldy #>sNoPrinter
-        cmp #4
-        beq !m+
-        ldx #<sBuiltIn
+!n5:    cmp #4
+        bne !n4+
+        jmp da_Printer
+!n4:    ldx #<sBuiltIn
         ldy #>sBuiltIn
 !m:     jmp da_Msg
 
@@ -1300,8 +1299,6 @@ daMsgP:  .word 0
 daConfTxt: .word sConfirm        // vraag van da_confirm
 trBuf:   .fill REC_STRIDE, 0
 .encoding "screencode_upper"
-sNoPrinter: .text "NO PRINTER CONNECTED"
-         .byte $ff
 sBuiltIn: .text "THIS PROGRAM MUST STAY"
          .byte $ff
 sTrEmpty: .text "THE TRASH IS EMPTY"
@@ -1312,6 +1309,272 @@ sBtnRestore: .text "RESTORE"
          .byte $ff
 sBtnEmpty: .text "EMPTY"
          .byte $ff
+
+//========================================================
+// PRINTER-venster (PRINT-icoon op het bureaublad): type en aansluiting,
+// TEST drukt een proefregel af, OK bewaart in CD64.CFG.
+//========================================================
+.const DP_X = 3
+.const DP_Y = 6
+
+da_Printer: {
+        lda CFG_printer
+        sta dpOld
+        lda #<sDpHint
+        sta dpMsg
+        lda #>sDpHint
+        sta dpMsg+1
+draw:   lda #<sDpTitle
+        sta r0
+        lda #>sDpTitle
+        sta r0+1
+        lda #DP_X
+        sta a0
+        lda #DP_Y
+        sta a1
+        lda #30
+        sta a2
+        lda #11
+        sta a3
+        jsr dlg_Draw             // rijen 6-16
+        lda #<sDpType            // TYPE: ...
+        ldx #>sDpType
+        ldy #DP_Y+2
+        jsr dp_Label
+        lda CFG_printer
+        and #3
+        tax
+        lda dpTLo,x
+        ldy dpTHi,x
+        tax
+        lda #DP_Y+2
+        jsr dp_Value
+        lda #<sDpPort            // PORT: ...
+        ldx #>sDpPort
+        ldy #DP_Y+4
+        jsr dp_Label
+        ldx #<sDpSerial
+        ldy #>sDpSerial
+        lda CFG_printer
+        bpl ps
+        ldx #<sDpUser
+        ldy #>sDpUser
+ps:     lda #DP_Y+4
+        jsr dp_Value
+        lda dpMsg                // melding / uitleg
+        sta r0
+        lda dpMsg+1
+        sta r0+1
+        lda #DP_X+2
+        sta a0
+        lda #DP_Y+6
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        lda #<sDpTest            // TEST, OK
+        sta r0
+        lda #>sDpTest
+        sta r0+1
+        lda #DP_X+2
+        sta a0
+        lda #DP_Y+8
+        sta a1
+        lda #6
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr btn_Draw
+        lda #<sDpOk
+        sta r0
+        lda #>sDpOk
+        sta r0+1
+        lda #DP_X+10
+        sta a0
+        lda #DP_Y+8
+        sta a1
+        lda #4
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr btn_Draw
+wait:   jsr da_pollClick         // sluitknop / ESC: niets bewaren
+        bcs cancel
+        lda evtB
+        cmp #DP_Y+2              // TYPE: EPSON -> STAR -> HP -> EPSON
+        bne np
+        lda CFG_printer
+        and #3
+        clc
+        adc #1
+        cmp #3
+        bcc t
+        lda #0
+t:      sta dpT
+        lda CFG_printer
+        and #$fc
+        ora dpT
+        sta CFG_printer
+        jmp hint
+np:     cmp #DP_Y+4              // PORT: serieel <-> userport
+        bne nb
+        lda CFG_printer
+        eor #$80
+        sta CFG_printer
+hint:   lda #<sDpHint
+        sta dpMsg
+        lda #>sDpHint
+        sta dpMsg+1
+        jmp draw
+nb:     lda #DP_X+2              // TEST
+        sta a0
+        lda #DP_Y+8
+        sta a1
+        lda #6
+        sta a2
+        jsr btn_HitTest
+        bcs test
+        lda #DP_X+10             // OK
+        sta a0
+        lda #4
+        sta a2
+        jsr btn_HitTest
+        bcc wait
+        jsr cfg_Save
+        jmp shell_DrawAll
+cancel: lda dpOld
+        sta CFG_printer
+        jmp shell_DrawAll
+test:   lda #<sDpBusy
+        sta dpMsg
+        lda #>sDpBusy
+        sta dpMsg+1
+        jsr dp_ClrMsg
+        lda #<sDpBusy
+        sta r0
+        lda #>sDpBusy
+        sta r0+1
+        lda #DP_X+2
+        sta a0
+        lda #DP_Y+6
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        jsr dp_Test
+        stx dpMsg
+        sty dpMsg+1
+        jmp draw
+}
+
+// dp_Test - proefpagina: kop, type, alfabet. Uit: X/Y = melding.
+dp_Test: {
+        jsr dtPr.pr_Open
+        bcs r
+        ldx #0
+lp:     stx dpT
+        lda dpLnLo,x
+        sta r6
+        lda dpLnHi,x
+        sta r6+1
+        ldy #0                   // lengte (tot $ff)
+ln:     lda (r6),y
+        cmp #$ff
+        beq pr
+        iny
+        bne ln
+pr:     jsr dtPr.pr_Line
+        bcs fail
+        ldx dpT
+        inx
+        cpx #4
+        bne lp
+        jsr dtPr.pr_Close
+        bcs r
+        ldx #<sDpDone
+        ldy #>sDpDone
+r:      rts
+fail:   jmp dtPr.pr_Shut
+}
+
+dp_Label:                        // A/X = tekst, Y = rij (kolom DP_X+2)
+        sta r0
+        stx r0+1
+        sty a1
+        lda #DP_X+2
+        sta a0
+        lda TH_text
+        sta a2
+        jmp gfx_DrawText
+dp_Value:                        // X/Y = tekst, A = rij (kolom DP_X+9)
+        stx r0
+        sty r0+1
+        sta a1
+        lda #DP_X+9
+        sta a0
+        lda TH_accent
+        sta a2
+        jmp gfx_DrawText
+dp_ClrMsg:
+        lda #DP_X+2
+        sta a0
+        lda #DP_Y+6
+        sta a1
+        lda #26
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jmp gfx_FillRect
+
+dpOld:  .byte 0
+dpT:    .byte 0
+dpMsg:  .word 0
+dpTLo:  .byte <sDpEpson, <sDpStar, <sDpHp
+dpTHi:  .byte >sDpEpson, >sDpStar, >sDpHp
+dpLnLo: .byte <sDpL0, <sDpL1, <sDpL2, <sDpL3
+dpLnHi: .byte >sDpL0, >sDpL1, >sDpL2, >sDpL3
+
+dtPr: PrinterDriver()
+
+.encoding "screencode_upper"
+sDpTitle:  .text "PRINTER"
+           .byte $ff
+sDpType:   .text "TYPE:"
+           .byte $ff
+sDpPort:   .text "PORT:"
+           .byte $ff
+sDpEpson:  .text "EPSON (ESC/P)     "
+           .byte $ff
+sDpStar:   .text "STAR              "
+           .byte $ff
+sDpHp:     .text "HP LASERJET (PCL) "
+           .byte $ff
+sDpSerial: .text "SERIAL, DEVICE 4  "
+           .byte $ff
+sDpUser:   .text "USERPORT (CABLE)  "
+           .byte $ff
+sDpHint:   .text "CLICK TYPE OR PORT TO CHANGE"
+           .byte $ff
+sDpBusy:   .text "PRINTING TEST PAGE..."
+           .byte $ff
+sDpDone:   .text "TEST PAGE PRINTED"
+           .byte $ff
+sDpTest:   .text "TEST"
+           .byte $ff
+sDpOk:     .text "OK"
+           .byte $ff
+sDpL0:     .text "COMMODORE DESK 64 - PRINTER TEST"
+           .byte $ff
+sDpL1:     .text "--------------------------------"
+           .byte $ff
+sDpL2:     .text "ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789"
+           .byte $ff
+sDpL3:     .text "IF YOU CAN READ THIS, PRINTING WORKS."
+           .byte $ff
 
 //--------------------------------------------------------
 // Data (alleen gebruikt door de overlay)

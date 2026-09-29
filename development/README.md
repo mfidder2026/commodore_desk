@@ -23,6 +23,7 @@ Ultimate-II+** or a **WiC64** (WiFi on the userport).
 - [Screenshots](#screenshots)
 - [The desktop](#the-desktop)
 - [Programs](#programs)
+- [Printing](#printing)
 - [Network programs](#network-programs)
 - [Settings (SYSTEM menu)](#settings-system-menu)
 - [Themes and fonts](#themes-and-fonts)
@@ -131,10 +132,16 @@ Ultimate-II+** or a **WiC64** (WiFi on the userport).
     line.
 - **Text editor**: type, RETURN for a new line, DEL to delete, cursor keys
   to move. **LOAD** and **SAVE** read and write a text file (SEQ) by name;
-  **NEW** starts over. A file opened from the File Manager is saved under
-  its own name.
+  **NEW** starts over; **PRINT** prints the text (see [Printing](#printing)).
+  A file opened from the File Manager is saved under its own name.
 - **Paint**: a full-screen **multicolour bitmap** (160×200) with all 16
   colours and an eraser. Hold the fire button or space to draw, ESC to leave.
+  The last block of the colour bar (≡), or the **M** key, opens the menu:
+  **NEW**, **LOAD**, **SAVE** (with a file name, like the editor) and
+  **PRINT**. Pictures are saved in the **Koala Painter** format (a PRG of
+  10003 bytes that loads at `$6000`), so other C64 paint programs and
+  viewers can open them too. The bottom two rows hold the colour bar; a
+  loaded picture keeps everything above it.
 - **Calculator**: a 16-bit calculator (+ − × ÷).
 - **SID Player**: lists every `.SID` music file on the disk; click one to
   play it.
@@ -150,6 +157,30 @@ Ultimate-II+** or a **WiC64** (WiFi on the userport).
     interrupt) are not supported.
   - Put your `.sid` files in the `sid\` folder; `build_disk.bat` writes them
     to the disks.
+  - The player screen uses your chosen font. Only a tune that loads into
+    the character set itself (`$3800-$3FFF`) gets the standard C64 letters.
+
+---
+
+## Printing
+
+Click **PRINT** to the right of the desktop to choose the printer:
+
+| | |
+|---|---|
+| **TYPE** | **EPSON** (ESC/P, 9- and 24-pin), **STAR** (native mode) or **HP LASERJET** (PCL) |
+| **PORT** | **SERIAL, DEVICE 4** (a Commodore-compatible printer or an interface such as a Xetec or Wiesemann, set to transparent mode; CD64 uses secondary address 5) or **USERPORT** (a Centronics cable: PB0-PB7 data, PA2 strobe, FLAG ← ACK) |
+
+**TEST** prints a test page, **OK** saves the choice in `CD64.CFG`.
+
+- **EDITOR → PRINT** prints the text as plain ASCII lines.
+- **PAINT → menu → PRINT** prints the picture as graphics (everything that
+  is not white prints black): Epson/Star as 8-dot bit-image bands
+  (`ESC K`), HP LaserJet as a 75 dpi PCL raster.
+- **RUN/STOP** stops printing; a missing or switched-off printer gives a
+  message instead of a hang.
+- In VICE: device 4 with `-device4 1 -virtualdev4 -pr4drv raw` writes the
+  printer data to a file; the userport printer is `-userportdevice 1`.
 
 ---
 
@@ -401,7 +432,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 
 | File | What it holds |
 |---|---|
-| `CD64.CFG` | theme, colours, mouse pointer colour, font, menu style, sound |
+| `CD64.CFG` | theme, colours, mouse pointer colour, font, menu style, sound, time zone, the DRIVE/PRINT/TRASH icons, printer |
 | `NET.CFG` | network and chat server settings |
 | `MAIL.CFG` | e-mail settings, **including your password** |
 | `BBS.CFG` | default BBS, local echo |

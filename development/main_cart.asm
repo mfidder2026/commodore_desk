@@ -14,6 +14,7 @@
 #import "include/memmap.inc"
 #import "include/abi.inc"
 #import "include/events.inc"
+#import "apps/printer_drv.asm"     // (macro PrinterDriver: EDITOR, PAINT, DESKTOOL)
 
 //--------------------------------------------------------
 // OS-image, geassembleerd op $0801 (het RAM-doeladres).

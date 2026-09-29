@@ -4,7 +4,8 @@
 // Commodore Desk 64
 //
 // Tekst van tot ED_MAXL regels van ED_W tekens (werkgeheugen $4000).
-// Werkbalk: NEW, LOAD, SAVE en de bestandsnaam (klik om te typen).
+// Werkbalk: NEW, LOAD, SAVE, PRINT en de bestandsnaam (klik om te typen).
+// PRINT gaat naar de printer van het PRINT-icoon (apps/printer_drv.asm).
 // Typen voegt in; RETURN splitst de regel, DEL wist links van de cursor
 // (aan het begin: regels samen), cursortoetsen, HOME / CLR (SHIFT).
 // LOAD leest elk bestand als tekst (PETSCII, CR = nieuwe regel), SAVE
@@ -17,7 +18,7 @@
 .const ED_VIS  = 19              // zichtbare regels (rij 3-21)
 .const ED_TOP  = 3
 .const ED_MSG  = 22
-.const ED_NCOL = 26              // naamveld
+.const ED_NCOL = 31              // naamveld (7 zichtbaar, schuift)
 .label ED_BUF  = $4000           // ED_MAXL * ED_W = 7200 bytes
 .label edPtr   = $3a             // zeropage-pointers
 .label edPtr2  = $3c
@@ -151,7 +152,7 @@ bl:     stx edI
         jsr btn_Draw
         ldx edI
         inx
-        cpx #3
+        cpx #4
         bne bl
         lda #<sEdName
         sta r0
@@ -183,7 +184,7 @@ ed_NameField:
         sta liCol
         lda #2
         sta liRow
-        lda #12
+        lda #7
         sta liVis
         rts
 
@@ -306,7 +307,7 @@ bl:     stx edI
         bcs btn
         ldx edI
         inx
-        cpx #3
+        cpx #4
         bne bl
         lda evtB
         cmp #2
@@ -353,13 +354,61 @@ b1:     cmp #1
 ld:     jsr ed_Clear
         jsr ed_Load
         jmp shell_DrawAll
-b2:     lda edName               // SAVE
+b2:     cmp #2
+        bne b3
+        lda edName               // SAVE
         cmp #$ff
         bne sv
         jsr ed_AskName
         bcc r
 sv:     jsr ed_Save
         jmp shell_DrawAll
+b3:     jsr ed_Print             // PRINT
+        jmp shell_DrawAll
+}
+
+// ed_Print - de tekst (t/m de laatste niet-lege regel) naar de printer.
+ed_Print: {
+        ldx #<sEdPrinting
+        ldy #>sEdPrinting
+        stx edMsg
+        sty edMsg+1
+        jsr ed_ShowMsg
+        lda #ED_MAXL             // laatste niet-lege regel
+        sta edJ
+fl:     dec edJ
+        lda edJ
+        cmp #$ff
+        beq em
+        jsr ed_LineLen
+        cpy #0
+        beq fl
+em:     inc edJ
+        jsr edPr.pr_Open
+        bcs msg
+        lda #0
+        sta edI
+ln:     lda edI
+        cmp edJ
+        bcs done
+        jsr ed_LineLen
+        lda edPtr
+        sta r6
+        lda edPtr+1
+        sta r6+1
+        jsr edPr.pr_Line
+        bcs fail
+        inc edI
+        jmp ln
+fail:   jsr edPr.pr_Shut
+        jmp msg
+done:   jsr edPr.pr_Close
+        bcs msg
+        ldx #<sEdPrinted
+        ldy #>sEdPrinted
+msg:    stx edMsg
+        sty edMsg+1
+        rts
 }
 
 // ed_AskName - naam laten typen. Carry=1 als er een naam is.
@@ -939,10 +988,12 @@ edMsg:    .word 0
 edName:   .fill 17, $ff
 edPName:  .fill 16, 0
 edCmd:    .fill 24, 0
-edBtnLo:  .byte <sEdNew, <sEdLoad, <sEdSave
-edBtnHi:  .byte >sEdNew, >sEdLoad, >sEdSave
-edBtnCol: .byte 2, 8, 15
-edBtnW:   .byte 5, 6, 6
+edBtnLo:  .byte <sEdNew, <sEdLoad, <sEdSave, <sEdPrint
+edBtnHi:  .byte >sEdNew, >sEdLoad, >sEdSave, >sEdPrint
+edBtnCol: .byte 2, 7, 13, 19
+edBtnW:   .byte 5, 6, 6, 7
+
+edPr: PrinterDriver()
 
 .encoding "screencode_upper"
 sEdNew:    .text "NEW"
@@ -950,6 +1001,12 @@ sEdNew:    .text "NEW"
 sEdLoad:   .text "LOAD"
            .byte $ff
 sEdSave:   .text "SAVE"
+           .byte $ff
+sEdPrint:  .text "PRINT"
+           .byte $ff
+sEdPrinting: .text "PRINTING... (RUN/STOP = STOP)"
+           .byte $ff
+sEdPrinted: .text "PRINTED"
            .byte $ff
 sEdName:   .text "NAME"
            .byte $ff

@@ -98,6 +98,9 @@
 // ---- Iconen rechts van het bureaubladvenster (SETTINGS, ook opgeslagen) ----
 .label CFG_strip    = $0236   // bit 0 DRIVE, 1 PRINTER, 2 TRASH (0 = geen strook)
 .const DEFAULT_STRIP = %111
+// ---- Printer (PRINT-icoon op het bureaublad, ook opgeslagen) ----
+.label CFG_printer  = $0237   // bit 0-1: 0 EPSON, 1 STAR, 2 HP LASERJET;
+                              // bit 7: 0 serieel device 4, 1 userport
 
 // ---- Venster-layout (Win95-stijl, vast) ----
 //   rij 0      menubalk          rij 1      titelbalk

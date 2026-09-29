@@ -13,6 +13,7 @@
 #import "include/memmap.inc"
 #import "include/abi.inc"
 #import "include/events.inc"
+#import "apps/printer_drv.asm"     // (macro PrinterDriver: EDITOR, PAINT, DESKTOOL)
 #import "net/net.inc"
 
 // Core mag NOOIT de charset op $3800 raken: max=$37FF laat de assembler
