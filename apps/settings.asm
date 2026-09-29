@@ -226,6 +226,48 @@ pdone:  lda #<sSave
         lda TH_accent
         sta a2
         jsr gfx_DrawText
+        // DRIVE / PRINT / TRASH (rijen 3-5, rechts): de iconen rechts van
+        // het bureaublad aan/uit (CFG_strip)
+        lda #0
+        sta setI
+sw:     ldx setI
+        lda swLo,x
+        sta r0
+        lda swHi,x
+        sta r0+1
+        lda #23
+        sta a0
+        txa
+        clc
+        adc #3
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldx setI
+        lda CFG_strip
+        and swBit,x
+        beq swn
+        ldy #1
+        .byte $2c                // (slaat ldy #0 over)
+swn:    ldy #0
+        lda soundNameLo,y
+        sta r0
+        lda soundNameHi,y
+        sta r0+1
+        lda #30
+        sta a0
+        lda setI
+        clc
+        adc #3
+        sta a1
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
+        inc setI
+        lda setI
+        cmp #3
+        bne sw
         jmp clk_Row
 }
 
@@ -233,7 +275,24 @@ pdone:  lda #<sSave
 // set_Click - rol kiezen / kleur zetten / opslaan.
 //--------------------------------------------------------
 set_Click: {
-        // rollen (rijen 5-10, kol 4-20)
+        // DRIVE / PRINT / TRASH aan/uit (rijen 3-5, kol 23-35)
+        lda evtA
+        cmp #23
+        bcc chkRole
+        cmp #36
+        bcs chkRole
+        lda evtB
+        sec
+        sbc #3
+        cmp #3
+        bcs chkRole
+        tax
+        lda swBit,x
+        eor CFG_strip
+        sta CFG_strip
+        jsr sid_Click
+        jmp set_Draw
+chkRole: // rollen (rijen 5-10, kol 4-20)
         lda evtB
         cmp #5
         bcc chkPal
@@ -710,5 +769,14 @@ ckTpl:   .text "##-##-#### ##:##"
          .byte $ff
 sNo:     .text "NO "
          .byte $ff
+swDrive: .text "DRIVE:"
+         .byte $ff
+swPrint: .text "PRINT:"
+         .byte $ff
+swTrash: .text "TRASH:"
+         .byte $ff
+swLo:    .byte <swDrive, <swPrint, <swTrash
+swHi:    .byte >swDrive, >swPrint, >swTrash
+swBit:   .byte 1, 2, 4
 sYes:    .text "YES"
          .byte $ff

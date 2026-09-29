@@ -95,6 +95,9 @@
 .label CFG_timeAuto = $0215   // 1 = bij het opstarten de tijd ophalen (NTP)
 .label CFG_ntp      = $0216   // tijdserver: schermcodes, $ff-afgesloten (32)
 .const TZ_DEFAULT   = 21      // AMSTERDAM, BERLIN, PARIS
+// ---- Iconen rechts van het bureaubladvenster (SETTINGS, ook opgeslagen) ----
+.label CFG_strip    = $0236   // bit 0 DRIVE, 1 PRINTER, 2 TRASH (0 = geen strook)
+.const DEFAULT_STRIP = %111
 
 // ---- Venster-layout (Win95-stijl, vast) ----
 //   rij 0      menubalk          rij 1      titelbalk

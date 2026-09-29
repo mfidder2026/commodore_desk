@@ -265,6 +265,8 @@ waits, the C64 answers pings itself.
 - **FONT**: ten fonts, see below.
 - **MENU**: drop-down menus filled or clear.
 - **SOUND**: a click sound on or off.
+- **DRIVE / PRINT / TRASH** (top right): the icons to the right of the
+  desktop window, each on or off; all off gives a full-width desktop.
 - **CLOCK**: set the date and time.
 - **SAVE** writes `CD64.CFG`, which is loaded again at start-up.
 
@@ -351,7 +353,11 @@ keeps your theme; pick DESK64 under SETTINGS → THEME, and TINY under FONT).
 - The desktop shows large 24×24 icons in three columns with the name
   underneath (own drawings in GEOS style, in the file `GEOSICON`).
 - To the right of the window: **DRIVE** (opens FILES), **PRINT** (no printer
-  support yet, it says so) and **TRASH**.
+  support yet, it says so) and **TRASH**. These three icons are there in
+  every theme (in the other themes as small icons in their style). Each can
+  be switched off under SETTINGS (DRIVE / PRINT / TRASH, saved in
+  `CD64.CFG`); with all three off the desktop window uses the full width
+  again and nothing is dragged.
 - **Drag** an icon with the mouse button held: the pointer becomes the icon.
   Drop it on TRASH to throw one of your own programs away (built-in
   programs stay). TRASH shows what is in it: **RESTORE** puts a program

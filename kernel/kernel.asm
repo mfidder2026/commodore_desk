@@ -95,6 +95,8 @@ osvars_Init:
         sta CFG_ntp              // tijdserver: standaard (pool.ntp.org)
         lda #TZ_DEFAULT
         sta CFG_tz
+        lda #DEFAULT_STRIP       // (oudere CD64.CFG: blijft zo staan)
+        sta CFG_strip
         lda #0
         sta CFG_timeAuto
         rts

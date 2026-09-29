@@ -78,6 +78,9 @@
 .const GI_PRINTER  = 11
 .const GI_TRASH    = 12
 .const GI_TRASHF   = 13
+// Win95-stijl: DRIVE, PRINTER, TRASH, TRASH (vol) als 2x3 op 102-125: dat
+// zijn na icon_Build vrije codes (alleen bron van de 2x3-iconen).
+.const STRIP_BASE  = 102
 .const GL_STRIPE   = 82
 .const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
@@ -224,6 +227,18 @@ icon_Build: {
         lda #>[CHARSET_BASE + ICON3_BASE*8]
         sta r5+1
         ldx #0
+        ldy #ICON3_N
+        jsr ib_Run
+        lda #<[CHARSET_BASE + STRIP_BASE*8]   // de strook (bron: stripGlyphs)
+        sta r5
+        lda #>[CHARSET_BASE + STRIP_BASE*8]
+        sta r5+1
+        ldx #ICON3_N
+        ldy #ICON3_N+4
+        jsr ib_Run
+        jmp rad
+// ib_Run - iconen X t/m Y-1 (bron ibSrc) als 2x3 naar (r5) en verder.
+ib_Run: sty ibE
 ic:     stx ibI
         lda ibSrcLo,x
         sta r4
@@ -251,9 +266,10 @@ st:     pha
         inc r5+1
 nc:     ldx ibI
         inx
-        cpx #ICON3_N
+        cpx ibE
         bne ic
-        ldx #0                   // RADIO: zelfde omzetting, andere codes
+        rts
+rad:    ldx #0                   // RADIO: zelfde omzetting, andere codes
 rg:     ldy ibMap,x
         lda #0
         cpy #$ff
@@ -301,9 +317,11 @@ ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
 ibSrcLo: .byte <[CHARSET_BASE+111*8], <[CHARSET_BASE+115*8], <[CHARSET_BASE+119*8]
          .byte <[CHARSET_BASE+107*8], <[CHARSET_BASE+102*8], <[CHARSET_BASE+80*8]
          .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs, <sidGlyphs
+         .byte <stripGlyphs, <[stripGlyphs+32], <[stripGlyphs+64], <[stripGlyphs+96]
 ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*8]
          .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
          .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs, >sidGlyphs
+         .byte >stripGlyphs, >[stripGlyphs+32], >[stripGlyphs+64], >[stripGlyphs+96]
 }
 
 // geos_Icons - in de GEOS-stijl GEOSICON laden: codes 128-253.
@@ -330,6 +348,7 @@ nmE:
 }
 
 ibI:    .byte 0
+ibE:    .byte 0
 
 //--------------------------------------------------------
 // font_Bold - verzwaar de streken: b = b | (b>>1). Alleen de normale

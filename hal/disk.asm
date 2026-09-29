@@ -32,7 +32,7 @@
 // Config-blok = OS-vars $0200-$020F (LAY 0-6, font 7, thema 8-12,
 // menuFill 13, text 14, profile 15).
 .label CFG_START = $0200
-.label CFG_END   = $0236          // (t/m CFG_ntp; $0211-$0212 worden na het
+.label CFG_END   = $0237          // (t/m CFG_strip; $0211-$0212 worden na het
                                  //  laden opnieuw afgeleid)
 
 //--------------------------------------------------------
@@ -397,6 +397,9 @@ tmpA:      .byte 0
 savedIrqEn: .byte 0
 gotName:   .byte 0
 nameLen:   .byte 0
-dirPtrLo:  .fill MAXDIR, 0
-dirPtrHi:  .fill MAXDIR, 0
-dirBuf:    .fill MAXDIR * [NAME_MAX+1], 0
+// directory (alleen de DeskTool-bestandskiezer): buiten de Core, in het
+// vrije stuk tussen DESK.APPS ($C100-$C251) en de klok ($C3F8)
+.label dirBuf   = $c260           // MAXDIR * 16 = 288 bytes
+.label dirPtrLo = dirBuf + MAXDIR * [NAME_MAX+1]
+.label dirPtrHi = dirPtrLo + MAXDIR
+.assert "dir-buffer onder de klok", dirPtrHi + MAXDIR <= $c3f8, true

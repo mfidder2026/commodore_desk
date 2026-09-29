@@ -98,6 +98,25 @@ pokeGlyphs:
         .byte $e0,$f8,$fc,$fe,$fe,$3f,$df,$20   // TR
         .byte $84,$83,$80,$40,$40,$20,$18,$07   // BL
         .byte $21,$c1,$01,$02,$02,$04,$18,$e0   // BR
+// DRIVE / PRINTER / TRASH / TRASH (vol) 16x16 (TL, TR, BL, BR): de strook
+// rechts in de Win95-stijl (icon_Build -> 2x3 op STRIP_BASE).
+stripGlyphs:
+        .byte $00,$00,$7f,$40,$40,$5f,$50,$5f   // DRIVE TL
+        .byte $00,$00,$fe,$02,$02,$fa,$0a,$fa   // DRIVE TR
+        .byte $40,$40,$40,$7f,$20,$3f,$00,$00   // DRIVE BL
+        .byte $02,$1a,$02,$fe,$04,$fc,$00,$00   // DRIVE BR
+        .byte $00,$0f,$08,$0b,$08,$7f,$80,$80   // PRINTER TL
+        .byte $00,$f0,$10,$d0,$10,$fe,$01,$19   // PRINTER TR
+        .byte $80,$ff,$80,$7f,$08,$0b,$0f,$00   // PRINTER BL
+        .byte $01,$ff,$01,$fe,$10,$d0,$f0,$00   // PRINTER BR
+        .byte $00,$03,$7f,$00,$3f,$24,$24,$24   // TRASH TL
+        .byte $00,$c0,$fe,$00,$fc,$24,$24,$24   // TRASH TR
+        .byte $24,$24,$24,$24,$24,$3f,$00,$00   // TRASH BL
+        .byte $24,$24,$24,$24,$24,$fc,$00,$00   // TRASH BR
+        .byte $12,$3b,$7f,$00,$3f,$24,$24,$24   // TRASH (FULL) TL
+        .byte $24,$76,$fe,$00,$fc,$24,$24,$24   // TRASH (FULL) TR
+        .byte $24,$24,$24,$24,$24,$3f,$00,$00   // TRASH (FULL) BL
+        .byte $24,$24,$24,$24,$24,$fc,$00,$00   // TRASH (FULL) BR
 
 //--------------------------------------------------------
 // userIcons - 20 launcher-iconen (1 cel, 8x8) op charset-codes 64..83.

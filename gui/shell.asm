@@ -113,7 +113,8 @@ drawDesktopBg:
         lda activeApp            // GEOS-bureaublad: de strook rechts
         cmp #$ff
         bne !r+
-        lda stGeos
+        lda CFG_strip            // (iconen aan in SETTINGS)
+        and #7
         beq !r+
         jmp da_Strip
 !r:     rts
@@ -166,7 +167,8 @@ win_Main:
         lda activeApp            // iconen DRIVE/PRINTER/TRASH
         cmp #$ff
         bne !w+
-        lda stGeos
+        lda CFG_strip
+        and #7
         beq !w+
         ldx #33
 !w:     stx a2
@@ -609,11 +611,13 @@ showLoadName:
         sta a0
         lda #10
         sta a1
-        lda #32
-        ldx stGeos               // GEOS: binnen het smallere venster
-        beq !w+                  // (da_Redraw wist het dan weer)
+        lda CFG_strip            // strook: binnen het smallere venster
+        and #7                   // (da_Redraw wist het dan weer)
+        beq !w+
         lda #28
-!w:     sta a2
+        .byte $2c                // (slaat lda #32 over)
+!w:     lda #32
+        sta a2
         lda #4
         sta a3
         lda TH_text

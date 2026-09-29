@@ -111,9 +111,22 @@ da_DrawEntries:
 !bars:  jmp da_drawScrollbar
 
 // da_Style - indeling van de stijl (stGeos): Win95 2 kolommen met het
-//            label ernaast, GEOS 3 kolommen met het label eronder.
+//            label ernaast, GEOS 3 kolommen met het label eronder; met de
+//            strook rechts (CFG_strip, daStrip) is het venster smaller.
 da_Style:
-        ldx stGeos
+        lda CFG_strip
+        and #7
+        beq !n+
+        lda #1
+!n:     sta daStrip
+        lda stGeos
+        asl
+        ora daStrip
+        tax
+        lda dsCellX,x
+        sta daCellX
+        lda dsCellW,x
+        sta daCellW
         lda dsCols,x
         sta daCols
         lda dsRowH,x
@@ -136,15 +149,18 @@ da_Style:
         lda #0
         sta daScroll
 !:      rts
-dsCols:   .byte 2, 3
-dsRowH:   .byte 3, 5
-dsVisR:   .byte 7, 4
-dsVis:    .byte 14, 12
-dsRow0:   .byte 3, 4
-dsColOff: .byte 0, 2
-dsScrCol: .byte 37, 32           // scrollbalk (GEOS: smaller venster)
-dsClrW:   .byte 35, 30           // breedte van de vensterinhoud
-daColX:   .byte 3, 21, 5, 15, 25 // Win95: kol 3/21; GEOS: 3x3-iconen op 5/15/25
+//        Win95, Win95+strook, GEOS, GEOS+strook
+dsCols:   .byte 2, 2, 3, 3
+dsRowH:   .byte 3, 3, 5, 5
+dsVisR:   .byte 7, 7, 4, 4
+dsVis:    .byte 14, 14, 12, 12
+dsRow0:   .byte 3, 3, 4, 4
+dsColOff: .byte 0, 2, 4, 7
+dsScrCol: .byte 37, 32, 37, 32   // scrollbalk (strook: smaller venster)
+dsClrW:   .byte 35, 30, 35, 30   // breedte van de vensterinhoud
+dsCellX:  .byte 0, 0, 2, 2       // klikzones: eerste kolom en breedte
+dsCellW:  .byte 20, 17, 11, 10
+daColX:   .byte 3, 21, 3, 17, 6, 17, 28, 5, 15, 25
 
 // da_div - A / daCols -> X = quotient, A = rest.
 da_div:
@@ -256,20 +272,8 @@ da_draw2x2:
         sec
         sbc #1
         sta a1
-        lda deIcon               // RADIO: 252-255, dan 80-81 (zie font.asm)
-        cmp #ICO_RADIO_D
-        bne !n+
-        txa
-        cmp #4
-        bcs !b+
-        adc #ICO_RADIO
-        bne !s+
-!b:     adc #ICO_RADIO_B-4-1     // (carry=1)
-        bne !s+
-!n:     txa
-        clc
-        adc deIcon
-!s:     sta a2
+        jsr da_code6
+        sta a2
         lda deIcoC
         sta a3
         jsr gfx_PutChar
@@ -277,6 +281,23 @@ da_draw2x2:
         inx
         cpx #6
         bne !lp-
+        rts
+
+// da_code6 - charset-code van cel X (0-5) van het 2x3-icoon deIcon.
+da_code6:
+        lda deIcon               // RADIO: 252-255, dan 80-81 (zie font.asm)
+        cmp #ICO_RADIO_D
+        bne !n+
+        txa
+        cmp #4
+        bcs !b+
+        adc #ICO_RADIO
+        rts
+!b:     adc #ICO_RADIO_B-4-1     // (carry=1)
+        rts
+!n:     txa
+        clc
+        adc deIcon
         rts
 
 // da_drawLabel - label (r0) op (deCol+3, deRow) in TH_text.
@@ -403,7 +424,7 @@ da_Click:
         lda evtA
         cmp daScrCol
         beq da_scrollClick       // scrollbalk-kolom
-        lda stGeos               // GEOS: de strook rechts
+        lda daStrip              // de strook rechts
         beq !g+
         lda evtA
         cmp #34
@@ -454,7 +475,7 @@ da_scrollClick:
 da_gridClick:
         jsr da_hitEntry
         bcc !r+
-        ldx stGeos               // GEOS: slepen
+        ldx daStrip              // met de strook: slepen
         beq !open+
         sta daDrag
         jsr da_Ghost             // muispijl = het icoon
@@ -502,30 +523,20 @@ da_gridClick:
 //--------------------------------------------------------
 da_hitEntry:
         jsr da_Style
-        lda stGeos
-        bne !g+
-        // Win95: hele linker-/rechterhelft telt (grens kol 20).
-        lda evtA
-        cmp #20
-        bcc !lc+
-        lda #1
-        jmp !cp+
-!lc:    lda #0
-        beq !cp+
-!g:     lda evtA                 // GEOS: kolommen van 10 vanaf kol 2
+        lda evtA                 // kolommen van daCellW vanaf daCellX
         sec
-        sbc #2
+        sbc daCellX
         bcc !no+
         ldx #0
-!gc:    cmp #10
+!gc:    cmp daCellW
         bcc !gd+
-        sbc #10
+        sbc daCellW
         inx
         bne !gc-
-!gd:    cpx #3
+!gd:    cpx daCols
         bcs !no+
         txa
-!cp:    sta deCol
+        sta deCol
         lda evtB                 // entry-rij: (rij - (eerste-1)) / hoogte
         clc
         adc #1
@@ -656,7 +667,8 @@ da_draw3x3:
         bne !rl-
         rts
 
-// da_Strip - rechts van het venster: geruit, met DRIVE, PRINTER, TRASH.
+// da_Strip - rechts van het venster: geruit, met de iconen die aan staan
+//            (CFG_strip): DRIVE, PRINTER, TRASH, van boven af.
 da_Strip:
         lda #34
         sta a0
@@ -671,39 +683,55 @@ da_Strip:
         lda TH_desktop
         sta a5
         jsr gfx_FillRect
-        ldx #0
+        lda #0
+        sta daSN
+        tax
 !lp:    stx daSI
-        lda gsIco,x
+        lda CFG_strip
+        and gsBit,x
+        beq !nx+
+        ldy daSN                 // volgende plek
+        txa
+        sta gsWhich,y
+        lda gsRow,y
+        sta deRow
+        inc daSN
         cpx #2                   // volle prullenbak?
         bne !n+
         ldy DA_trashN
         beq !n+
-        lda #GI_TRASHF
-!n:     jsr da_giCode
-        sta deIcon
-        lda #35
+        inx
+!n:     lda #35
         sta deCol
-        ldx daSI
-        lda gsRow,x
-        sta deRow
         lda TH_text
         sta deIcoC
+        lda stGeos
+        beq !w+
+        lda gsIco,x              // GEOS: 3x3
+        jsr da_giCode
+        sta deIcon
         jsr da_draw3x3
-        ldx daSI
+        jmp !lb+
+!w:     lda gsW95,x              // Win95: 2x3 (rijen deRow-1..deRow+1)
+        sta deIcon
+        inc deRow
+        jsr da_draw2x2
+        dec deRow
+!lb:    ldx daSI
         lda gsLo,x
         sta r0
         lda gsHi,x
         sta r0+1
         lda #34
         sta a0
-        lda gsRow,x
+        lda deRow
         clc
         adc #3
         sta a1
         lda TH_text
         sta a2
         jsr gfx_DrawText
-        ldx daSI
+!nx:    ldx daSI
         inx
         cpx #3
         bne !lp-
@@ -712,19 +740,21 @@ da_Strip:
 // da_StripHit - (evtA,evtB) op de strook: X = 0 DRIVE, 1 PRINTER,
 //               2 TRASH (carry=1), anders carry=0.
 da_StripHit:
-        ldx #0
-!l:     lda evtB
+        ldy #0
+!l:     cpy daSN
+        bcs !no+
+        lda evtB
         sec
-        sbc gsRow,x
+        sbc gsRow,y
         bcc !nx+
         cmp #4
         bcs !nx+
+        ldx gsWhich,y
         sec
         rts
-!nx:    inx
-        cpx #3
+!nx:    iny
         bne !l-
-        clc
+!no:    clc
         rts
 
 // da_StripAct - klik op DRIVE (FILES), PRINTER of TRASH (X).
@@ -738,13 +768,82 @@ da_StripAct:
         inx
         jmp tool_Run
 
-// da_Ghost - muispijl = icoon van entry A (sprite-blok 14, $0380).
+// da_Ghost - muispijl = icoon van entry A (sprite-blok 14, $0380): eerst
+//            de 3x3 cellen (ghC), dan de 24x21 pixels daaruit.
 da_Ghost:
+        sta daGE
+        ldx #8
+        lda #$20                 // lege cel = spatie
+!c:     sta ghC,x
+        dex
+        bpl !c-
+        lda stGeos
+        beq !w+
+        lda daGE                 // GEOS: 9 codes op een rij
         cmp biCount
         bcc !b+
         lda #GI_APP
 !b:     jsr da_giCode
-        sta $fb                  // $fb = charset + code*8
+        ldx #0
+!g:     sta ghC,x
+        clc
+        adc #1
+        inx
+        cpx #9
+        bne !g-
+        beq !mk+
+!w:     lda daGE                 // Win95: 2x3-icoon of 1 cel
+        cmp biCount
+        bcs !u+
+        tax
+        lda biIcon,x
+        jmp !i6+
+!u:     sec
+        sbc biCount
+        jsr da_recPtr
+        ldy #REC_ICON
+        lda ($fb),y
+        cmp #BIG_ICON_BASE
+        bcc !sm+
+        sbc #BIG_ICON_BASE
+        tax
+        lda bigIcon,x
+!i6:    sta deIcon
+        ldx #0
+!s6:    stx daIc
+        jsr da_code6
+        ldx daIc
+        ldy gh6,x
+        sta ghC,y
+        inx
+        cpx #6
+        bne !s6-
+        beq !mk+
+!sm:    cmp #NUM_USERICONS
+        bcc !s1+
+        lda #0
+!s1:    tax
+        lda userIconGlyphs,x
+        sta ghC+4
+!mk:    ldx #0
+        stx daR
+!rl:    lda daR                  // pixelrij r: cellen (r/8)*3 .. +2, rij r%8
+        and #7
+        sta daRr
+        lda daR
+        lsr
+        lsr
+        lsr
+        sta daT
+        asl
+        adc daT
+        sta daT
+        lda #3
+        sta daC
+!cc:    stx daX
+        ldy daT
+        lda ghC,y                // $fb = charset + code*8
+        sta $fb
         lda #0
         sta $fc
         asl $fb
@@ -760,43 +859,14 @@ da_Ghost:
         lda $fc
         adc #>CHARSET_BASE
         sta $fc
-        ldx #0
-        lda #0
-        sta daR
-!rl:    lda daR                  // bytes van rij r: (r/8)*24 + r%8 (+8, +16)
-        lsr
-        lsr
-        lsr
-        sta daT
-        asl
-        clc
-        adc daT
-        asl
-        asl
-        asl
-        sta daT
-        lda daR
-        and #7
-        clc
-        adc daT
-        tay
+        ldy daRr
         lda ($fb),y
+        ldx daX
         sta $0380,x
         inx
-        tya
-        clc
-        adc #8
-        tay
-        lda ($fb),y
-        sta $0380,x
-        inx
-        tya
-        clc
-        adc #8
-        tay
-        lda ($fb),y
-        sta $0380,x
-        inx
+        inc daT
+        dec daC
+        bne !cc-
         inc daR
         lda daR
         cmp #21
@@ -806,9 +876,21 @@ da_Ghost:
         rts
 
 gsRow:  .byte 3, 9, 15
-gsIco:  .byte GI_DRIVE, GI_PRINTER, GI_TRASH
+gsBit:  .byte 1, 2, 4
+gsIco:  .byte GI_DRIVE, GI_PRINTER, GI_TRASH, GI_TRASHF
+gsW95:  .byte STRIP_BASE, STRIP_BASE+6, STRIP_BASE+12, STRIP_BASE+18
 gsLo:   .byte <sgDrive, <sgPrint, <sgTrash
 gsHi:   .byte >sgDrive, >sgPrint, >sgTrash
+gh6:    .byte 0, 1, 3, 4, 6, 7   // 2x3-cel -> 3x3-cel
+gsWhich: .byte 0, 0, 0
+ghC:    .fill 9, $20
+daSN:   .byte 0
+daGE:   .byte 0
+daRr:   .byte 0
+daX:    .byte 0
+daStrip: .byte 0
+daCellX: .byte 0
+daCellW: .byte 20
 .encoding "screencode_upper"
 sgDrive: .text "DRIVE"
         .byte $ff
