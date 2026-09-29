@@ -38,7 +38,7 @@
 
 Commodore Desk 64 (hierna **CD64**) is een grafische shell die na het aanzetten
 van de C64 direct verschijnt, in plaats van de BASIC-READY-prompt. Het gevoel is
-**Apple/macOS-achtig**, niet Windows/GEOS:
+**Apple/macOS-achtig**, niet Windows-achtig:
 
 - **Dock onderin** met applicatie-iconen.
 - **Contextuele menubalk bovenin**: klik je een app-icoon aan, dan verschijnt de
@@ -73,9 +73,9 @@ expliciet zodat ze bewust genomen zijn en niet later "per ongeluk" anders lopen.
 pixels, 320×200). Grafische apps (Paint, plaatjesviewer) schakelen tijdelijk
 naar **hi-res bitmap** (320×200) of **multicolor bitmap** (160×200).
 
-**Waarom char-mode en niet bitmap zoals GEOS?**
+**Waarom char-mode en niet bitmap zoals de klassieke C64-desktops?**
 
-- GEOS gebruikte een bitmap omdat het **overlappende, sleepbare vensters** had —
+- Die gebruikten een bitmap omdat ze **overlappende, sleepbare vensters** had —
   daarvoor moet je willekeurige pixels kunnen overtekenen. CD64 heeft dat
   bewust **niet**. Zonder sleepbare vensters is een bitmap pure verspilling.
 - Char-mode kost **~4 KB** (2 KB charset + 1000 bytes scherm-RAM + 1000 bytes
@@ -91,7 +91,7 @@ naar **hi-res bitmap** (320×200) of **multicolor bitmap** (160×200).
 
 De muispijl is **sprite 0**. Sprites zweven in hardware boven zowel char- als
 bitmap-mode, zonder dat je het scherm eronder hoeft te herstellen. Dit is de
-klassieke, goedkope oplossing (ook GEOS deed dit). Sprite = 24×21 pixels, prima
+klassieke, goedkope oplossing (ook de klassieke C64-desktops deden dit). Sprite = 24×21 pixels, prima
 voor een pijl. De sprite volgt de **virtuele cursor** die de input-HAL bijhoudt.
 
 ### 2.3 Eén virtuele cursor, drie invoerbronnen

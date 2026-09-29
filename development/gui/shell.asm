@@ -98,7 +98,7 @@ drawDesktopBg:
         lda #0
         sta a0
         stx a1
-        lda stDeskFill           // (GEOS-stijl: ruitjes)
+        lda stDeskFill           // (STONE-stijl: ruitjes)
         sta a2
         lda TH_desktop
         sta a3
@@ -110,7 +110,7 @@ drawDesktopBg:
         inx
         cpx #STATUS_ROW
         bne !lp-
-        lda activeApp            // GEOS-bureaublad: de strook rechts
+        lda activeApp            // STONE-bureaublad: de strook rechts
         cmp #$ff
         bne !r+
         lda CFG_strip            // (iconen aan in SETTINGS)
@@ -163,7 +163,7 @@ win_Main:
         sta a0
         lda #1
         sta a1
-        ldx #38                  // GEOS-bureaublad: smaller, rechts de
+        ldx #38                  // STONE-bureaublad: smaller, rechts de
         lda activeApp            // iconen DRIVE/PRINTER/TRASH
         cmp #$ff
         bne !w+
@@ -215,7 +215,7 @@ drawMenubar:
         inx
         cpx #MB_ITEMS
         bne !lp-
-        lda stGeos               // GEOS: lijntjes tussen de menu's
+        lda stStone               // STONE: lijntjes tussen de menu's
         beq !r+
         ldx #0
 !sp:    stx menuI
@@ -904,7 +904,7 @@ menuBarClick:
 
 //--------------------------------------------------------
 // tool_Run - launcher-beheer (overlay DESKTOOL) laden en starten.
-//            X = 0 toevoegen, 1 bewerken, 2 verwijderen; GEOS-strook:
+//            X = 0 toevoegen, 1 bewerken, 2 verwijderen; STONE-strook:
 //            3 naar de prullenbak (toolArg = programma), 4 printer,
 //            5 prullenbak openen, 6 "ingebouwd programma".
 //--------------------------------------------------------

@@ -23,12 +23,12 @@ calc_Init:
 // calc_Draw - display + toetsen.
 //--------------------------------------------------------
 calc_Draw: {
-        lda #LIGHT_GREY          // kleuren: vast, GEOS: uit het thema
+        lda #LIGHT_GREY          // kleuren: vast, STONE: uit het thema
         sta calcBoxC
         sta calcBtnC
         lda #LIGHT_GREEN
         sta calcDispC
-        lda stGeos
+        lda stStone
         beq !d+
         lda TH_text
         sta calcBoxC

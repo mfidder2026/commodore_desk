@@ -57,7 +57,7 @@ fm_Load: {
         bne rd
         inc fmScanned
         lda #4                   // melding in een kader (het venster staat
-        sta a0                   // er nog niet; GEOS: binnen het bureaublad)
+        sta a0                   // er nog niet; STONE: binnen het bureaublad)
         lda #10
         sta a1
         lda #28

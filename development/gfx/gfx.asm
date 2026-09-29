@@ -174,7 +174,7 @@ gfx_BarRow:
         adc #$d4
         sta r5+1
         ldy #0
-!lp:    lda stBarFill            // (GEOS-stijl: geen vol blok)
+!lp:    lda stBarFill            // (STONE-stijl: geen vol blok)
         sta (r4),y
         lda a2
         sta (r5),y
@@ -189,7 +189,7 @@ gfx_BarRow:
 // In: r0=pointer, a0=kol, a1=rij, a2=kleur (van het blok)
 // Klobbert: A,X,Y, r4, r5
 //--------------------------------------------------------
-// gfx_CurChar - teken A als cursor: omgekeerd, of in de GEOS-stijl (geen
+// gfx_CurChar - teken A als cursor: omgekeerd, of in de STONE-stijl (geen
 //               omgekeerde tekens) een vol blok op een spatie.
 gfx_CurChar:
         bit stRevOr
@@ -220,7 +220,7 @@ gfx_DrawTextRev:
 !lp:    lda (r0),y
         cmp #$ff
         beq !done+
-        ora stRevOr              // reverse-video (GEOS: gewone tekens)
+        ora stRevOr              // reverse-video (STONE: gewone tekens)
         sta (r4),y
         lda a2
         sta (r5),y

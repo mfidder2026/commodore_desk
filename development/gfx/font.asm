@@ -67,9 +67,9 @@
 .const ICO_RADIO   = 252
 .const ICO_RADIO_B = 80          // onderste rij
 .const ICO_RADIO_D = ICO_RADIO - 2
-// GEOS-stijl: titelstrepen en knoppenpatroon, na icon_Build op 82-83
+// STONE-stijl: titelstrepen en knoppenpatroon, na icon_Build op 82-83
 // (net als 80-81 alleen bron van het BBS-icoon)
-// GEOS-stijl: 24x24-iconen (GEOSICON, tools/make_geosicons.py) op codes
+// STONE-stijl: 24x24-iconen (STONEICON, tools/make_stoneicons.py) op codes
 // 128-253, 9 per icoon; de ingebouwde programma's hebben icoon 0-8 in de
 // volgorde van biIcon, daarna deze:
 .const GI_BASE     = 128
@@ -182,7 +182,7 @@ font_OverlayUI:
         pla
         sta $01
         plp
-        jmp geos_Icons           // GEOS-stijl: de grote iconen erover
+        jmp stone_Icons           // STONE-stijl: de grote iconen erover
 fo_Ov:
         // Reverse-helft (codes 128-255) = de omgekeerde normale helft, voor
         // elk font opnieuw: menubalk, titels en statusbalk (reverse tekst)
@@ -192,7 +192,7 @@ fo_Ov:
 !rv:
     .for (var p=0; p<4; p++) {
         lda CHARSET_BASE + p*$100,x
-        eor stRevMask            // GEOS-stijl: niet omgekeerd
+        eor stRevMask            // STONE-stijl: niet omgekeerd
         sta CHARSET_BASE + $400 + p*$100,x
     }
         inx
@@ -283,7 +283,7 @@ rb:     sta CHARSET_BASE+ICO_RADIO_B*8-32,x
 rn:     inx
         cpx #48
         bne rg
-        ldx #15                  // strepen + stippen (GEOS-stijl)
+        ldx #15                  // strepen + stippen (STONE-stijl)
 sg:     lda styleGlyphs,x
         sta CHARSET_BASE+GL_STRIPE*8,x
         dex
@@ -298,7 +298,7 @@ sg:     lda styleGlyphs,x
         dex
         bpl !i-
 !d:
-        lda stGeos               // GEOS: dunner vensterkader (91-95)
+        lda stStone               // STONE: dunner vensterkader (91-95)
         beq tr
         ldx #39
 tf:     lda thinFrame,x
@@ -324,9 +324,9 @@ ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*
          .byte >stripGlyphs, >[stripGlyphs+32], >[stripGlyphs+64], >[stripGlyphs+96]
 }
 
-// geos_Icons - in de GEOS-stijl GEOSICON laden: codes 128-253.
-geos_Icons: {
-        lda stGeos
+// stone_Icons - in de STONE-stijl STONEICON laden: codes 128-253.
+stone_Icons: {
+        lda stStone
         beq r
         jsr cfg_io_begin
         lda #nmE-nm
@@ -342,7 +342,7 @@ geos_Icons: {
         jsr cfg_io_end
 r:      rts
 .encoding "petscii_upper"
-nm:     .text "GEOSICON"
+nm:     .text "STONEICON"
 nmE:
 .encoding "screencode_upper"
 }

@@ -1,9 +1,9 @@
-"""Build build/geosicon.prg: the 24x24 desktop icons of the GEOS theme.
+"""Build build/stoneicon.prg: the 24x24 desktop icons of the STONE theme.
 
-Loaded at $3C00 = charset codes 128-253 while the GEOS theme is active
+Loaded at $3C00 = charset codes 128-253 while the STONE theme is active
 (there the "reverse" half of the charset is not needed). Icon i uses the
 nine codes 128+9*i .. 128+9*i+8, row by row (TL TC TR / ML MC MR / BL BC BR).
-Own drawings in the style of the GEOS deskTop ('#' = pixel).
+Own drawings in a classic 8-bit desktop style ('#' = pixel).
 Order = GI_* in gfx/font.asm.
 """
 import os
@@ -410,6 +410,6 @@ for name in ORDER:
     data += glyphs(ICONS[name])
 assert len(data) <= 126 * 8, len(data)
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-out = os.path.join(root, 'build', 'geosicon.prg')
+out = os.path.join(root, 'build', 'stoneicon.prg')
 open(out, 'wb').write(bytes([0x00, 0x3c]) + data)
-print('geosicon.prg: %d icons, %d bytes' % (len(ORDER), len(data)))
+print('stoneicon.prg: %d icons, %d bytes' % (len(ORDER), len(data)))

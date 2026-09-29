@@ -28,7 +28,7 @@
 .label DA_count = $c100
 .label DA_recs  = $c101
 .const DA_end   = DA_recs + DESK_MAXUSER*REC_STRIDE
-// Prullenbak (GEOS): de weggegooide records staan achteraan in de tabel
+// Prullenbak (STONE): de weggegooide records staan achteraan in de tabel
 // (plek 11, 10, ...), hun aantal direct achter de tabel.
 .label DA_trashN = DA_end
 
@@ -110,8 +110,8 @@ da_DrawEntries:
         jmp !lp-
 !bars:  jmp da_drawScrollbar
 
-// da_Style - indeling van de stijl (stGeos): Win95 2 kolommen met het
-//            label ernaast, GEOS 3 kolommen met het label eronder; met de
+// da_Style - indeling van de stijl (stStone): Win95 2 kolommen met het
+//            label ernaast, STONE 3 kolommen met het label eronder; met de
 //            strook rechts (CFG_strip, daStrip) is het venster smaller.
 da_Style:
         lda CFG_strip
@@ -119,7 +119,7 @@ da_Style:
         beq !n+
         lda #1
 !n:     sta daStrip
-        lda stGeos
+        lda stStone
         asl
         ora daStrip
         tax
@@ -149,7 +149,7 @@ da_Style:
         lda #0
         sta daScroll
 !:      rts
-//        Win95, Win95+strook, GEOS, GEOS+strook
+//        Win95, Win95+strook, STONE, STONE+strook
 dsCols:   .byte 2, 2, 3, 3
 dsRowH:   .byte 3, 3, 5, 5
 dsVisR:   .byte 7, 7, 4, 4
@@ -174,9 +174,9 @@ da_div:
 
 // da_drawOne - teken entry daEnt op (deCol,deRow).
 da_drawOne:
-        lda stGeos               // GEOS: 3x3-iconen, naam eronder
+        lda stStone               // STONE: 3x3-iconen, naam eronder
         beq !w95+
-        jmp da_drawGeos
+        jmp da_drawStone
 !w95:   lda daEnt
         cmp biCount
         bcs !user+
@@ -308,7 +308,7 @@ da_drawLabel:
         sta a0
         lda deRow
         sta a1
-        lda stGeos               // GEOS: gecentreerd onder het icoon
+        lda stStone               // STONE: gecentreerd onder het icoon
         beq !w+
         ldy #0
 !l:     lda (r0),y
@@ -576,12 +576,12 @@ da_hitEntry:
         rts
 
 //========================================================
-// GEOS-stijl (stGeos): 3x3-iconen, strook met DRIVE / PRINTER / TRASH,
+// STONE-stijl (stStone): 3x3-iconen, strook met DRIVE / PRINTER / TRASH,
 // slepen naar de strook.
 //========================================================
-// da_drawGeos - entry daEnt: icoon (deCol = linkerkolom, deRow = midden)
+// da_drawStone - entry daEnt: icoon (deCol = linkerkolom, deRow = midden)
 //               en de naam eronder.
-da_drawGeos:
+da_drawStone:
         lda daEnt
         cmp biCount
         bcs !u+
@@ -598,7 +598,7 @@ da_drawGeos:
         sta r0
         lda #>sgSid
         sta r0+1
-!sn:    lda daEnt                // ingebouwd programma i = GEOS-icoon i
+!sn:    lda daEnt                // ingebouwd programma i = STONE-icoon i
         jmp !d+
 !u:     sec
         sbc biCount
@@ -622,7 +622,7 @@ da_drawGeos:
         inc deRow
         jmp da_drawLabel
 
-// da_giCode - GEOS-icoon A -> eerste charset-code (128 + 9*A).
+// da_giCode - STONE-icoon A -> eerste charset-code (128 + 9*A).
 da_giCode:
         sta daT
         asl
@@ -705,9 +705,9 @@ da_Strip:
         sta deCol
         lda TH_text
         sta deIcoC
-        lda stGeos
+        lda stStone
         beq !w+
-        lda gsIco,x              // GEOS: 3x3
+        lda gsIco,x              // STONE: 3x3
         jsr da_giCode
         sta deIcon
         jsr da_draw3x3
@@ -777,9 +777,9 @@ da_Ghost:
 !c:     sta ghC,x
         dex
         bpl !c-
-        lda stGeos
+        lda stStone
         beq !w+
-        lda daGE                 // GEOS: 9 codes op een rij
+        lda daGE                 // STONE: 9 codes op een rij
         cmp biCount
         bcc !b+
         lda #GI_APP

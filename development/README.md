@@ -333,12 +333,12 @@ darker or lighter variant.
 | **MATRIX** | green on black |
 | **PAPER** | black on white |
 | **FREMEN** | shades of grey: dark grey on light grey |
-| **STONE** | a classic 8-bit desktop look, inspired by GEOS (see below) |
+| **STONE** | a classic 8-bit desktop look (see below) |
 | **DESK64** | the default: the STONE layout in the colours of the boot screen — blue windows with white text and lines, yellow accents, a light grey dotted desktop; with the TINY font |
 
 ### The STONE and DESK64 themes
 
-![The STONE theme](docs/screenshots/geos_desk.png)
+![The STONE theme](docs/screenshots/stone_desk.png)
 
 SETTINGS → THEME → STONE changes more than the colours; any other theme
 brings the normal look back at once. **DESK64**, the default theme on a new
@@ -351,7 +351,7 @@ keeps your theme; pick DESK64 under SETTINGS → THEME, and TINY under FONT).
   bar, window titles are striped, buttons dotted and the desktop edge is
   checkered. The menus are separated by thin lines.
 - The desktop shows large 24×24 icons in three columns with the name
-  underneath (own drawings, in the file `GEOSICON`).
+  underneath (own drawings, in the file `STONEICON`).
 - To the right of the window: **DRIVE** (opens FILES), **PRINT** (no printer
   support yet, it says so) and **TRASH**. These three icons are there in
   every theme (in the other themes as small icons in their style). Each can
@@ -366,7 +366,7 @@ keeps your theme; pick DESK64 under SETTINGS → THEME, and TINY under FONT).
 - A drop on the same icon starts it, a drop on DRIVE or PRINT is a click
   there.
 
-![The trash](docs/screenshots/geos_trash.png)
+![The trash](docs/screenshots/stone_trash.png)
 
 Ten fonts. Five are built in: SYSTEM, CLASSIC (italic), BOLD, LOWER (lower
 case) and TINY. Five are loaded from disk: FREMEN, SERIF, MONO, CASUAL and

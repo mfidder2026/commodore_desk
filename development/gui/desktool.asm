@@ -1045,7 +1045,7 @@ da_showFull:
 
 
 //========================================================
-// GEOS-strook: prullenbak, printer (tool_Run 3-6)
+// STONE-strook: prullenbak, printer (tool_Run 3-6)
 //========================================================
 // da_ToolMore - A = toolFn: 3 naar de prullenbak (toolArg), 4 printer,
 //               5 prullenbak openen, 6 ingebouwd programma.
@@ -1096,7 +1096,7 @@ da_TrashOpen:
         sta r0
         lda #>sgTrash
         sta r0+1
-        lda #3                   // (binnen het GEOS-bureaubladvenster)
+        lda #3                   // (binnen het STONE-bureaubladvenster)
         sta a0
         lda #4
         sta a1

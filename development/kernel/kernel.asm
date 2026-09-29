@@ -138,7 +138,7 @@ profile_Derive:
         txa                      // stijl: vullingen + omgekeerde tekens
         pha
         ldy #0
-        cpx #PROFILE_GEOS        // GEOS en DESK64: GEOS-stijl
+        cpx #PROFILE_STONE        // STONE en DESK64: STONE-stijl
         bcc !st+
         ldy #ST_N
 !st:    ldx #0
@@ -159,14 +159,14 @@ profile_Derive:
 
 // Venster = TH_deskbg ($D021), balken = TH_menubg (menubalk + statusbalk),
 // desktop = grijs eromheen.
-// Fremen = de kleuren van GEOS: donkergrijs op lichtgrijs, grijze tinten
+// Fremen = grijze tinten: donkergrijs op lichtgrijs
 // (balktekst = achtergrondkleur, dus donkere balken voor het contrast).
-// GEOS = de look van de GEOS deskTop: lichtgrijs, zwarte tekst zonder
+// STONE = een klassieke 8-bit desktop-look: lichtgrijs, zwarte tekst zonder
 // balken, gestreepte titels en een geruit bureaublad (zie stTab).
-// DESK64 = de GEOS-indeling in de kleuren van het bootscherm: blauwe vensters
+// DESK64 = de STONE-indeling in de kleuren van het bootscherm: blauwe vensters
 // met witte tekst en lijnen, lichtgrijs bureaublad (stippen omgekeerd, zie
 // icon_Build: de stippen zijn dan blauw).
-//          C64/Win95     Matrix       Paper        Fremen       GEOS         DESK64
+//          C64/Win95     Matrix       Paper        Fremen       STONE         DESK64
 profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY,   BLACK,       BLACK
 profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY,  LIGHT_GREY,  BLUE
 profMenu:    .byte LIGHT_GREY, GREEN,       GREY,        DARK_GREY,   BLACK,       WHITE
@@ -177,12 +177,12 @@ profDesktop: .byte GREY,       DARK_GREY,   LIGHT_GREY,  GREY,        DARK_GREY,
 profTitle:   .byte LIGHT_BLUE, GREEN,       BLUE,        DARK_GREY,   BLACK,       WHITE
 profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE,        YELLOW
 
-// Stijl per profiel (Win95 / GEOS): vulteken van de balken (menu, status),
+// Stijl per profiel (Win95 / STONE): vulteken van de balken (menu, status),
 // van titelbalken, van knoppen en van de desktoprand, en het masker voor
-// de "omgekeerde" tekens (128-255). GEOS: niet omgekeerd, dus tekst op
+// de "omgekeerde" tekens (128-255). STONE: niet omgekeerd, dus tekst op
 // balken en knoppen wordt gewone donkere tekst op de lichte achtergrond.
-// (laatste waarde: 1 = GEOS-indeling van het bureaublad en de menubalk)
-// (en de waarde die gfx_DrawTextRev bij de tekens optelt: in GEOS staan
+// (laatste waarde: 1 = STONE-indeling van het bureaublad en de menubalk)
+// (en de waarde die gfx_DrawTextRev bij de tekens optelt: in STONE staan
 // op 128-253 de 24x24-iconen, dus daar gewone tekens)
 stTab:  .byte $a0, $a0,      $a0,     $a0,      $ff, 0, $80
         .byte $20, GL_STRIPE, GL_DOTS, GL_TRACK, $00, 1, $00
@@ -191,5 +191,5 @@ stTitleFill: .byte $a0
 stBtnFill:   .byte $a0
 stDeskFill:  .byte $a0
 stRevMask:   .byte $ff
-stGeos:      .byte 0
+stStone:      .byte 0
 stRevOr:     .byte $80

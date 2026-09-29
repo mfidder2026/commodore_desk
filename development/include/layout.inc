@@ -112,8 +112,8 @@
 .const PROFILE_MATRIX   = 1
 .const PROFILE_PAPER    = 2
 .const PROFILE_FREMEN   = 3
-.const PROFILE_GEOS     = 4      // GEOS-stijl: licht, strepen, ruitjes
-.const PROFILE_DESK64   = 5      // GEOS-stijl met blauwe vensters (bootscherm)
+.const PROFILE_STONE     = 4      // STONE-stijl: licht, strepen, ruitjes
+.const PROFILE_DESK64   = 5      // STONE-stijl met blauwe vensters (bootscherm)
 .const NUM_PROFILES     = 6
 .const ST_N             = 7      // stijlwaarden per profiel (kernel.asm: stTab)
 .const DEFAULT_PROFILE  = PROFILE_DESK64
@@ -122,7 +122,7 @@
 // Reserveer bijv. de bovenste tekens voor frames/iconen; tekst-glyphs
 // staan op de standaard screencode-posities.
 .const GL_SOLID      = 127   // altijd een vol blok (cursor, kleurvlakken),
-                              // ook in de GEOS-stijl (daar is $A0 een spatie)
+                              // ook in de STONE-stijl (daar is $A0 een spatie)
 .const UI_GLYPH_FIRST = 96    // eerste screencode gereserveerd voor UI/iconen
 
 // Basis van het scherm-RAM (char-mode). VIC-bank 0, scherm op $0400.

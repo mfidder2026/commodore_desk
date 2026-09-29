@@ -63,14 +63,14 @@ frameGlyphs:
         .byte $53,$72,$53,$72,$53,$ff,$00,$00   // BL
         .byte $9c,$94,$9c,$94,$9c,$ff,$00,$00   // BR
 
-// GEOS-stijl: dun vensterkader (1 pixel) voor 91-95.
+// STONE-stijl: dun vensterkader (1 pixel) voor 91-95.
 thinFrame:
         .byte $80,$80,$80,$80,$80,$80,$80,$80   // 91 linkerrand
         .byte $01,$01,$01,$01,$01,$01,$01,$01   // 92 rechterrand
         .byte $00,$00,$00,$00,$00,$00,$00,$ff   // 93 onderrand
         .byte $80,$80,$80,$80,$80,$80,$80,$ff   // 94 hoek linksonder
         .byte $01,$01,$01,$01,$01,$01,$01,$ff   // 95 hoek rechtsonder
-// GEOS-stijl: strepen (titelbalk) en een licht stippenpatroon (knoppen).
+// STONE-stijl: strepen (titelbalk) en een licht stippenpatroon (knoppen).
 styleGlyphs:
         .byte $ff,$00,$ff,$00,$ff,$00,$ff,$00
         .byte $00,$44,$00,$11,$00,$44,$00,$11
