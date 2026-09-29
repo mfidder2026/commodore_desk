@@ -70,10 +70,6 @@ thinFrame:
         .byte $00,$00,$00,$00,$00,$00,$00,$ff   // 93 onderrand
         .byte $80,$80,$80,$80,$80,$80,$80,$ff   // 94 hoek linksonder
         .byte $01,$01,$01,$01,$01,$01,$01,$ff   // 95 hoek rechtsonder
-// STONE-stijl: haakjes aan de uiteinden van een knop: [ en ].
-btnGlyphs:
-        .byte $1f,$10,$10,$10,$10,$10,$10,$1f   // 124 [
-        .byte $f8,$08,$08,$08,$08,$08,$08,$f8   // 125 ]
 // STONE-stijl: strepen (titelbalk) en een licht stippenpatroon.
 styleGlyphs:
         .byte $ff,$00,$ff,$00,$ff,$00,$ff,$00

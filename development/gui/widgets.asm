@@ -39,7 +39,7 @@ btn_Draw:
         sta a2
         lda #1
         sta a3
-        lda stBtnFill            // (STONE-stijl: leeg, met [ ])
+        lda stBtnFill            // (STONE-stijl: leeg, alleen de tekstkleur)
         sta a4
         lda wColor
         sta a5
@@ -54,27 +54,7 @@ btn_Draw:
         lda wColor
         sta a2
         jsr gfx_DrawTextRev      // r0 = label (nog intact)
-        lda stStone              // STONE: [ en ] aan de uiteinden
-        beq !r+
-        lda wRow
-        sta a1
-        lda wColor
-        sta a3
-        lda wCol
-        sta a0
-        lda #GL_BTNL
-        sta a2
-        jsr gfx_PutChar
-        lda wCol
-        clc
-        adc wW
-        sec
-        sbc #1
-        sta a0
-        lda #GL_BTNR
-        sta a2
-        jsr gfx_PutChar
-!r:     rts
+        rts
 
 //--------------------------------------------------------
 // btn_HitTest - zit (evtA,evtB) op de knop (a0=kol,a1=rij,a2=br)?
@@ -487,7 +467,7 @@ dlg_OkButton:
         sta a1
         lda #4
         sta a2
-        lda TH_menubg
+        lda TH_accent
         sta a3
         jmp btn_Draw
 

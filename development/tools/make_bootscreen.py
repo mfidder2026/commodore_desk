@@ -23,10 +23,9 @@ def sc(ch):
     if 0x20<=o<=0x3f: return o
     return 0x20
 
-# desktop: the dotted pattern of the STONE theme (GL_DOTS in gfx/uiglyphs.asm:
-# dark grey dots on light grey)
-DOTS=[0x00,0x44,0x00,0x11,0x00,0x44,0x00,0x11]
-grid=[[DGREY if DOTS[y&7]&(0x80>>(x&7)) else LGREY for x in range(320)] for y in range(200)]
+# desktop: the checkered pattern of the STONE theme (GL_TRACK in
+# gfx/uiglyphs.asm: dark grey on light grey, every other pixel)
+grid=[[DGREY if (x+y)&1 else LGREY for x in range(320)] for y in range(200)]
 
 def fill(x0,y0,x1,y1,c):
     for y in range(y0,y1):

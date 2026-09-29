@@ -728,7 +728,7 @@ da_confirm:
         sta a1
         lda #5
         sta a2
-        lda TH_menubg
+        lda TH_accent
         sta a3
         jsr btn_Draw
         lda #<sBtnNo
@@ -741,7 +741,7 @@ da_confirm:
         sta a1
         lda #4
         sta a2
-        lda TH_menubg
+        lda TH_accent
         sta a3
         jsr btn_Draw
 !w:     jsr evt_Poll
@@ -1185,7 +1185,7 @@ da_TrashOpen:
         sta a1
         lda #9
         sta a2
-        lda TH_menubg
+        lda TH_accent
         sta a3
         jsr btn_Draw
         lda #<sBtnEmpty
@@ -1198,7 +1198,7 @@ da_TrashOpen:
         sta a1
         lda #7
         sta a2
-        lda TH_menubg
+        lda TH_accent
         sta a3
         jsr btn_Draw
 !w:     jsr da_pollClick         // (sluitknop / ESC: carry=1)
@@ -1594,7 +1594,7 @@ sDpSerial: .text "SERIAL, DEVICE 4  "
            .byte $ff
 sDpUser:   .text "USERPORT (CABLE)  "
            .byte $ff
-sDpHint:   .text "CLICK TYPE OR PORT TO CHANGE"
+sDpHint:   .text "CLICK A LINE TO CHANGE IT"
            .byte $ff
 sDpBusy:   .text "PRINTING TEST PAGE..."
            .byte $ff

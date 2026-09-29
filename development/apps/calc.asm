@@ -32,7 +32,7 @@ calc_Draw: {
         beq !d+
         lda TH_text
         sta calcBoxC
-        lda TH_menubg
+        lda TH_accent
         sta calcBtnC
         lda TH_accent
         sta calcDispC

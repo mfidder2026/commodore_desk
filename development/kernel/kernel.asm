@@ -168,8 +168,7 @@ profile_Derive:
 // STONE = een klassieke 8-bit desktop-look: lichtgrijs, zwarte tekst zonder
 // balken, gestreepte titels en een geruit bureaublad (zie stTab).
 // DESK64 = de STONE-indeling in de kleuren van het bootscherm: blauwe vensters
-// met witte tekst en lijnen, lichtgrijs bureaublad (stippen omgekeerd, zie
-// icon_Build: de stippen zijn dan blauw).
+// met witte tekst en lijnen, een lichtgrijs geruit bureaublad.
 //          C64/Win95     Matrix       Paper        Fremen       STONE         DESK64
 profBorder:  .byte LIGHT_BLUE, BLACK,       GREY,        DARK_GREY,   BLACK,       BLACK
 profDesk:    .byte BLUE,       BLACK,       WHITE,       LIGHT_GREY,  LIGHT_GREY,  BLUE
@@ -189,7 +188,7 @@ profMouse:   .byte WHITE,      LIGHT_GREEN, BLACK,       WHITE,       BLUE,     
 // (en de waarde die gfx_DrawTextRev bij de tekens optelt: in STONE staan
 // op 128-253 de 24x24-iconen, dus daar gewone tekens)
 stTab:  .byte $a0, $a0,      $a0,     $a0,      $ff, 0, $80
-        .byte $20, GL_STRIPE, GL_DOTS, $20,      $00, 1, $00
+        .byte $20, GL_STRIPE, $20,     GL_TRACK, $00, 1, $00   // knoppen: alleen de tekstkleur
 stBarFill:   .byte $a0
 stTitleFill: .byte $a0
 stBtnFill:   .byte $a0

@@ -1375,7 +1375,7 @@ sPmBack:    .text "BACK"
             .byte $ff
 sPmName:    .text "NAME"
             .byte $ff
-sPmHint:    .text "(M IN PAINT = THIS MENU)"
+sPmHint:    .text "(KEY M = MENU)"
             .byte $ff
 sPmAsk:     .text "TYPE A FILE NAME, THEN RETURN"
             .byte $ff
