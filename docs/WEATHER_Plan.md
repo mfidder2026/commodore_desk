@@ -268,8 +268,8 @@ Een zonnetje half achter een wolkje, in alle thema's:
 | # | Stap | Klaar als |
 |---|---|---|
 | 1 | **Core-ruimte**: `font_Base`/`fo_Ov` als lus, overlay-keuze als bereik | ✅ **klaar**: Core van 11 naar **139 bytes** vrij; 6 thema's, 10 fonts en de apps pixel voor pixel gelijk aan vóór de wijziging |
-| 2 | **Sprites ontwerpen**: `make_weather_sprites.py` + preview | 🟡 **voorbeeld klaar** (`build/weather_preview.png`, 16 weertypes, 19 vormen, 2,4 KB); wacht op jouw goedkeuring |
-| 3 | **Overlay-skelet**: `weather_main.asm`, app-id 14, icoon (STONE + Win95), venster met vaste testgegevens | app opent/sluit in alle thema's, icoon klopt, bureaublad-iconen na sluiten intact |
+| 2 | **Sprites ontwerpen**: `make_weather_sprites.py` + preview | ✅ **klaar**: 16 weertypes, 19 vormen (2,4 KB), goedgekeurd |
+| 3 | **Overlay-skelet**: `weather_main.asm`, app-id 14, icoon (STONE + Win95), venster met vaste testgegevens | ✅ **klaar**: eigen PRG `WEATHER` (1,3 KB), icoon in alle thema's, wttr.in-regels ontleed (°C, windpijl → richting), REFRESH bladert door 4 testregels; Core nog 5 bytes vrij |
 | 4 | **Sprite-motor**: lagen, kleuren, animatie, opslaan/terugzetten `$3E00` | alle 13 weertypes met testgegevens in VICE (screenshots) |
 | 5 | **Ophalen**: HTTP GET naar wttr.in, ontleden, meldingen | echte data op RR-Net (VICE) en WiC64 (VICE-emulatie) |
 | 6 | **Locatie**: CHANGE, AUTO, `WEATHER.CFG`, `build_disk.bat` | plaats blijft bewaard na herstart en na een nieuwe build |

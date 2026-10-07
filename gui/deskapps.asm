@@ -159,8 +159,8 @@ dsColOff: .byte 0, 2, 4, 7
 dsScrCol: .byte 37, 32, 37, 32   // scrollbalk (strook: smaller venster)
 dsClrW:   .byte 35, 30, 35, 30   // breedte van de vensterinhoud
 dsCellX:  .byte 0, 0, 2, 2       // klikzones: eerste kolom en breedte
-dsCellW:  .byte 20, 17, 11, 10
-daColX:   .byte 3, 21, 3, 17, 6, 17, 28, 5, 15, 25
+dsCellW:  .byte 20, 18, 11, 10
+daColX:   .byte 3, 21, 3, 18, 6, 17, 28, 5, 15, 25
 
 // da_div - A / daCols -> X = quotient, A = rest.
 da_div:
@@ -599,6 +599,9 @@ da_drawStone:
         lda #>sgSid
         sta r0+1
 !sn:    lda daEnt                // ingebouwd programma i = STONE-icoon i
+        cmp #9                   // (behalve WEATHER: eigen icoon)
+        bne !d+
+        lda #GI_WEATHER
         jmp !d+
 !u:     sec
         sbc biCount
@@ -624,7 +627,11 @@ da_drawStone:
 
 // da_giCode - STONE-icoon A -> eerste charset-code (128 + 9*A).
 da_giCode:
-        sta daT
+        cmp #GI_WEATHER          // WEATHER staat niet in GEOSICON
+        bne !g+
+        lda #GI_WEATHER_CODE
+        rts
+!g:     sta daT
         asl
         asl
         asl
@@ -689,7 +696,9 @@ da_Strip:
 !lp:    stx daSI
         lda CFG_strip
         and gsBit,x
-        beq !nx+
+        bne !on+
+        jmp !nx+
+!on:
         ldy daSN                 // volgende plek
         txa
         sta gsWhich,y
@@ -717,6 +726,23 @@ da_Strip:
         inc deRow
         jsr da_draw2x2
         dec deRow
+        lda daSI                 // volle prullenbak: de lege + eigen bovenrij
+        cmp #2
+        bne !lb+
+        lda DA_trashN
+        beq !lb+
+        lda deCol
+        sta a0
+        lda deRow
+        sta a1
+        lda #GL_TRASHF
+        sta a2
+        lda deIcoC
+        sta a3
+        jsr gfx_PutChar
+        inc a0
+        inc a2
+        jsr gfx_PutChar
 !lb:    ldx daSI
         lda gsLo,x
         sta r0
@@ -734,7 +760,9 @@ da_Strip:
 !nx:    ldx daSI
         inx
         cpx #3
-        bne !lp-
+        beq !r+
+        jmp !lp-
+!r:
         rts
 
 // da_StripHit - (evtA,evtB) op de strook: X = 0 DRIVE, 1 PRINTER,
@@ -783,7 +811,10 @@ da_Ghost:
         cmp biCount
         bcc !b+
         lda #GI_APP
-!b:     jsr da_giCode
+!b:     cmp #9                   // WEATHER: eigen icoon
+        bne !c+
+        lda #GI_WEATHER
+!c:     jsr da_giCode
         ldx #0
 !g:     sta ghC,x
         clc
@@ -878,7 +909,7 @@ da_Ghost:
 gsRow:  .byte 3, 9, 15
 gsBit:  .byte 1, 2, 4
 gsIco:  .byte GI_DRIVE, GI_PRINTER, GI_TRASH, GI_TRASHF
-gsW95:  .byte STRIP_BASE, STRIP_BASE+6, STRIP_BASE+12, STRIP_BASE+18
+gsW95:  .byte STRIP_BASE, STRIP_BASE+6, STRIP_BASE+12, STRIP_BASE+12
 gsLo:   .byte <sgDrive, <sgPrint, <sgTrash
 gsHi:   .byte >sgDrive, >sgPrint, >sgTrash
 gh6:    .byte 0, 1, 3, 4, 6, 7   // 2x3-cel -> 3x3-cel

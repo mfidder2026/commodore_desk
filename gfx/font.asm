@@ -81,6 +81,14 @@
 // Win95-stijl: DRIVE, PRINTER, TRASH, TRASH (vol) als 2x3 op 102-125: dat
 // zijn na icon_Build vrije codes (alleen bron van de 2x3-iconen).
 .const STRIP_BASE  = 102
+// WEATHER: in de Win95-stijl 2x3 op 120-125 (daar stond de volle
+// prullenbak; die is nu de lege + een eigen bovenrij op 82-83, want de
+// rest van beide is gelijk); in de STONE-stijl 3x3 op 102-110 (daar staan
+// anders de Win95-strookiconen, die STONE niet gebruikt).
+.const ICO_WEATHER = 120
+.const GL_TRASHF   = 82          // volle prullenbak: bovenrij (2 tekens)
+.const GI_WEATHER  = 14          // STONE-icoonnummer van WEATHER (geen GEOSICON-plek)
+.const GI_WEATHER_CODE = 102
 .const GL_STRIPE   = 82
 .const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
@@ -305,12 +313,30 @@ sg:     lda styleGlyphs,x
         dex
         bpl sg
         lda stStone               // STONE: dunner vensterkader (91-95)
-        beq tr
+        beq w95
         ldx #39
 tf:     lda thinFrame,x
         sta CHARSET_BASE+W_L*8,x
         dex
         bpl tf
+        ldx #71                  // STONE: WEATHER 3x3 op 102-110
+tw:     lda weatherBig,x
+        sta CHARSET_BASE+GI_WEATHER_CODE*8,x
+        dex
+        bpl tw
+        rts
+w95:    ldx #15                  // Win95: bovenrij volle prullenbak -> 82-83
+tt:     lda CHARSET_BASE+[STRIP_BASE+18]*8,x
+        sta CHARSET_BASE+GL_TRASHF*8,x
+        dex
+        bpl tt
+        lda #<[CHARSET_BASE + ICO_WEATHER*8]   // en WEATHER op 120-125
+        sta r5
+        lda #>[CHARSET_BASE + ICO_WEATHER*8]
+        sta r5+1
+        ldx #ICON3_N+4
+        ldy #ICON3_N+5
+        jmp ib_Run
 tr:     rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
@@ -324,10 +350,12 @@ ibSrcLo: .byte <[CHARSET_BASE+111*8], <[CHARSET_BASE+115*8], <[CHARSET_BASE+119*
          .byte <[CHARSET_BASE+107*8], <[CHARSET_BASE+102*8], <[CHARSET_BASE+80*8]
          .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs, <sidGlyphs
          .byte <stripGlyphs, <[stripGlyphs+32], <[stripGlyphs+64], <[stripGlyphs+96]
+         .byte <weatherGlyphs
 ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*8]
          .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
          .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs, >sidGlyphs
          .byte >stripGlyphs, >[stripGlyphs+32], >[stripGlyphs+64], >[stripGlyphs+96]
+         .byte >weatherGlyphs
 }
 
 // stone_Icons - in de STONE-stijl STONEICON laden: codes 128-253.

@@ -1,5 +1,5 @@
 """Export the Core's labels for separately assembled overlays (BBS, EMAIL,
-TIME, RADIO).
+TIME, RADIO, WEATHER).
 
 Reads build/disk_main.vs (VICE labels of the main assembly) and writes
 build/core_syms.inc with `.label name = $addr` for every Core label that a
@@ -18,7 +18,8 @@ out = os.path.join(root, 'build', 'core_syms.inc')
 own_sources = sys.argv[1:] or ['net/*.asm', 'net/*.inc', 'apps/bbs/*.asm', 'apps/email/*.asm',
                                'apps/email/*.inc', 'include/*.inc', 'bbs_main.asm', 'email_main.asm',
                                'apps/time/*.asm', 'time_main.asm', 'apps/sidplay.asm',
-                               'apps/radio/*.asm', 'apps/radio/*.inc', 'radio_main.asm']
+                               'apps/radio/*.asm', 'apps/radio/*.inc', 'radio_main.asm',
+                               'apps/weather/*.asm', 'apps/weather/*.inc', 'weather_main.asm']
 
 defined = set()
 pat = re.compile(r'^\s*(?:\.label\s+|\.const\s+|\.var\s+)?([A-Za-z_]\w*)\s*(?::|=)', re.M)

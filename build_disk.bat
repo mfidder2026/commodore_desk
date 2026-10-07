@@ -43,6 +43,10 @@ if errorlevel 1 ( echo EMAIL build failed. & exit /b 1 )
 if errorlevel 1 ( echo TIME build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" radio_main.asm -odir build
 if errorlevel 1 ( echo RADIO build failed. & exit /b 1 )
+python tools\make_weather_sprites.py
+if errorlevel 1 ( echo WEATHER-sprites mislukt. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" weather_main.asm -odir build
+if errorlevel 1 ( echo WEATHER build failed. & exit /b 1 )
 python tools\make_radio_seq.py
 if errorlevel 1 ( echo RADIO.LST mislukt. & exit /b 1 )
 python tools\make_stoneicons.py
@@ -87,6 +91,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\email.prg email ^
   -write build\time.prg time ^
   -write build\radio.prg radio ^
+  -write build\weather.prg weather ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -181,6 +186,7 @@ if exist build\CD64.d81 del build\CD64.d81
   -write build\email.prg email ^
   -write build\time.prg time ^
   -write build\radio.prg radio ^
+  -write build\weather.prg weather ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -223,6 +229,7 @@ if exist release\CD64.d81 del release\CD64.d81
   -write build\email.prg email ^
   -write build\time.prg time ^
   -write build\radio.prg radio ^
+  -write build\weather.prg weather ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^

@@ -70,6 +70,21 @@ thinFrame:
         .byte $00,$00,$00,$00,$00,$00,$00,$ff   // 93 onderrand
         .byte $80,$80,$80,$80,$80,$80,$80,$ff   // 94 hoek linksonder
         .byte $01,$01,$01,$01,$01,$01,$01,$ff   // 95 hoek rechtsonder
+weatherGlyphs:  // 16x16 (TL, TR, BL, BR): WEATHER (Win95-stijl, icon_Build)
+        .byte $00,$0c,$20,$60,$1e,$9f,$9f,$1e   // TL
+        .byte $00,$00,$80,$80,$00,$00,$70,$88   // TR
+        .byte $0d,$62,$04,$04,$04,$03,$00,$00   // BL
+        .byte $04,$04,$02,$01,$01,$fe,$00,$00   // BR
+weatherBig:     // 24x24 (3x3, rijen): WEATHER (STONE-stijl, codes 102-110)
+        .byte $00,$00,$01,$01,$30,$30,$03,$07   // 102
+        .byte $00,$00,$80,$80,$0c,$0c,$c0,$e0   // 103
+        .byte $00,$00,$00,$00,$00,$00,$00,$00   // 104
+        .byte $0f,$cf,$cf,$0f,$07,$01,$30,$30   // 105
+        .byte $e0,$f4,$f3,$ec,$e8,$90,$60,$80   // 106
+        .byte $00,$00,$c0,$20,$10,$08,$08,$04   // 107
+        .byte $01,$01,$01,$00,$00,$00,$00,$00   // 108
+        .byte $00,$00,$00,$80,$80,$7f,$00,$00   // 109
+        .byte $02,$02,$01,$02,$02,$fc,$00,$00   // 110
 // STONE-stijl: strepen (titelbalk) en een licht stippenpatroon.
 styleGlyphs:
         .byte $ff,$00,$ff,$00,$ff,$00,$ff,$00
