@@ -268,7 +268,7 @@ Een zonnetje half achter een wolkje, in alle thema's:
 | # | Stap | Klaar als |
 |---|---|---|
 | 1 | **Core-ruimte**: `font_Base`/`fo_Ov` als lus, overlay-keuze als bereik | ✅ **klaar**: Core van 11 naar **139 bytes** vrij; 6 thema's, 10 fonts en de apps pixel voor pixel gelijk aan vóór de wijziging |
-| 2 | **Sprites ontwerpen**: `make_weather_sprites.py` + preview | preview van alle weertypes goedgekeurd door jou |
+| 2 | **Sprites ontwerpen**: `make_weather_sprites.py` + preview | 🟡 **voorbeeld klaar** (`build/weather_preview.png`, 16 weertypes, 19 vormen, 2,4 KB); wacht op jouw goedkeuring |
 | 3 | **Overlay-skelet**: `weather_main.asm`, app-id 14, icoon (STONE + Win95), venster met vaste testgegevens | app opent/sluit in alle thema's, icoon klopt, bureaublad-iconen na sluiten intact |
 | 4 | **Sprite-motor**: lagen, kleuren, animatie, opslaan/terugzetten `$3E00` | alle 13 weertypes met testgegevens in VICE (screenshots) |
 | 5 | **Ophalen**: HTTP GET naar wttr.in, ontleden, meldingen | echte data op RR-Net (VICE) en WiC64 (VICE-emulatie) |
