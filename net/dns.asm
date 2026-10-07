@@ -290,13 +290,15 @@ cp:     lda (ck2),y
         lda #1
         sta dnsDone
 out:    rts
-skip:   ldy #9                   // 10 + rdlength verder
+skip:   ldy #8                   // 10 + rdlength verder (de hoge byte eerst
+        lda (ck2),y              // lezen: daarna staat ck2 al verder - zo
+        sta dnsHi                // ging een CNAME voor het A-record mis)
+        ldy #9
         lda (ck2),y
         clc
         adc #10
         jsr ptrAdd
-        ldy #8
-        lda (ck2),y              // (rdlength hoog: pagina's)
+        lda dnsHi
         beq nx
         jsr ptrAddHi
 nx:     dec dnsCnt
@@ -343,6 +345,7 @@ dnsTry:    .byte 0
 dnsDone:   .byte 0               // 1 = gevonden, 2 = onbekend
 dnsCnt:    .byte 0
 dnsLen:    .byte 0
+dnsHi:     .byte 0
 dnsLenPos: .byte 0
 dnsTmp:    .byte 0
 
