@@ -17,9 +17,15 @@ Pixel values ('.', '1', '2', '3' in the grids) are the multicolour bit pairs:
 The shapes are drawn in screen pixels (96 x 42 per layer) and sampled per
 fat pixel (4 x 2 screen pixels), so circles stay round on screen.
 
+The 3-day forecast uses a small picture per day: 2 sprites side by side,
+only Y-expanded (48 x 42 pixels), made by shrinking the big picture to half
+size and bringing each sprite to 3 colours (white, light grey and its own).
+
 Output:
   build/weather_spr.bin    the shapes, 128 bytes each (2 sprites x 64)
-  build/weather_spr.inc    shape numbers and the weather-type table
+  build/weather_mini.bin   the small forecast pictures, 128 bytes each
+  build/weather_spr.inc    shape numbers, the weather-type table, the small
+                           pictures and the forecast codes (WWO -> type)
   build/weather_preview.png  every weather type on its sky (for review)
 
 usage: python tools/make_weather_sprites.py
@@ -252,8 +258,11 @@ ORDER = ['SUN_A', 'SUN_B', 'MOON', 'CLOUD_BIG', 'CLOUD_SMALL', 'RAIN_L_A', 'RAIN
          'SLEET_A', 'SLEET_B', 'FOG_A', 'FOG_B', 'BOLT', 'QMARK']
 
 # ---- weather types --------------------------------------------------------------
-# (name, wttr.in %x symbols, sky colour, layers FRONT FIRST [(shape, colour, (dx, dy))],
+# (name, wttr.in %x symbols, sky colour, layers FRONT FIRST [(shape, colour, (dx, dy)[, width])],
 #  animated layer: (shape A, shape B) or None).  dx/dy in screen pixels.
+#  width: sprites of the layer (default 2, the bolt 1); a layer of 1 sprite
+#  only shows the left half of its shape, and must come last when it moves
+#  (the animation also sets the pointer of the next sprite).
 P_SKY, P_CLOUD, P_RAIN = (0, 0), (0, 14), (0, 44)
 TYPES = [
     ('SUNNY', 'o', LBLUE, [('SUN_A', YELLOW, P_SKY)], ('SUN_A', 'SUN_B')),
@@ -265,8 +274,9 @@ TYPES = [
     ('FOG', '=', GREY, [('FOG_A', LGREY, (0, 20))], ('FOG_A', 'FOG_B')),
     ('LIGHT RAIN', '. /', LBLUE, [('CLOUD_BIG', LGREY, P_CLOUD), ('RAIN_L_A', BLUE, P_RAIN)],
      ('RAIN_L_A', 'RAIN_L_B')),
-    ('SHOWERS', './ (day)', LBLUE, [('CLOUD_SMALL', WHITE, (0, 18)), ('RAIN_L_A', BLUE, (40, 46)),
-                                    ('SUN_A', YELLOW, P_SKY)], ('RAIN_L_A', 'RAIN_L_B')),
+    ('SHOWERS', './ (day)', LBLUE, [('CLOUD_SMALL', WHITE, (0, 18)), ('SUN_A', YELLOW, P_SKY),
+                                    ('RAIN_L_A', BLUE, (40, 46), 1)],    # (stays in the panel)
+     ('RAIN_L_A', 'RAIN_L_B')),
     ('HEAVY RAIN', '// ///', GREY, [('CLOUD_BIG', DGREY, P_CLOUD), ('RAIN_H_A', LBLUE, P_RAIN)],
      ('RAIN_H_A', 'RAIN_H_B')),
     ('LIGHT SNOW', '* */', LBLUE, [('CLOUD_BIG', LGREY, P_CLOUD), ('SNOW_L_A', WHITE, P_RAIN)],
@@ -288,6 +298,133 @@ PANEL_COL, PANEL_ROW = 3, 7
 PANEL_X, PANEL_Y = 24 + PANEL_COL * 8, 50 + PANEL_ROW * 8
 
 
+# ---- small pictures (forecast) -------------------------------------------------
+NIGHT = ('CLEAR NIGHT', 'PARTLY CLOUDY NIGHT')
+MINI_TYPES = [t for t in TYPES if t[0] not in NIGHT]
+ACCENT = (YELLOW, BLUE, LBLUE)          # these win the sprite's own colour
+
+
+def compose(t):
+    """The big picture of a type (panel pixels, colour or None)."""
+    img = [[None] * PIC_W for _ in range(PIC_H)]
+    for layer in reversed(t[3]):
+        shape, colour, (dx, dy) = layer[:3]
+        g = SHAPES[shape]
+        for r in range(H):
+            for c in range(12 * width(layer)):
+                v = g[r][c]
+                if v == '.':
+                    continue
+                col = {'1': MC1, '2': colour, '3': MC2}[v]
+                for yy in range(2):
+                    for xx in range(4):
+                        X, Y = dx + c * 4 + xx, dy + r * 2 + yy
+                        if 0 <= X < PIC_W and 0 <= Y < PIC_H:
+                            img[Y][X] = col
+    return img
+
+
+def mini(t):
+    """24 x 21 fat pixels (2 x 2 screen pixels): half size, centred, and per
+    sprite (12 columns) only white, light grey and one colour of its own.
+    Returns (grid of '.', '1', '2', '3', (own colour left, right))."""
+    from collections import Counter
+    img = compose(t)
+    pts = [(x, y) for y in range(PIC_H) for x in range(PIC_W) if img[y][x] is not None]
+    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
+    ox = (x0 + x1 + 1) // 2 - 48        # centre of the drawing -> centre of 96 x 84
+    oy = (y0 + y1 + 1) // 2 - 42
+    grid = [[None] * 24 for _ in range(21)]
+    for r in range(21):
+        for c in range(24):
+            cnt = Counter()
+            for y in range(4 * r + oy, 4 * r + oy + 4):
+                for x in range(4 * c + ox, 4 * c + ox + 4):
+                    cnt[img[y][x] if 0 <= x < PIC_W and 0 <= y < PIC_H else None] += 1
+            col = cnt.most_common(1)[0][0]
+            if col is None:
+                nn = [(k, v) for k, v in cnt.items() if k is not None]
+                if nn and max(v for _, v in nn) >= 6:
+                    col = max(nn, key=lambda kv: kv[1])[0]
+            grid[r][c] = col
+    own = []
+    for h in range(2):
+        cnt = Counter(grid[r][c] for r in range(21) for c in range(h * 12, h * 12 + 12)
+                      if grid[r][c] not in (None, MC1, MC2))
+        acc = [k for k in ACCENT if cnt[k] >= 2]
+        own.append(acc[0] if acc else (cnt.most_common(1)[0][0] if cnt else DGREY))
+
+    def dist(a, b):
+        return sum((p - q) ** 2 for p, q in zip(PAL[a], PAL[b]))
+    out = blank()
+    for r in range(21):
+        for c in range(24):
+            v = grid[r][c]
+            if v is None:
+                continue
+            o = own[c // 12]
+            k = o if v == o else min((MC1, MC2), key=lambda k: dist(k, v))
+            out[r][c] = {MC1: '1', MC2: '3'}.get(k, '2')
+    return out, own
+
+
+# forecast: WWO weather codes (wttr.in format=j1, "weatherCode") -> type.
+# The C64 looks them up as code >> 1 (all different, and < 256).
+WWO = {113: 'SUNNY', 116: 'PARTLY CLOUDY', 119: 'CLOUDY', 122: 'OVERCAST',
+       143: 'FOG', 248: 'FOG', 260: 'FOG'}
+for codes, name in (((176, 263, 353), 'SHOWERS'), ((266, 293, 296), 'LIGHT RAIN'),
+                    ((299, 302, 305, 308, 356, 359), 'HEAVY RAIN'),
+                    ((179, 182, 185, 281, 284, 311, 314, 317, 350, 362, 365, 374, 377), 'SLEET'),
+                    ((200, 386, 389), 'THUNDER'), ((227, 320, 323, 326, 368), 'LIGHT SNOW'),
+                    ((230, 329, 332, 335, 338, 371, 395), 'HEAVY SNOW'), ((392,), 'THUNDER SNOW')):
+    for c in codes:
+        WWO[c] = name
+
+
+def mini_asm():
+    names = [t[0] for t in TYPES]
+    keys = sorted(WWO)
+    assert len({k >> 1 for k in keys}) == len(keys) and max(keys) >> 1 < 255
+    mi = [names.index(t[0]) for t in MINI_TYPES]
+    minis = [mini(t)[1] for t in MINI_TYPES]
+    out = ['wtMini: .byte %s' % ', '.join(str(mi.index(i)) if i in mi else '0'
+                                         for i in range(len(TYPES))),
+           'wmColL: .byte %s' % ', '.join(str(o[0]) for o in minis),
+           'wmColR: .byte %s' % ', '.join(str(o[1]) for o in minis),
+           '.const WC_N = %d' % len(keys),
+           'wcKey:  .byte %s' % ', '.join(str(k >> 1) for k in keys),
+           'wcType: .byte %s' % ', '.join(str(names.index(WWO[k])) for k in keys)]
+    return '\n'.join(out) + '\n'
+
+
+def render_mini():
+    from PIL import Image
+    sc = 3
+    img = Image.new('RGB', (len(MINI_TYPES) * 56 * sc, 56 * sc), (40, 40, 40))
+    px = img.load()
+    for i, t in enumerate(MINI_TYPES):
+        g, own = mini(t)
+        ox = i * 56 + 4
+        for y in range(48):
+            for x in range(48):
+                for a in range(sc):
+                    for b in range(sc):
+                        px[(ox + x) * sc + a, (4 + y) * sc + b] = PAL[t[2]]
+        for r in range(21):
+            for c in range(24):
+                v = g[r][c]
+                if v == '.':
+                    continue
+                rgb = PAL[{'1': MC1, '3': MC2, '2': own[c // 12]}[v]]
+                for yy in range(2):
+                    for xx in range(2):
+                        for a in range(sc):
+                            for b in range(sc):
+                                px[(ox + c * 2 + xx) * sc + a, (7 + r * 2 + yy) * sc + b] = rgb
+    return img
+
+
 # ---- output ---------------------------------------------------------------------
 def sprite_bytes(g, half):
     """64 bytes of one sprite: 21 rows x 3 bytes (12 fat pixels), + 1 pad."""
@@ -301,14 +438,25 @@ def sprite_bytes(g, half):
     return out + b'\x00'
 
 
+def width(layer):
+    return layer[3] if len(layer) > 3 else (1 if layer[0] == 'BOLT' else 2)
+
+
 def check_blocks():
-    """At most 8 sprite blocks per weather type (plan 3.2) and 7 sprites."""
+    """At most 8 sprite blocks per weather type (plan 3.2) and 7 sprites;
+    every layer stays inside the panel."""
     for name, _, _, layers, anim in TYPES:
-        shapes = {s for s, _, _ in layers} | set(anim or ())
+        shapes = {l[0] for l in layers} | set(anim or ())
         blocks = sum(1 if s == 'BOLT' else 2 for s in shapes)
-        sprites = sum(1 if s == 'BOLT' else 2 for s, _, _ in layers)
+        sprites = sum(width(l) for l in layers)
         assert blocks <= 8, (name, blocks)
         assert sprites <= 7, (name, sprites)
+        for i, l in enumerate(layers):
+            g, (dx, dy) = SHAPES[l[0]], l[2]
+            used = [c for r in range(H) for c in range(12 * width(l)) if g[r][c] != '.']
+            assert dx + (max(used) + 1) * 4 <= PIC_W, (name, l[0], 'leaves the panel')
+            if anim and l[0] == anim[0] and width(l) == 1:
+                assert i == len(layers) - 1, (name, 'a moving 1-sprite layer must be last')
 
 
 def render(frame):
@@ -328,12 +476,13 @@ def render(frame):
                     for b in range(sc):
                         px[(ox + x) * sc + a, (oy + y) * sc + b] = PAL[sky]
         # back to front: the last layer in the list is drawn first
-        for shape, colour, (dx, dy) in reversed(layers):
+        for layer in reversed(layers):
+            shape, colour, (dx, dy) = layer[:3]
             if frame and anim and shape == anim[0]:
                 shape = anim[1]
             g = SHAPES[shape]
             for r in range(H):
-                for c in range(W):
+                for c in range(12 * width(layer)):
                     v = g[r][c]
                     if v == '.':
                         continue
@@ -361,14 +510,14 @@ def types_asm():
         a_l, a_b, b_l = 255, 0, 255
         for i in range(4):
             if i < len(layers):
-                s, c, (dx, dy) = layers[i]
+                s, c, (dx, dy) = layers[i][:3]
                 x, y = PANEL_X + dx, PANEL_Y + dy
                 assert 0 <= x and x + 96 <= 255 and 0 <= y <= 255, (name, x, y)
                 sh.append(ORDER.index(s))
                 co.append(c)
                 xs.append(x)
                 ys.append(y)
-                wd.append(1 if s == 'BOLT' else 2)
+                wd.append(width(layers[i]))
                 if anim and s == anim[0]:
                     a_l, a_b = i, ORDER.index(anim[1])
                 if s == 'BOLT':
@@ -401,6 +550,12 @@ def main():
         for i, s in enumerate(ORDER):
             f.write('.const WS_%s = %d\n' % (s, i))
         f.write(types_asm())
+        f.write(mini_asm())
+    mdata = bytearray()
+    for t in MINI_TYPES:
+        g = mini(t)[0]
+        mdata += sprite_bytes(g, 0) + sprite_bytes(g, 1)
+    open(os.path.join(ROOT, 'build', 'weather_mini.bin'), 'wb').write(mdata)
     try:
         from PIL import Image
         a, b = render(0), render(1)
@@ -408,10 +563,11 @@ def main():
         both.paste(a, (0, 0))
         both.paste(b, (0, a.height + 20))
         both.save(os.path.join(ROOT, 'build', 'weather_preview.png'))
+        render_mini().save(os.path.join(ROOT, 'build', 'weather_mini.png'))
     except ImportError:
         print('(no Pillow: no preview)')
-    print('weather_spr.bin: %d shapes, %d bytes; %d weather types'
-          % (len(ORDER), len(data), len(TYPES)))
+    print('weather_spr.bin: %d shapes, %d bytes; %d weather types; %d small pictures (%d bytes)'
+          % (len(ORDER), len(data), len(TYPES), len(MINI_TYPES), len(mdata)))
 
 
 if __name__ == '__main__':

@@ -278,13 +278,20 @@ Een zonnetje half achter een wolkje, in alle thema's:
 
 ---
 
-## 9. Open vragen voor jou
+## 9. Open vragen voor jou (beantwoord)
 
-1. **Eenheden**: alleen metrisch (°C, km/h), of ook een keuze °F/mph?
-2. **Verwachting**: alleen het **huidige** weer (dit plan), of later ook een
-   korte verwachting voor 3 dagen eronder (wttr.in kan dat ook, met kleine
-   icoontjes)?
-3. **Taal** van de omschrijving: Engels (zoals de rest van CD64) of
-   Nederlands (`lang=nl`, maar dan komen er é/ë-tekens in die we moeten
-   omzetten)?
-4. **D64**: WEATHER weglaten op de D64, of daar iets anders voor wijken?
+1. **Eenheden**: ✅ beide. De knop `C KM/H` / `F MPH` onder CHANGE wisselt
+   (`&m` / `&u` bij wttr.in; in de verwachting `maxtempC`/`maxtempF`).
+   Bewaard als byte 33 van `WEATHER.CFG` (een oud bestand van 32 bytes
+   geeft gewoon C).
+2. **Verwachting**: ✅ 3 dagen op een eigen pagina (knop `3 DAYS` / `NOW`):
+   dag, klein plaatje (2 sprites, alleen hoog vergroot; uit
+   `make_weather_sprites.py`), het weer om 12:00, max/min en de hoogste
+   regenkans. Bron: `format=j1` (~40 KB JSON), byte voor byte gelezen in
+   `apps/weather/weather_fc.asm`; getest met de testserver, de WiC64 en de
+   RR-Net (VICE).
+3. **Taal**: Engels, zoals de rest van CD64 (niet gevraagd).
+4. **D64**: ✅ twee kanten. Kant A: het systeem met WEATHER (64 blokken) en
+   wat er nog past; kant B: de rest (screensaver, spellen) plus alles om
+   ervan te starten en na een spel terug te komen. Een programma van de
+   andere kant geeft `NOT ON THIS DISK`.

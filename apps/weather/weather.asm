@@ -17,6 +17,10 @@
 //
 // Ophalen (weather_net.asm): na het openen, met REFRESH en elke 15
 // minuten zolang WEATHER open is (ovIdle). Plaats: weLoc (leeg = AUTO).
+//
+// Twee pagina's (wePage): 0 = het weer nu, 1 = de verwachting voor 3
+// dagen (weather_fc.asm); de knop 3 DAYS / NOW wisselt. Eenheden (weUnit):
+// 0 = C en km/h, 1 = F en mph; samen met de plaats in WEATHER.CFG.
 //========================================================
 
 .const WE_HELP  = 19             // F1-context (gui/help.txt)
@@ -32,6 +36,11 @@
 .const WE_W_CHG = 8
 .const WE_C_REF = 27             // REFRESH-knop
 .const WE_W_REF = 9
+.const WE_C_PG  = 17             // 3 DAYS / NOW
+.const WE_W_PG  = 8
+.const WE_R_UN  = 4              // eenheden-knop (onder CHANGE, even breed)
+.const WE_C_UN  = WE_C_CHG
+.const WE_W_UN  = WE_W_CHG
 .const WI_N     = 22             // regels in de wi-tabellen (we_Draw)
 .label weS = r5                  // zeropage: bron (antwoord)
 .label weD = r6                  // zeropage: doel (veld)
@@ -77,7 +86,11 @@ we_DoFetch:
         bcs !ok+
         stx weMsg
         sty weMsg+1
-        jmp shell_DrawAll
+        lda weMode               // verwachting mislukt: geen halve dagen
+        beq !d+
+        lda #0
+        sta fcN
+!d:     jmp shell_DrawAll
 !ok:    lda #0
         sta weMsg+1
         sta weMinCnt
@@ -254,8 +267,22 @@ q:      lda #$2e                 // de rest -> .
 // we_Draw - plaatsnaam, luchtvlak, het weer, knoppen, melding.
 //--------------------------------------------------------
 we_Draw: {
+        lda #<weUpd              // UPDATED: van de pagina
+        ldx #>weUpd
+        ldy wePage
+        beq u
+        lda #<fcUpd
+        ldx #>fcUpd
+u:      sta wiLo+WI_N-1
+        stx wiHi+WI_N-1
         ldx #0                   // teksten en velden (tabel weI*)
-lp:     stx weI
+lp:     lda wePage               // verwachting: alleen plaats en UPDATED
+        beq lq
+        cpx #2
+        bcc lq
+        cpx #WI_N-2
+        bcc nx
+lq:     stx weI
         lda wiLo,x
         sta r0
         lda wiHi,x
@@ -271,10 +298,15 @@ lp:     stx weI
 c:      sta a2
         jsr gfx_DrawText
         ldx weI
-        inx
+nx:     inx
         cpx #WI_N
         bne lp
-        lda #WE_COL              // luchtvlak (stap 4: sprites erin)
+        lda wePage
+        beq now
+        jsr fc_Draw
+        jsr fc_SprShow
+        jmp bt
+now:    lda #WE_COL              // luchtvlak (stap 4: sprites erin)
         sta a0
         lda #WE_SKYR
         sta a1
@@ -292,7 +324,7 @@ c:      sta a2
 sk:     sta a5
         jsr gfx_FillRect
         jsr we_SprShow
-        lda #<sWeChange          // knoppen
+bt:     lda #<sWeChange          // knoppen
         sta r0
         lda #>sWeChange
         sta r0+1
@@ -314,6 +346,40 @@ sk:     sta a5
         lda #WE_R_UPD
         sta a1
         lda #WE_W_REF
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr btn_Draw
+        lda #<sWe3Days           // 3 DAYS / NOW
+        ldx #>sWe3Days
+        ldy wePage
+        beq p
+        lda #<sWeNow
+        ldx #>sWeNow
+p:      sta r0
+        stx r0+1
+        lda #WE_C_PG
+        sta a0
+        lda #WE_R_UPD
+        sta a1
+        lda #WE_W_PG
+        sta a2
+        lda TH_accent
+        sta a3
+        jsr btn_Draw
+        lda #<sWeMetric          // C KM/H / F MPH
+        ldx #>sWeMetric
+        ldy weUnit
+        beq m
+        lda #<sWeUS
+        ldx #>sWeUS
+m:      sta r0
+        stx r0+1
+        lda #WE_C_UN
+        sta a0
+        lda #WE_R_UN
+        sta a1
+        lda #WE_W_UN
         sta a2
         lda TH_accent
         sta a3
@@ -371,10 +437,42 @@ nc:     lda #WE_C_REF
         lda #WE_W_REF
         sta a2
         jsr btn_HitTest
-        bcc r
+        bcc np
         lda #1                   // REFRESH: ophalen (in we_Idle)
         sta weNeed
         rts
+np:     lda #WE_C_PG
+        sta a0
+        lda #WE_R_UPD
+        sta a1
+        lda #WE_W_PG
+        sta a2
+        jsr btn_HitTest
+        bcc nu
+        lda #0
+        sta weMsg+1
+        lda wePage               // andere pagina; nu altijd opnieuw ophalen,
+        eor #1                   // de verwachting alleen als hij er niet is
+        sta wePage
+        beq f
+        lda fcN
+        bne d
+f:      lda #1
+        sta weNeed
+d:      jmp shell_DrawAll
+nu:     lda #WE_C_UN
+        sta a0
+        lda #WE_R_UN
+        sta a1
+        lda #WE_W_UN
+        sta a2
+        jsr btn_HitTest
+        bcc r
+        lda weUnit               // C <-> F: bewaren en opnieuw ophalen
+        eor #1
+        sta weUnit
+        jsr we_SaveCfg
+        jmp we_Reset
 r:      rts
 }
 
@@ -465,8 +563,19 @@ we_SprShow: {
         cmp #WT_N
         bcc ok
         jmp we_SprOff
-ok:     lda weSaved
-        bne cp
+ok:     jsr we_SprSave
+        lda #<weSprData
+        sta weBase
+        lda #>weSprData
+        sta weBase+1
+        jmp we_SprLay
+}
+
+// we_SprSave - eenmalig de bureaublad-iconen op $3E00-$3FFF bewaren en de
+//              haken van de Core zetten.
+we_SprSave: {
+        lda weSaved
+        bne r
         ldx #0                   // $3E00-$3FFF (iconen) bewaren
 sv:     lda $3e00,x
         sta WE_SAVE,x
@@ -483,6 +592,10 @@ sv:     lda $3e00,x
         sta ovIdle
         lda #>we_Idle
         sta ovIdle+1
+r:      rts
+}
+
+we_SprLay: {
 cp:     lda weType               // tabelindex van laag 0
         asl
         asl
@@ -602,17 +715,17 @@ one:    ldy weSpr
 
 // we_CpShape - vorm A (128 bytes) naar plek weSlot op $3E00; A = blok.
 we_CpShape: {
-        sta weT                  // bron = weSprData + A*128
+        sta weT                  // bron = weBase + A*128
         lsr
         clc
-        adc #>weSprData
+        adc weBase+1
         sta weS+1
         lda weT
         and #1
         beq e
         lda #$80
 e:      clc
-        adc #<weSprData
+        adc weBase
         sta weS
         bcc s1
         inc weS+1
@@ -677,8 +790,11 @@ m:      lda clkMin               // elke 15 minuten opnieuw
         bcc an
         lda #0
         sta weMinCnt
+        sta fcN                  // (verwachting: opnieuw zodra hij te zien is)
         inc weNeed
-an:     lda $dc08                // tienden van de TOD-klok
+an:     lda wePage               // verwachting: geen animatie
+        bne r
+        lda $dc08                // tienden van de TOD-klok
         cmp weLastT
         bne t
         rts
@@ -792,6 +908,9 @@ we_LoadCfg: {
         jsr cfg_io_end
         lda #$ff                 // altijd afgesloten
         sta weLoc+31
+        lda weUnit
+        and #1
+        sta weUnit
         jmp we_Clean
 nm:     .encoding "petscii_upper"
         .text "WEATHER.CFG"
@@ -816,8 +935,8 @@ we_SaveCfg: {
         lda #>weLoc
         sta $fc
         lda #$fb
-        ldx #<[weLoc+32]
-        ldy #>[weLoc+32]
+        ldx #<[weLoc+33]         // plaats + eenheid
+        ldy #>[weLoc+33]
         jsr K_SAVE
         php
         jsr cfg_io_end
@@ -864,6 +983,13 @@ we_Change: {
         jsr li_Edit
         jsr we_Clean
         jsr we_SaveCfg
+        // (valt door)
+}
+
+// we_Reset - nieuwe plaats of eenheid: de oude gegevens weg, ophalen.
+we_Reset: {
+        lda #0
+        sta fcN
         lda #$ff                 // geen oude gegevens bij de nieuwe plaats
         sta weType
         lda #<weEmpty
@@ -875,6 +1001,7 @@ we_Change: {
         ldx #4                   // UPDATED weer --:--
 u:      lda sWeNoTime,x
         sta weUpd,x
+        sta fcUpd,x
         dex
         bpl u
         lda #0
@@ -971,6 +1098,10 @@ weMinCnt: .byte 0                // minuten sinds het laatste ophalen
 weLastMin: .byte 0
 weEmpty: .byte 0
 weLoc:   .fill 32, $ff           // plaats (schermcodes; leeg = AUTO), WEATHER.CFG
+weUnit:  .byte 0                 // (byte 33 van WEATHER.CFG) 0 = C km/h, 1 = F mph
+wePage:  .byte 0                 // 0 = nu, 1 = 3 dagen
+weMode:  .byte 0                 // wat we_Fetch ophaalt (= wePage)
+weBase:  .word 0                 // bron van we_CpShape
 weUpd:   .text "--:--"
          .byte $ff
 weMsg:   .word 0
@@ -1024,6 +1155,14 @@ sWeUpd:     .text "UPDATED"
 sWeChange:  .text "CHANGE"
             .byte $ff
 sWeRefresh: .text "REFRESH"
+            .byte $ff
+sWe3Days:   .text "3 DAYS"
+            .byte $ff
+sWeNow:     .text "NOW"
+            .byte $ff
+sWeMetric:  .text "C KM/H"
+            .byte $ff
+sWeUS:      .text "F MPH"
             .byte $ff
 sWeAsk:     .text "TYPE A PLACE, RETURN (EMPTY=AUTO)"
             .byte $ff

@@ -14,7 +14,11 @@
 
 // we_Fetch - ophalen en ontleden. Carry=1 gelukt, anders X/Y = melding.
 we_Fetch: {
-        jsr nc_Load              // netwerk (NET.CFG) + hardware
+        lda wePage               // nu of de verwachting
+        sta weMode
+        beq !+
+        jsr fc_Start
+!:      jsr nc_Load              // netwerk (NET.CFG) + hardware
         jsr net_Detect
         lda #0
         sta netAbort
@@ -56,8 +60,24 @@ pp:     jsr mc_Chr
         iny
         cpy #31
         bne pl
-pe:     ldx #<sWeQry
+pe:     lda weMode
+        bne fq
+        ldx #<sWeQry             // nu: ?format=...&m (of &u)&lang=en
         ldy #>sWeQry
+        jsr mc_Str
+        lda #$6d                 // m
+        ldx weUnit
+        beq un
+        lda #$75                 // u
+un:     jsr mc_Chr
+        ldx #<sWeLang
+        ldy #>sWeLang
+        jmp hd
+fq:     ldx #<sWeQj              // 3 dagen: ?format=j1
+        ldy #>sWeQj
+hd:     jsr mc_Str
+        ldx #<sWeHdr
+        ldy #>sWeHdr
         jsr mc_Str
         lda #<mnCmd
         sta tcpDataPtr
@@ -130,7 +150,19 @@ se:     ldx #<sWeSvc
         ldy #>sWeSvc
         clc
         rts
-ok:     lda weRawN
+ok:     lda weMode
+        beq o1
+        lda fcN                  // verwachting: minstens een dag gelezen?
+        beq se
+        jsr we_Stamp
+        ldx #4
+fu:     lda weUpd,x
+        sta fcUpd,x
+        dex
+        bpl fu
+        sec
+        rts
+o1:     lda weRawN
         bne o2
         ldx #<sMnClosed
         ldy #>sMnClosed
@@ -186,12 +218,14 @@ nx:     inc weNr
         lda #0
         sta weLn
         rts
-body:   ldx weRawN
+body:   ldx weRawN           // het begin bewaren (foutmelding)
         cpx #255
-        bcs r
+        bcs b2
         sta WE_RAW,x
         inc weRawN
-        rts
+b2:     ldx weMode
+        beq r
+        jmp fc_Byte              // verwachting: JSON meteen lezen
 }
 
 // we_Stamp - "UPDATED HH:MM" (klok van de C64, BCD) in weUpd.
@@ -247,7 +281,13 @@ sWeBusy: .text "FETCHING THE WEATHER (RUN/STOP)"
 .encoding "ascii"
 sWeGet:  .text "GET /"
          .byte 0
-sWeQry:  .text "?format=%l|%x|%t|%f|%C|%w|%h|%p|%P|%S|%s|%T&m&lang=en HTTP/1.0"
+sWeQry:  .text "?format=%l|%x|%t|%f|%C|%w|%h|%p|%P|%S|%s|%T&"
+         .byte 0
+sWeLang: .text "&lang=en"
+         .byte 0
+sWeQj:   .text "?format=j1"
+         .byte 0
+sWeHdr:  .text " HTTP/1.0"
          .byte $0d, $0a
          .text "Host: wttr.in"
          .byte $0d, $0a

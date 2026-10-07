@@ -43,5 +43,8 @@
         #import "build/weather_spr.inc"       // tools/make_weather_sprites.py
         #import "apps/weather/weather.asm"
         #import "apps/weather/weather_net.asm"
+        #import "apps/weather/weather_fc.asm"
 weSprData:
         .import binary "build/weather_spr.bin"
+weMiniData:                      // de kleine plaatjes (verwachting)
+        .import binary "build/weather_mini.bin"
