@@ -78,6 +78,10 @@ help_Show: {
         bne ok
         rts
 ok:     inc helpBusy
+        lda $d015                // sprites van een app weg (muis blijft)
+        sta hSpr
+        lda #1
+        sta $d015
         lda helpCtx              // context kiezen
         bne c1
         ldx activeApp
@@ -214,6 +218,8 @@ okb:    lda #18                  // OK-knop
         jsr dlg_OkButton
         jsr dlg_WaitClose
         jsr hs_Restore
+        lda hSpr
+        sta $d015
         dec helpBusy
         rts
 // hLine - regel vanaf hP naar hTxt ($ff); hEnd = 1 als het de laatste was.
@@ -329,6 +335,7 @@ hs_Restore:
 
 //--------------------------------------------------------
 helpOk:   .byte 0                // HELPTEXT geladen
+hSpr:     .byte 0                // sprites voor de hulp opende
 helpBusy: .byte 0                // hulp staat open (geen tweede)
 helpOff:  .byte 0                // 1 = F1 niet opvangen (BBS-terminal)
 helpCtx:  .byte 0                // 0 = activeApp + 1, anders deze context

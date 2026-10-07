@@ -24,4 +24,7 @@
         jmp we_Click             // $8006
         jmp we_Key               // $8009
 
+        #import "build/weather_spr.inc"       // tools/make_weather_sprites.py
         #import "apps/weather/weather.asm"
+weSprData:
+        .import binary "build/weather_spr.bin"

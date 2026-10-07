@@ -7,6 +7,7 @@
 .label WE_BUF  = $c500           // 12 velden x 32 bytes (schermcodes, $ff)
 .const WE_NF   = 12              // velden in het wttr.in-antwoord
 .const WE_FL   = 32              // ruimte per veld
+.label WE_SAVE = $c700           // 512 bytes: $3E00-$3FFF zolang de sprites er staan
 // veldnummers (volgorde van het format: %l|%x|%t|%f|%C|%w|%h|%p|%P|%S|%s|%T)
 .const WF_LOC   = 0
 .const WF_SYM   = 1

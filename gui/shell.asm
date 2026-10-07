@@ -26,6 +26,7 @@ shell_Run:
         jmp !ev+
 !bars:  jsr clk_Poll             // statusbalk: datum/tijd bijwerken
         jsr ss_Poll              // screensaver
+        jsr ov_Idle              // app-PRG: animatie e.d. (ovIdle)
 !ev:    jsr evt_Poll
         cmp #EVT_MOUSEDOWN
         bne !k+
@@ -728,6 +729,7 @@ ovJT:   cmp #11
 // exitToDesktop - active app sluiten, terug naar bureaublad.
 //--------------------------------------------------------
 exitToDesktop:
+        jsr ov_Exit              // app-PRG ruimt op (ovExit)
         lda activeApp            // Paint: eerst char-mode herstellen
         cmp #2
         bne !np+
@@ -861,8 +863,12 @@ doTime: lda #12                  // TIME
         beq close
         jmp openApp
 doHelp: jmp help_Show            // tekent zelf het scherm opnieuw
-doAbout:jsr shell_DrawAll        // menu weg, dan het venster
-        jmp about_Show
+doAbout:jsr shell_DrawAll        // menu weg, dan "VERSION 1.1"
+        lda #<aLine2
+        sta r0
+        lda #>aLine2
+        sta r0+1
+        jmp msg_Show
 doReset:
         sei
         lda #$37                 // BASIC+KERNAL+I/O inbanken
@@ -942,6 +948,25 @@ ss_Poll:
 ssIdle: .byte 0
 ssPos:  .byte 0
 
+// ov_Idle / ov_Exit - haken voor een app-PRG (sprongtabel op $8000): de
+//          app zet ovIdle (elke ronde van de hoofdlus aangeroepen) en ovExit
+//          (eenmaal bij het sluiten of wisselen; daarna zijn beide weer 0).
+ov_Idle:
+        lda ovIdle+1
+        beq !r+
+        jmp (ovIdle)
+ov_Exit:
+        lda ovExit+1
+        beq !r+
+        jsr !x+
+        lda #0
+        sta ovExit+1
+        sta ovIdle+1
+!r:     rts
+!x:     jmp (ovExit)
+ovIdle: .word 0
+ovExit: .word 0
+
 tool_Run:
         stx toolFn
         ldx #15
@@ -981,54 +1006,6 @@ miLo:    .byte <oHelp, <oReset, <oExit, <oAbout, <oAdd, <oEditP, <oDel
          .byte <nSet, <oNet, <oMail, <oTime
 miHi:    .byte >oHelp, >oReset, >oExit, >oAbout, >oAdd, >oEditP, >oDel
          .byte >nSet, >oNet, >oMail, >oTime
-
-//--------------------------------------------------------
-// about_Show - "over deze OS"-dialoog (Win95-stijl: titelbalk, sluitknop,
-//              OK-knop; ESC/SPATIE/RETURN sluiten ook).
-//--------------------------------------------------------
-about_Show:
-        lda #<oAbout
-        sta r0
-        lda #>oAbout
-        sta r0+1
-        lda #7
-        sta a0
-        lda #7
-        sta a1
-        lda #26
-        sta a2
-        lda #9
-        sta a3
-        jsr dlg_Draw             // rijen 7-15
-        lda #<aLine1
-        sta r0
-        lda #>aLine1
-        sta r0+1
-        lda #11
-        sta a0
-        lda #9
-        sta a1
-        lda TH_accent
-        sta a2
-        jsr gfx_DrawText
-        lda #<aLine2
-        sta r0
-        lda #>aLine2
-        sta r0+1
-        lda #11
-        sta a0
-        lda #11
-        sta a1
-        lda TH_text
-        sta a2
-        jsr gfx_DrawText
-        lda #18
-        sta a0
-        lda #13
-        sta a1
-        jsr dlg_OkButton
-        jsr dlg_WaitClose
-        jmp shell_DrawAll
 
 //--------------------------------------------------------
 // onMouseDown - klik afhandelen (evtA=kol, evtB=rij).
@@ -1102,6 +1079,9 @@ onMouseDown:
 //           initialiseert en tekent. Paint gaat naar bitmapmodus.
 //--------------------------------------------------------
 openApp:
+        pha
+        jsr ov_Exit              // vorige app-PRG ruimt eerst op
+        pla
         sta activeApp
         ldx #0                   // hulpcontext: die van de app
         stx helpCtx
@@ -1302,8 +1282,6 @@ nRadio: .text "SID RADIO"
 sF1Help: .text "F1=HELP"
         .byte $ff
 mbSys:  .text "SYSTEM"
-        .byte $ff
-aLine1: .text "COMMODORE DESK 64"
         .byte $ff
 aLine2: .text "VERSION 1.1"
         .byte $ff

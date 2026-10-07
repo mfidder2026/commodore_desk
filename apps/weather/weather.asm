@@ -10,18 +10,24 @@
 // we_Parse zet die (ASCII + UTF-8) om naar schermcodes in WE_BUF: °C wordt
 // " C", een windpijl een windrichting.
 //
-// Stap 3: nog zonder netwerk en sprites; REFRESH bladert door testregels
-// in hetzelfde formaat (weT0-weT3).
+// Het weerbeeld: lagen multicolor-sprites (zon/maan, wolk, neerslag,
+// bliksem) uit tools/make_weather_sprites.py, op $3E00-$3FFF (daar staan
+// de bureaublad-iconen; die worden zolang bewaard op WE_SAVE). De Core
+// roept ovIdle (animatie) en ovExit (sprites uit, iconen terug) aan.
+//
+// Nog zonder netwerk: REFRESH bladert door testregels in hetzelfde
+// formaat (weT0-weT3).
 //========================================================
 
 .const WE_HELP  = 19             // F1-context (gui/help.txt)
 .const WE_COL   = 3              // linkerkolom
-.const WE_SKYR  = 5              // luchtvlak (plaatje): rij 5-15, kol 3-14
+.const WE_SKYR  = 7              // luchtvlak (plaatje): rij 7-17, kol 3-14
+                                 // (onder de uitklapmenu's: sprites staan voor tekst)
 .const WE_SKYW  = 12
 .const WE_SKYH  = 11
 .const WE_R_LOC = 3              // LOCATION + CHANGE
-.const WE_R_UPD = 20             // UPDATED + REFRESH
-.const WE_R_MSG = 21             // meldingen
+.const WE_R_UPD = 21             // UPDATED + REFRESH
+.const WE_R_MSG = 22             // meldingen
 .const WE_C_CHG = 29             // CHANGE-knop
 .const WE_W_CHG = 8
 .const WE_C_REF = 27             // REFRESH-knop
@@ -51,7 +57,8 @@ we_TestLine:
         sta weS
         lda weTHi,x
         sta weS+1
-        jmp we_Parse
+        jsr we_Parse
+        jmp we_Type
 
 //--------------------------------------------------------
 // we_Parse - wttr.in-regel (weS: ASCII/UTF-8, tot $00, CR of LF) in de
@@ -239,9 +246,14 @@ c:      sta a2
         sta a3
         lda #GL_SOLID
         sta a4
-        lda #LIGHT_BLUE
-        sta a5
+        ldx weType               // lucht van het weertype
+        lda TH_deskbg
+        cpx #WT_N
+        bcs sk
+        lda wtSky,x
+sk:     sta a5
         jsr gfx_FillRect
+        jsr we_SprShow
         lda #<sWeChange          // knoppen
         sta r0
         lda #>sWeChange
@@ -340,6 +352,382 @@ r:      rts
 }
 
 //--------------------------------------------------------
+// Weertype en sprites (stap 4)
+//--------------------------------------------------------
+// we_Type - weType uit het symbool (%x), 's nachts maan i.p.v. zon.
+we_Type: {
+        ldx #0
+next:   lda weSymT,x             // tabel: patroon, $ff, type ... $fe = einde
+        cmp #$fe
+        beq unk
+        ldy #0
+cl:     lda weSymT,x
+        cmp WE_BUF+WF_SYM*WE_FL,y
+        bne skip
+        cmp #$ff
+        beq hit
+        inx
+        iny
+        bne cl
+skip:   lda weSymT,x             // naar het volgende patroon
+        inx
+        cmp #$ff
+        bne skip
+        inx                      // (typebyte)
+        jmp next
+hit:    lda weSymT+1,x
+        jmp got
+unk:    lda #15                  // onbekend: wolk met vraagteken
+got:    sta weType
+        jsr we_Night
+        bcc r
+        ldx #2                   // nacht: zon -> maan, buien -> lichte regen
+nl:     lda weType
+        cmp weDayT,x
+        bne nn
+        lda weNightT,x
+        sta weType
+        rts
+nn:     dex
+        bpl nl
+r:      rts
+}
+weDayT:   .byte 0, 2, 8          // SUNNY, PARTLY CLOUDY, SHOWERS
+weNightT: .byte 1, 3, 7          // CLEAR NIGHT, PARTLY CLOUDY NIGHT, LIGHT RAIN
+
+// we_Night - carry=1 als de lokale tijd (%T) voor zonsopkomst (%S) of na
+//            zonsondergang (%s) ligt. Tijden als "HH:MM" (schermcodes).
+we_Night: {
+        lda WE_BUF+WF_TIME*WE_FL
+        cmp #$ff
+        beq day
+        lda WE_BUF+WF_RISE*WE_FL
+        cmp #$ff
+        beq day
+        lda WE_BUF+WF_SET*WE_FL
+        cmp #$ff
+        beq day
+        ldx #0
+r:      lda WE_BUF+WF_TIME*WE_FL,x
+        cmp WE_BUF+WF_RISE*WE_FL,x
+        bcc night                // voor zonsopkomst
+        bne s
+        inx
+        cpx #5
+        bne r
+s:      ldx #0
+t:      lda WE_BUF+WF_TIME*WE_FL,x
+        cmp WE_BUF+WF_SET*WE_FL,x
+        bcc day                  // voor zonsondergang
+        bne night
+        inx
+        cpx #5
+        bne t
+night:  sec
+        rts
+day:    clc
+        rts
+}
+
+//--------------------------------------------------------
+// we_SprShow - het weerbeeld van weType: vormen naar $3E00 (eerst de
+//              bureaublad-iconen daar bewaren), sprites 1-7 zetten.
+//--------------------------------------------------------
+we_SprShow: {
+        lda weType
+        cmp #WT_N
+        bcc ok
+        jmp we_SprOff
+ok:     lda weSaved
+        bne cp
+        ldx #0                   // $3E00-$3FFF (iconen) bewaren
+sv:     lda $3e00,x
+        sta WE_SAVE,x
+        lda $3f00,x
+        sta WE_SAVE+$100,x
+        inx
+        bne sv
+        inc weSaved
+        lda #<we_SprOff          // de Core roept dit aan bij sluiten
+        sta ovExit
+        lda #>we_SprOff
+        sta ovExit+1
+        lda #<we_Idle            // en dit in de hoofdlus (animatie)
+        sta ovIdle
+        lda #>we_Idle
+        sta ovIdle+1
+cp:     lda weType               // tabelindex van laag 0
+        asl
+        asl
+        sta weB
+        lda #0
+        sta weSlot
+        sta weL
+cl:     ldx weType               // vormen van de lagen
+        lda weL
+        cmp wtNL,x
+        bcs an
+        clc
+        adc weB
+        tax
+        lda wtShape,x
+        jsr we_CpShape
+        ldx weL
+        sta weLBlk,x
+        inc weL
+        jmp cl
+an:     ldx weType               // tweede vorm van de bewegende laag
+        lda wtAnimL,x
+        cmp #$ff
+        beq spr
+        tay
+        lda weLBlk,y
+        sta weABlk
+        lda wtAnimB,x
+        jsr we_CpShape
+        sta weBBlk
+spr:    lda #0
+        sta weMask
+        sta weL
+        sta weFr
+        lda #1
+        sta weSpr
+sl:     ldx weType
+        lda weL
+        cmp wtNL,x
+        bcs reg
+        clc
+        adc weB
+        sta weI                  // tabelindex van deze laag
+        ldx weL
+        lda weSpr
+        sta weLSpr,x
+        lda weLBlk,x
+        jsr one                  // linker sprite
+        ldx weI
+        lda wtW,x
+        cmp #2
+        bne nx
+        ldx weL                  // rechter sprite: blok+1, 48 pixels verder
+        lda weLBlk,x
+        clc
+        adc #1
+        jsr one
+        dey                      // (Y = 2 * spritenummer van de rechter)
+        dey
+        lda $d000,y
+        clc
+        adc #48
+        sta $d000,y
+nx:     inc weL
+        jmp sl
+reg:    lda $d010                // x < 256; muis (sprite 0) blijft
+        and #1
+        sta $d010
+        lda $d01b                // voor de tekens (het luchtvlak)
+        and #1
+        sta $d01b
+        lda $d01c                // multicolor
+        and #1
+        ora weMask
+        sta $d01c
+        lda $d017                // dubbel hoog en breed
+        and #1
+        ora weMask
+        sta $d017
+        lda $d01d
+        and #1
+        ora weMask
+        sta $d01d
+        lda #WHITE
+        sta $d025
+        lda #LIGHT_GREY
+        sta $d026
+        lda $d015
+        and #1
+        ora weMask
+        sta $d015
+        lda #1
+        sta weAC
+        sta weBC
+        rts
+// one - sprite weSpr: blok A, kleur/plaats van laag weI; weSpr+1.
+one:    ldy weSpr
+        sta $07f8,y
+        ldx weI
+        lda wtCol,x
+        sta $d027,y
+        lda bitTab,y
+        ora weMask
+        sta weMask
+        tya
+        asl
+        tay
+        lda wtX,x
+        sta $d000,y
+        lda wtY,x
+        sta $d001,y
+        iny
+        iny
+        inc weSpr
+        rts
+}
+
+// we_CpShape - vorm A (128 bytes) naar plek weSlot op $3E00; A = blok.
+we_CpShape: {
+        sta weT                  // bron = weSprData + A*128
+        lsr
+        clc
+        adc #>weSprData
+        sta weS+1
+        lda weT
+        and #1
+        beq e
+        lda #$80
+e:      clc
+        adc #<weSprData
+        sta weS
+        bcc s1
+        inc weS+1
+s1:     lda weSlot               // doel = $3E00 + slot*128
+        lsr
+        clc
+        adc #$3e
+        sta weD+1
+        lda weSlot
+        and #1
+        beq f
+        lda #$80
+f:      sta weD
+        ldy #127
+lp:     lda (weS),y
+        sta (weD),y
+        dey
+        bpl lp
+        lda weSlot               // blok = $3E00/64 + 2*slot
+        asl
+        clc
+        adc #$3e00/64
+        inc weSlot
+        rts
+}
+
+// we_SprOff - sprites 1-7 uit, de bureaublad-iconen terug (ovExit).
+we_SprOff: {
+        lda $d015
+        and #1
+        sta $d015
+        lda weSaved
+        beq r
+        ldx #0
+rs:     lda WE_SAVE,x
+        sta $3e00,x
+        lda WE_SAVE+$100,x
+        sta $3f00,x
+        inx
+        bne rs
+        lda #0
+        sta weSaved
+r:      rts
+}
+
+// we_Idle - animatie (ovIdle, elke ronde van de hoofdlus): op de 1/10 s
+//           van de TOD-klok; elke 0,3 s het andere beeld van de bewegende
+//           laag, de bliksem 0,2 s aan per 2,5 s.
+we_Idle: {
+        lda $dc08                // tienden van de TOD-klok
+        cmp weLastT
+        bne t
+        rts
+t:      sta weLastT
+        ldx weType
+        cpx #WT_N
+        bcs r
+        dec weAC
+        bne bolt
+        lda #3
+        sta weAC
+        lda wtAnimL,x
+        cmp #$ff
+        beq bolt
+        tay                      // eerste sprite van de laag
+        lda weLSpr,y
+        tay
+        lda weFr
+        eor #1
+        sta weFr
+        lda weABlk
+        ldx weFr
+        beq a
+        lda weBBlk
+a:      sta $07f8,y
+        clc
+        adc #1
+        sta $07f9,y              // (rechter sprite; bij 1 sprite onzichtbaar)
+bolt:   ldx weType
+        lda wtBolt,x
+        cmp #$ff
+        beq r
+        tay
+        lda weLSpr,y
+        tay                      // spritenummer van de bliksem
+        dec weBC
+        bpl b1
+        lda #24
+        sta weBC
+b1:     lda weBC
+        cmp #2
+        bcs off
+        lda $d015
+        ora bitTab,y
+        sta $d015
+        rts
+off:    lda bitTab,y
+        eor #$ff
+        and $d015
+        sta $d015
+r:      rts
+}
+
+bitTab:   .byte 1, 2, 4, 8, 16, 32, 64, 128
+// wttr.in %x -> weertype (schermcodes: o = 15, m = 13, x = 24)
+weSymT:   .byte 15, $ff, 0                    // o    zonnig / helder
+          .byte 13, $ff, 2                    // m    half bewolkt
+          .byte 13, 13, $ff, 4                // mm   bewolkt
+          .byte 13, 13, 13, $ff, 5            // mmm  zwaar bewolkt
+          .byte $3d, $ff, 6                   // =    mist
+          .byte $2f, $ff, 7                   // /    lichte regen
+          .byte $2e, $ff, 8                   // .    lichte buien
+          .byte $2f, $2f, $ff, 9              // //   (zware) buien
+          .byte $2f, $2f, $2f, $ff, 9         // ///  zware regen
+          .byte $2a, $ff, 10                  // *    lichte sneeuw
+          .byte $2a, $2f, $ff, 10             // */   sneeuwbuien
+          .byte $2a, $2a, $ff, 11             // **   zware sneeuw
+          .byte $2a, $2f, $2a, $ff, 11        // */*  zware sneeuwbuien
+          .byte 24, $ff, 12                   // x    natte sneeuw
+          .byte 24, $2f, $ff, 12              // x/   natte-sneeuwbuien
+          .byte $21, $2f, $ff, 13             // !/   onweersbuien
+          .byte $2f, $21, $2f, $ff, 13        // /!/  onweer met zware regen
+          .byte $2a, $21, $2a, $ff, 14        // *!*  onweer met sneeuw
+          .byte $fe
+weType:   .byte $ff
+weSaved:  .byte 0
+weB:      .byte 0
+weL:      .byte 0
+weSlot:   .byte 0
+weSpr:    .byte 0
+weMask:   .byte 0
+weFr:     .byte 0
+weAC:     .byte 1
+weBC:     .byte 1
+weLastT:  .byte 0
+weABlk:   .byte 0
+weBBlk:   .byte 0
+weLBlk:   .fill 4, 0
+weLSpr:   .fill 4, 0
+
+
+//--------------------------------------------------------
 weF:     .byte 0                 // veld (we_Parse)
 weN:     .byte 0                 // positie in het veld
 weI:     .byte 0
@@ -369,8 +757,8 @@ wiHi:    .byte >sWeLoc, >[WE_BUF+WF_LOC*WE_FL], >[WE_BUF+WF_TEMP*WE_FL], >sWeFee
          .byte >[WE_BUF+WF_TIME*WE_FL], >sWeUpd, >sWeTestData
 wiCol:   .byte WE_COL, 13, 17, 17, 28, 17, 17, 27, 17, 27, 17
          .byte 27, 17, 27, WE_COL, 11, 17, 24, WE_COL, 14, WE_COL, 11
-wiRow:   .byte WE_R_LOC, WE_R_LOC, 5, 6, 6, 8, 10, 10, 11, 11, 12
-         .byte 12, 13, 13, 17, 17, 17, 17, 18, 18, WE_R_UPD, WE_R_UPD
+wiRow:   .byte WE_R_LOC, WE_R_LOC, 7, 8, 8, 10, 12, 12, 13, 13, 14
+         .byte 14, 15, 15, 19, 19, 19, 19, 20, 20, WE_R_UPD, WE_R_UPD
 wiAcc:   .byte 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0
          .byte 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1
 .assert "wi-tabellen even lang", wiRow - wiCol, WI_N
