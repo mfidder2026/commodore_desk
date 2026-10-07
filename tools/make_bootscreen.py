@@ -57,21 +57,23 @@ fill(8,32,312,176,BLUE)
 fill(8,32,312,34,WHITE); fill(8,174,312,176,WHITE)
 fill(8,32,10,176,WHITE); fill(310,32,312,176,WHITE)
 
-# ---- Windows-flag logo: 4 squares, centred, rows 6-9 ----
-sq=16; gap=8
-lw=sq*2+gap
-lx=(320-lw)//2; ly=48
-fill(lx,      ly,      lx+sq,      ly+sq,      RED)
-fill(lx+sq+gap,ly,     lx+2*sq+gap,ly+sq,      GREEN)
-fill(lx,      ly+sq+gap,lx+sq,     ly+2*sq+gap,LBLUE)
-fill(lx+sq+gap,ly+sq+gap,lx+2*sq+gap,ly+2*sq+gap,YELLOW)
+# ---- Commodore rainbow: 5 diagonal stripes, rows 6-10 (y 48-87) ----
+# Each stripe is 8 px wide with 8 px of panel blue in between, and the
+# block starts on x = 104: then every 8x8 cell holds at most one stripe
+# colour plus the blue (the hi-res limit of 2 colours per cell).
+RAINBOW=[RED,ORANGE,YELLOW,GREEN,LBLUE]
+rx0, ry0, ry1 = 104, 48, 88
+for k, c in enumerate(RAINBOW):
+    for y in range(ry0, ry1):
+        x = rx0 + 16*k + (ry1 - 1 - y)
+        fill(x, y, x + 8, y + 1, c)
 
 # ---- big title (scale 2) ----
 ctext("COMMODORE DESK 64",96,WHITE,2)
 
 # ---- subtitle + version (scale 1) ----
 ctext("GRAPHICAL DESKTOP ENVIRONMENT",128,CYAN,1)
-ctext("VERSION 1.0   -   VIC-II 320X200",144,LGREY,1)
+ctext("VERSION 1.1   -   VIC-II 320X200",144,LGREY,1)
 ctext("(C) 2026 FREMEN IT WORKERS",160,WHITE,1)
 
 # ---- footer strip (rows 23-24) ----

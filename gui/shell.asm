@@ -1305,7 +1305,7 @@ mbSys:  .text "SYSTEM"
         .byte $ff
 aLine1: .text "COMMODORE DESK 64"
         .byte $ff
-aLine2: .text "VERSION 1.0"
+aLine2: .text "VERSION 1.1"
         .byte $ff
 aClose: .text "SPACE = CLOSE"
         .byte $ff
