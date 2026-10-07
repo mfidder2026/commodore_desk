@@ -271,15 +271,9 @@ drawContent:
 !e5:    cmp #8
         bne !e6+
         jmp BBS_DRAW
-!e6:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12),
-        beq !em+                 // RADIO (13): sprongtabel op $8000
-        cmp #10
-        beq !em+
-        cmp #12
-        beq !em+
-        cmp #13
-        bne !e7+
-!em:    jmp EMAIL_DRAW
+!e6:    jsr ovJT                 // EMAIL, TIME, RADIO, ...: sprongtabel $8000
+        bcc !e7+
+        jmp EMAIL_DRAW
 !e7:    cmp #11                  // SID PLAYER
         bne !f+
         jmp sp_Draw
@@ -711,16 +705,22 @@ appKey:
         jsr chat_Key
         sec
         rts
-!m:     cmp #9                   // EMAIL (9/10), TIME (12): eigen toetsen
-        beq !em+                 // (precies vergelijken: het bureaublad
-        cmp #10                  //  is $ff en heeft geen overlay)
-        beq !em+
-        cmp #12
-        beq !em+
-        cmp #13
-        bne !n+
-!em:    lda evtA
+!m:     jsr ovJT                 // sprongtabel-overlays: eigen toetsen
+        bcc !n+
+        lda evtA
         jmp EMAIL_KEY
+!n:     clc
+        rts
+
+// ovJT - carry=1 als app A een overlay met sprongtabel op $8000 is: EMAIL
+//        (9), EMAIL SETTINGS (10), TIME (12), RADIO (13) en elke nieuwe app
+//        vanaf 14. Niet: 11 (SID PLAYER) en $ff (bureaublad). A blijft.
+ovJT:   cmp #11
+        beq !n+
+        cmp #$ff
+        beq !n+
+        cmp #9                   // (carry = A >= 9)
+        rts
 !n:     clc
         rts
 
@@ -1089,15 +1089,9 @@ onMouseDown:
 !w7:    cmp #8
         bne !w8+
         jmp BBS_CLICK
-!w8:    cmp #9                   // EMAIL (9), EMAIL SETTINGS (10), TIME (12),
-        beq !em+                 // RADIO (13)
-        cmp #10
-        beq !em+
-        cmp #12
-        beq !em+
-        cmp #13
-        bne !w9+
-!em:    jmp EMAIL_CLICK
+!w8:    jsr ovJT                 // EMAIL, TIME, RADIO, ...
+        bcc !w9+
+        jmp EMAIL_CLICK
 !w9:    cmp #11                  // SID PLAYER
         bne !done+
         jmp sp_Click

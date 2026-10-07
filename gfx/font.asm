@@ -154,13 +154,21 @@ font_Base:
         pha
         lda #$33                 // karakter-ROM zichtbaar op $D000 (geen I/O)
         sta $01
-        ldx #0
-!lp:
-    .for (var p=0; p<8; p++) {
-        lda $d000 + p*$100,x
-        sta CHARSET_BASE + p*$100,x
-    }
-        inx
+        ldy #0                   // 8 pagina's (lus: Core-ruimte)
+        sty r5
+        sty r6
+        lda #$d0
+        sta r5+1
+        lda #>CHARSET_BASE
+        sta r6+1
+        ldx #8
+!lp:    lda (r5),y
+        sta (r6),y
+        iny
+        bne !lp-
+        inc r5+1
+        inc r6+1
+        dex
         bne !lp-
         pla
         sta $01
@@ -188,14 +196,22 @@ fo_Ov:
         // elk font opnieuw: menubalk, titels en statusbalk (reverse tekst)
         // volgen zo altijd het gekozen font (Tiny/Lower hadden daar nog
         // de System-letters).
-        ldx #0
-!rv:
-    .for (var p=0; p<4; p++) {
-        lda CHARSET_BASE + p*$100,x
+        ldy #0                   // 4 pagina's (lus: Core-ruimte)
+        sty r5
+        sty r6
+        lda #>CHARSET_BASE
+        sta r5+1
+        lda #>[CHARSET_BASE+$400]
+        sta r6+1
+        ldx #4
+!rv:    lda (r5),y
         eor stRevMask            // STONE-stijl: niet omgekeerd
-        sta CHARSET_BASE + $400 + p*$100,x
-    }
-        inx
+        sta (r6),y
+        iny
+        bne !rv-
+        inc r5+1
+        inc r6+1
+        dex
         bne !rv-
         ldx #7                   // GL_SOLID: altijd een vol blok
         lda #$ff                 // (kleurvlakken, cursor)
