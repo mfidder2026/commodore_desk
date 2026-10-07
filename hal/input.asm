@@ -58,10 +58,13 @@ input_Poll:
         jsr rdJoystick
         jsr rdKeyboard
         jsr kbd_Scan
+        lda #$c0                 // tot de volgende frame: POTs van poort 1
+        sta CIA1_DDRA            // (de muis), zie rdMouse
+        lda #MOUSE_SEL
+        sta CIA1_PRA
         jsr clampCursor
         jsr spr_CursorUpdate
-        jsr evt_GenMouse
-        rts
+        jmp evt_GenMouse
 
 //--------------------------------------------------------
 // kbd_Scan - volledige matrix-scan; genereert EVT_KEY op de
@@ -71,12 +74,20 @@ input_Poll:
 kbd_Scan:
         lda #$ff
         sta CIA1_DDRA
-        lda #$ff
         sta kbFound
-        ldx #0
+        sta CIA1_PRA             // geen kolom: wat nu laag is, komt van
+        lda CIA1_PRB             // poort 1 (de muisknoppen, een joystick)
+        eor #$ff
+        sta kbJoy                // ... en is dus geen toets
+        and #$10                 // linker muisknop / vuurknop poort 1
+        beq !+
+        lda #1
+        sta crsBtn
+!:      ldx #0
 !col:   lda colMask,x
         sta CIA1_PRA
         lda CIA1_PRB
+        ora kbJoy
         sta kbBits
         ldy #0
 !row:   lsr kbBits
@@ -388,80 +399,79 @@ rdKeyboard:
 
 //--------------------------------------------------------
 // rdMouse - 1351 op poort 1 via POT_X/POT_Y (delta-tracking).
+//   De SID meet de POTs van de poort die CIA1 PRA bits 6-7 kiest;
+//   input_Poll laat poort 1 de hele frame gekozen, zodat de waarde die
+//   we hier lezen echt van de muis komt (anders zwerft de pijl).
 //--------------------------------------------------------
 rdMouse:
-        lda #$c0
-        sta CIA1_DDRA            // bits 6-7 output voor POT-selectie
-        lda #MOUSE_SEL
-        sta CIA1_PRA
-
-        // ---- X ----
-        lda POT_X
-        sec
-        sbc mOldX
-        pha                      // ruwe delta bewaren voor mOldX-update
-        and #$7f
-        cmp #$40
-        bcc !+
-        ora #$80                 // teken uitbreiden
-!:      cmp #$80                 // teken -> carry
-        ror                      // gedeeld door 2 (rekenkundig)
+        ldx #0                   // ---- X ----
+        jsr mDelta
         beq !xdone+              // geen beweging
-        // 16-bit teken-uitbreiding en optellen bij crsX
-        tax
-        ldy #0
-        cpx #$80
+        ldy #0                   // 16-bit teken-uitbreiding
+        cmp #$80
         bcc !+
-        ldy #$ff
-!:      txa
-        clc
+        dey
+!:      clc
         adc crsXlo
         sta crsXlo
         tya
         adc crsXhi
         sta crsXhi
-!xdone:
-        pla                      // ruwe delta
-        clc
-        adc mOldX
-        sta mOldX                // = huidige POT_X
-
-        // ---- Y ----
-        lda POT_Y
-        sec
-        sbc mOldY
-        pha
-        and #$7f
-        cmp #$40
-        bcc !+
-        ora #$80
-!:      cmp #$80
-        ror
+!xdone: inx                      // ---- Y ----
+        jsr mDelta
         beq !ydone+
         // Y omlaag = crsY groter; POT loopt omgekeerd -> aftrekken
         sta tmpDy
         lda crsY
         sec
         sbc tmpDy
-        sta crsY
-!ydone:
+        bit tmpDy                // omlaag voorbij 255: onderaan houden
+        bpl !+                   // (niet rondlopen naar boven)
+        bcc !+
+        lda #$ff
+!:      sta crsY
+!ydone: rts
+
+// mDelta - beweging van POT X (X=0) of Y (X=1), zoals Commodore's 1351-
+//          driver: 7 bits, /2, en ruis van 1 telt niet (dan blijft de oude
+//          waarde staan, zodat langzaam bewegen toch optelt).
+//          A = delta (met teken), Z=1 als er niets bewoog.
+mDelta:
+        lda POT_X,x
+        pha
+        sec
+        sbc mOldX,x
+        and #$7f
+        cmp #$40
+        bcs !neg+
+        lsr
+        bne !upd+
+!zero:  pla
+        lda #0
+        rts
+!neg:   ora #$c0
+        cmp #$ff
+        beq !zero-
+        sec
+        ror
+!upd:   tay
         pla
-        clc
-        adc mOldY
-        sta mOldY
+        sta mOldX,x
+        tya
         rts
 
 //--------------------------------------------------------
 // clampCursor - crsX in [24,320], crsY in [50,229].
 //--------------------------------------------------------
 clampCursor:
-        // X-min
+        // X-min (crsXhi negatief: de muis ging links voorbij 0)
         lda crsXhi
+        bmi !minX+
         bne !chkMaxX+
         lda crsXlo
         cmp #CRS_XMIN
         bcs !chkMaxX+
-        lda #CRS_XMIN
+!minX:  lda #CRS_XMIN
         sta crsXlo
         lda #0
         sta crsXhi
@@ -529,6 +539,7 @@ colMask: .byte $fe, $fd, $fb, $f7, $ef, $df, $bf, $7f
 shFrom: .byte $31,$32,$33,$34,$35,$36,$37,$38,$39,$2c,$2e,$2f,$3a,$3b
 shTo:   .byte $21,$22,$23,$24,$25,$26,$27,$28,$29,$3c,$3e,$3f,$1b,$1d
 kbBits: .byte 0
+kbJoy:  .byte 0                  // lijnen van poort 1 (1 = actief)
 
 // Keycode (kol*8+rij) -> schermcode. 0 = negeren, $80 = RETURN, $81 = DEL.
 keyTab:

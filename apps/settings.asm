@@ -53,7 +53,7 @@ notSel: lda TH_text
 setCol: sta a2
         jsr gfx_DrawText
         // kleurstaal van de rol
-        lda #18
+        lda #11                  // (kolom van de waarden: THEME, SOUND)
         sta a0
         lda setRow
         sta a1
@@ -360,7 +360,7 @@ sv3:    lda svList,x
         sta CFG_saver
         jsr sid_Click
         jmp set_Draw
-chkRole: // rollen (rijen 5-10, kol 4-20)
+chkRole: // rollen (rijen 5-10, kol 4-20: naam + staal)
         lda evtB
         cmp #5
         bcc chkPal
