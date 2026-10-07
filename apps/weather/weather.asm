@@ -15,8 +15,8 @@
 // de bureaublad-iconen; die worden zolang bewaard op WE_SAVE). De Core
 // roept ovIdle (animatie) en ovExit (sprites uit, iconen terug) aan.
 //
-// Nog zonder netwerk: REFRESH bladert door testregels in hetzelfde
-// formaat (weT0-weT3).
+// Ophalen (weather_net.asm): na het openen, met REFRESH en elke 15
+// minuten zolang WEATHER open is (ovIdle). Plaats: weLoc (leeg = AUTO).
 //========================================================
 
 .const WE_HELP  = 19             // F1-context (gui/help.txt)
@@ -32,7 +32,6 @@
 .const WE_W_CHG = 8
 .const WE_C_REF = 27             // REFRESH-knop
 .const WE_W_REF = 9
-.const WE_NTEST = 4
 .const WI_N     = 22             // regels in de wi-tabellen (we_Draw)
 .label weS = r5                  // zeropage: bron (antwoord)
 .label weD = r6                  // zeropage: doel (veld)
@@ -42,23 +41,50 @@ we_Init:
         sta helpCtx
         lda #0
         sta weMsg+1
-        sta weTest
-        jmp we_TestLine
+        sta weMinCnt
+        lda #$ff
+        sta weType
+        lda #<weEmpty            // velden leeg tot het eerste antwoord
+        sta weS
+        lda #>weEmpty
+        sta weS+1
+        jsr we_Parse
+        lda clkMin
+        sta weLastMin
+        lda #1                   // ophalen zodra het scherm staat (we_Idle)
+        sta weNeed
+        lda #<we_SprOff          // haken in de Core: sluiten en de hoofdlus
+        sta ovExit
+        lda #>we_SprOff
+        sta ovExit+1
+        lda #<we_Idle
+        sta ovIdle
+        lda #>we_Idle
+        sta ovIdle+1
+        rts
+
+// we_DoFetch - "FETCHING ...", ophalen, alles opnieuw tekenen (met de
+//              melding van een fout; de vorige gegevens blijven dan staan).
+we_DoFetch:
+        lda #<sWeBusy
+        sta weMsg
+        lda #>sWeBusy
+        sta weMsg+1
+        jsr we_ShowMsg
+        jsr we_Fetch
+        bcs !ok+
+        stx weMsg
+        sty weMsg+1
+        jmp shell_DrawAll
+!ok:    lda #0
+        sta weMsg+1
+        sta weMinCnt
+        jmp shell_DrawAll
 
 // we_Key - geen eigen toetsen (SPATIE/RETURN = klik op de cursor).
 we_Key:
         clc
         rts
-
-// we_TestLine - testregel weTest ontleden (zolang er geen netwerk is).
-we_TestLine:
-        ldx weTest
-        lda weTLo,x
-        sta weS
-        lda weTHi,x
-        sta weS+1
-        jsr we_Parse
-        jmp we_Type
 
 //--------------------------------------------------------
 // we_Parse - wttr.in-regel (weS: ASCII/UTF-8, tot $00, CR of LF) in de
@@ -104,7 +130,15 @@ nx:     ldy #0
         sta weN
         jsr fptr0
         jmp nx
-nb:     cmp #$80
+nb:     cmp #$2c                 // plaats: alleen tot de eerste komma
+        bne nc
+        ldx weF
+        bne nc
+        jsr term
+        lda weFMax
+        sta weN
+        jmp nx
+nc:     cmp #$80
         bcs utf
         jsr asc
         jsr put
@@ -131,7 +165,9 @@ u3:     cmp #$e2                 // E2 86 90-99 = pijl -> windrichting
         jsr inc1
         lda weT
         cmp #$86
-        bne nx
+        beq !j0+
+        jmp nx
+!j0:
         lda weT+1
         sec
         sbc #$90
@@ -338,16 +374,9 @@ nc:     lda #WE_C_REF
         sta a2
         jsr btn_HitTest
         bcc r
-        ldx weTest               // stap 3: volgende testregel
-        inx
-        cpx #WE_NTEST
-        bcc t
-        ldx #0
-t:      stx weTest
-        jsr we_TestLine
-        lda #0
-        sta weMsg+1
-        jmp shell_DrawAll
+        lda #1                   // REFRESH: ophalen (in we_Idle)
+        sta weNeed
+        rts
 r:      rts
 }
 
@@ -635,7 +664,23 @@ r:      rts
 //           van de TOD-klok; elke 0,3 s het andere beeld van de bewegende
 //           laag, de bliksem 0,2 s aan per 2,5 s.
 we_Idle: {
-        lda $dc08                // tienden van de TOD-klok
+        lda weNeed               // ophalen gevraagd (openen, REFRESH, 15 min)
+        beq m
+        lda #0
+        sta weNeed
+        jmp we_DoFetch
+m:      lda clkMin               // elke 15 minuten opnieuw
+        cmp weLastMin
+        beq an
+        sta weLastMin
+        inc weMinCnt
+        lda weMinCnt
+        cmp #15
+        bcc an
+        lda #0
+        sta weMinCnt
+        inc weNeed
+an:     lda $dc08                // tienden van de TOD-klok
         cmp weLastT
         bne t
         rts
@@ -733,14 +778,18 @@ weN:     .byte 0                 // positie in het veld
 weI:     .byte 0
 weC:     .byte 0
 weT:     .word 0
-weTest:  .byte 0
+weNeed:  .byte 0                 // 1 = ophalen in we_Idle
+weMinCnt: .byte 0                // minuten sinds het laatste ophalen
+weLastMin: .byte 0
+weEmpty: .byte 0
+weLoc:   .fill 32, $ff           // plaats (schermcodes; leeg = AUTO, stap 6)
+weUpd:   .text "--:--"
+         .byte $ff
 weMsg:   .word 0
 weFLo:   .fill WE_NF, <[WE_BUF + i*WE_FL]
 weFHi:   .fill WE_NF, >[WE_BUF + i*WE_FL]
 // maximale lengte per veld: zo blijft alles binnen het venster
 weFMax:  .byte 15, 4, 6, 6, 20, 10, 5, 7, 8, 5, 5, 5
-weTLo:   .byte <weT0, <weT1, <weT2, <weT3
-weTHi:   .byte >weT0, >weT1, >weT2, >weT3
 
 // wat we_Draw tekent: tekst of veld, kolom, rij, accentkleur (1)
 wiLo:    .byte <sWeLoc, <[WE_BUF+WF_LOC*WE_FL], <[WE_BUF+WF_TEMP*WE_FL], <sWeFeels
@@ -748,13 +797,13 @@ wiLo:    .byte <sWeLoc, <[WE_BUF+WF_LOC*WE_FL], <[WE_BUF+WF_TEMP*WE_FL], <sWeFee
          .byte <[WE_BUF+WF_WIND*WE_FL], <sWeHum, <[WE_BUF+WF_HUM*WE_FL], <sWeRain
          .byte <[WE_BUF+WF_RAIN*WE_FL], <sWePress, <[WE_BUF+WF_PRESS*WE_FL], <sWeRise
          .byte <[WE_BUF+WF_RISE*WE_FL], <sWeSet, <[WE_BUF+WF_SET*WE_FL], <sWeLocal
-         .byte <[WE_BUF+WF_TIME*WE_FL], <sWeUpd, <sWeTestData
+         .byte <[WE_BUF+WF_TIME*WE_FL], <sWeUpd, <weUpd
 wiHi:    .byte >sWeLoc, >[WE_BUF+WF_LOC*WE_FL], >[WE_BUF+WF_TEMP*WE_FL], >sWeFeels
          .byte >[WE_BUF+WF_FEELS*WE_FL], >[WE_BUF+WF_COND*WE_FL], >sWeWind
          .byte >[WE_BUF+WF_WIND*WE_FL], >sWeHum, >[WE_BUF+WF_HUM*WE_FL], >sWeRain
          .byte >[WE_BUF+WF_RAIN*WE_FL], >sWePress, >[WE_BUF+WF_PRESS*WE_FL], >sWeRise
          .byte >[WE_BUF+WF_RISE*WE_FL], >sWeSet, >[WE_BUF+WF_SET*WE_FL], >sWeLocal
-         .byte >[WE_BUF+WF_TIME*WE_FL], >sWeUpd, >sWeTestData
+         .byte >[WE_BUF+WF_TIME*WE_FL], >sWeUpd, >weUpd
 wiCol:   .byte WE_COL, 13, 17, 17, 28, 17, 17, 27, 17, 27, 17
          .byte 27, 17, 27, WE_COL, 11, 17, 24, WE_COL, 14, WE_COL, 11
 wiRow:   .byte WE_R_LOC, WE_R_LOC, 7, 8, 8, 10, 12, 12, 13, 13, 14
@@ -784,8 +833,6 @@ sWeLocal:   .text "LOCAL TIME"
             .byte $ff
 sWeUpd:     .text "UPDATED"
             .byte $ff
-sWeTestData: .text "TEST DATA"
-            .byte $ff
 sWeChange:  .text "CHANGE"
             .byte $ff
 sWeRefresh: .text "REFRESH"
@@ -794,35 +841,3 @@ sWeLater:   .text "CHOOSING A PLACE COMES IN STEP 6"
             .byte $ff
 // windpijl E2 86 90-99 -> waar de wind VANDAAN komt (2 tekens)
 weDir:      .text "E S W N     SESWNWNE"
-// testregels in het wttr.in-formaat (UTF-8, zoals de dienst ze stuurt),
-// gemaakt met een Python-hulpje; REFRESH bladert erdoor (stap 3/4)
-weT0:
-        .byte $55,$74,$72,$65,$63,$68,$74,$7c,$6d,$7c,$2b,$31,$39,$c2,$b0,$43
-        .byte $7c,$2b,$31,$38,$c2,$b0,$43,$7c,$50,$61,$72,$74,$6c,$79,$20,$63
-        .byte $6c,$6f,$75,$64,$79,$7c,$e2,$86,$97,$36,$6b,$6d,$2f,$68,$7c,$36
-        .byte $33,$25,$7c,$30,$2e,$30,$6d,$6d,$7c,$31,$30,$31,$36,$68,$50,$61
-        .byte $7c,$30,$37,$3a,$35,$38,$3a,$31,$32,$7c,$31,$39,$3a,$30,$32,$3a
-        .byte $34,$30,$7c,$31,$33,$3a,$34,$35,$3a,$31,$30,$2b,$30,$32,$30,$30
-        .byte $00
-weT1:
-        .byte $41,$6d,$73,$74,$65,$72,$64,$61,$6d,$7c,$2f,$2f,$7c,$2b,$31,$32
-        .byte $c2,$b0,$43,$7c,$2b,$39,$c2,$b0,$43,$7c,$48,$65,$61,$76,$79,$20
-        .byte $72,$61,$69,$6e,$7c,$e2,$86,$90,$32,$34,$6b,$6d,$2f,$68,$7c,$39
-        .byte $34,$25,$7c,$35,$2e,$32,$6d,$6d,$7c,$31,$30,$30,$34,$68,$50,$61
-        .byte $7c,$30,$37,$3a,$35,$37,$3a,$30,$31,$7c,$31,$39,$3a,$30,$31,$3a
-        .byte $31,$32,$7c,$32,$32,$3a,$31,$30,$3a,$30,$30,$2b,$30,$32,$30,$30
-        .byte $00
-weT2:
-        .byte $4f,$73,$6c,$6f,$7c,$2a,$2a,$7c,$2d,$34,$c2,$b0,$43,$7c,$2d,$39
-        .byte $c2,$b0,$43,$7c,$48,$65,$61,$76,$79,$20,$73,$6e,$6f,$77,$7c,$e2
-        .byte $86,$93,$31,$38,$6b,$6d,$2f,$68,$7c,$38,$38,$25,$7c,$31,$2e,$34
-        .byte $6d,$6d,$7c,$39,$39,$38,$68,$50,$61,$7c,$30,$38,$3a,$30,$35,$3a
-        .byte $30,$30,$7c,$31,$38,$3a,$33,$30,$3a,$30,$30,$7c,$30,$39,$3a,$31
-        .byte $35,$3a,$30,$30,$2b,$30,$32,$30,$30,$00
-weT3:
-        .byte $52,$6f,$6d,$65,$7c,$6f,$7c,$2b,$32,$37,$c2,$b0,$43,$7c,$2b,$32
-        .byte $38,$c2,$b0,$43,$7c,$53,$75,$6e,$6e,$79,$7c,$e2,$86,$91,$33,$6b
-        .byte $6d,$2f,$68,$7c,$34,$30,$25,$7c,$30,$2e,$30,$6d,$6d,$7c,$31,$30
-        .byte $32,$30,$68,$50,$61,$7c,$30,$37,$3a,$31,$35,$3a,$30,$30,$7c,$31
-        .byte $38,$3a,$35,$30,$3a,$30,$30,$7c,$31,$32,$3a,$30,$30,$3a,$30,$30
-        .byte $2b,$30,$32,$30,$30,$00
