@@ -44,11 +44,13 @@ we_Init:
         sta weMinCnt
         lda #$ff
         sta weType
+        jsr we_LoadCfg           // de bewaarde plaats (WEATHER.CFG)
         lda #<weEmpty            // velden leeg tot het eerste antwoord
         sta weS
         lda #>weEmpty
         sta weS+1
         jsr we_Parse
+        jsr we_LocDefault
         lda clkMin
         sta weLastMin
         lda #1                   // ophalen zodra het scherm staat (we_Idle)
@@ -361,11 +363,7 @@ we_Click: {
         sta a2
         jsr btn_HitTest
         bcc nc
-        lda #<sWeLater           // (stap 6)
-        sta weMsg
-        lda #>sWeLater
-        sta weMsg+1
-        jmp we_ShowMsg
+        jmp we_Change
 nc:     lda #WE_C_REF
         sta a0
         lda #WE_R_UPD
@@ -773,6 +771,196 @@ weLSpr:   .fill 4, 0
 
 
 //--------------------------------------------------------
+// Plaats kiezen en bewaren (stap 6): WEATHER.CFG = weLoc (32 bytes,
+// schermcodes, $ff-afgesloten; leeg = AUTO).
+//--------------------------------------------------------
+// we_LoadCfg - WEATHER.CFG naar weLoc (ontbreekt hij: AUTO).
+we_LoadCfg: {
+        jsr cfg_io_begin
+        lda #nmE-nm
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #0                   // sa=0: naar het adres in X/Y
+        jsr K_SETLFS
+        lda #0
+        ldx #<weLoc
+        ldy #>weLoc
+        jsr K_LOAD
+        jsr cfg_io_end
+        lda #$ff                 // altijd afgesloten
+        sta weLoc+31
+        jmp we_Clean
+nm:     .encoding "petscii_upper"
+        .text "WEATHER.CFG"
+nmE:
+        .encoding "screencode_upper"
+}
+
+// we_SaveCfg - weLoc als WEATHER.CFG ("SETTINGS ARE BEING SAVED").
+we_SaveCfg: {
+        jsr save_Begin
+        jsr cfg_io_begin
+        lda #nmE-nm
+        ldx #<nm
+        ldy #>nm
+        jsr K_SETNAM
+        lda #1
+        ldx #8
+        ldy #0
+        jsr K_SETLFS
+        lda #<weLoc
+        sta $fb
+        lda #>weLoc
+        sta $fc
+        lda #$fb
+        ldx #<[weLoc+32]
+        ldy #>[weLoc+32]
+        jsr K_SAVE
+        php
+        jsr cfg_io_end
+        plp
+        jmp save_End
+nm:     .encoding "petscii_upper"
+        .text "@0:WEATHER.CFG"
+nmE:
+        .encoding "screencode_upper"
+}
+
+// we_Change - CHANGE: plaats typen (RETURN), bewaren, het weer ophalen.
+we_Change: {
+        lda #<sWeAsk
+        sta weMsg
+        lda #>sWeAsk
+        sta weMsg+1
+        jsr we_ShowMsg
+        lda #13                  // het oude antwoord weg uit de regel
+        sta a0
+        lda #WE_R_LOC
+        sta a1
+        lda #15
+        sta a2
+        lda #1
+        sta a3
+        lda #$20
+        sta a4
+        lda TH_text
+        sta a5
+        jsr gfx_FillRect
+        lda #<weLoc
+        sta r3
+        lda #>weLoc
+        sta r3+1
+        lda #31
+        sta liMax
+        lda #13
+        sta liCol
+        lda #WE_R_LOC
+        sta liRow
+        lda #15
+        sta liVis
+        jsr li_Edit
+        jsr we_Clean
+        jsr we_SaveCfg
+        lda #$ff                 // geen oude gegevens bij de nieuwe plaats
+        sta weType
+        lda #<weEmpty
+        sta weS
+        lda #>weEmpty
+        sta weS+1
+        jsr we_Parse
+        jsr we_LocDefault
+        ldx #4                   // UPDATED weer --:--
+u:      lda sWeNoTime,x
+        sta weUpd,x
+        dex
+        bpl u
+        lda #0
+        sta weMsg+1
+        lda #1                   // ophalen (we_Idle)
+        sta weNeed
+        jmp shell_DrawAll
+}
+
+// we_LocDefault - zolang er geen antwoord is: de gekozen plaats of AUTO.
+we_LocDefault: {
+        ldx #0
+        lda weLoc
+        cmp #$ff
+        bne lp
+a:      lda sWeAuto,x            // AUTO
+        sta WE_BUF+WF_LOC*WE_FL,x
+        inx
+        cmp #$ff
+        bne a
+        rts
+lp:     lda weLoc,x
+        cpx #15                  // (veldbreedte)
+        bcc s
+        lda #$ff
+s:      sta WE_BUF+WF_LOC*WE_FL,x
+        inx
+        cmp #$ff
+        bne lp
+        rts
+}
+
+// we_Clean - alleen A-Z, 0-9, spatie, - en , in weLoc; geen spaties aan
+//            het begin of eind (ze worden + in het webadres).
+we_Clean: {
+        ldx #0
+        ldy #0
+lp:     cpx #31
+        bcs e
+        lda weLoc,x
+        cmp #$ff
+        beq e
+        inx
+        jsr ok
+        bcc lp
+        cmp #$20                 // spatie aan het begin overslaan
+        bne st
+        cpy #0
+        beq lp
+st:     sta weLoc,y
+        iny
+        jmp lp
+e:      cpy #0                   // spaties aan het eind weg
+        beq z
+        lda weLoc-1,y
+        cmp #$20
+        bne z
+        dey
+        jmp e
+z:      lda #$ff                 // rest leeg
+f:      sta weLoc,y
+        iny
+        cpy #32
+        bcc f
+        rts
+ok:     cmp #1                   // carry=1: toegestaan
+        bcc no
+        cmp #27
+        bcc yes                  // A-Z
+        cmp #$20
+        beq yes
+        cmp #$2c
+        beq yes
+        cmp #$2d
+        beq yes
+        cmp #$30
+        bcc no
+        cmp #$3a
+        bcc yes                  // 0-9
+no:     clc
+        rts
+yes:    sec
+        rts
+}
+
+//--------------------------------------------------------
 weF:     .byte 0                 // veld (we_Parse)
 weN:     .byte 0                 // positie in het veld
 weI:     .byte 0
@@ -782,7 +970,7 @@ weNeed:  .byte 0                 // 1 = ophalen in we_Idle
 weMinCnt: .byte 0                // minuten sinds het laatste ophalen
 weLastMin: .byte 0
 weEmpty: .byte 0
-weLoc:   .fill 32, $ff           // plaats (schermcodes; leeg = AUTO, stap 6)
+weLoc:   .fill 32, $ff           // plaats (schermcodes; leeg = AUTO), WEATHER.CFG
 weUpd:   .text "--:--"
          .byte $ff
 weMsg:   .word 0
@@ -837,7 +1025,10 @@ sWeChange:  .text "CHANGE"
             .byte $ff
 sWeRefresh: .text "REFRESH"
             .byte $ff
-sWeLater:   .text "CHOOSING A PLACE COMES IN STEP 6"
+sWeAsk:     .text "TYPE A PLACE, RETURN (EMPTY=AUTO)"
             .byte $ff
+sWeAuto:    .text "AUTO"
+            .byte $ff
+sWeNoTime:  .text "--:--"
 // windpijl E2 86 90-99 -> waar de wind VANDAAN komt (2 tekens)
 weDir:      .text "E S W N     SESWNWNE"

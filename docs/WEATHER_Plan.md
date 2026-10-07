@@ -272,7 +272,7 @@ Een zonnetje half achter een wolkje, in alle thema's:
 | 3 | **Overlay-skelet**: `weather_main.asm`, app-id 14, icoon (STONE + Win95), venster met vaste testgegevens | ✅ **klaar**: eigen PRG `WEATHER` (1,3 KB), icoon in alle thema's, wttr.in-regels ontleed (°C, windpijl → richting), REFRESH bladert door 4 testregels; Core nog 5 bytes vrij |
 | 4 | **Sprite-motor**: lagen, kleuren, animatie, opslaan/terugzetten `$3E00` | ✅ **klaar**: lagen + animatie op de C64 zoals het voorbeeld; Core-haken `ovIdle`/`ovExit` (ABOUT gebruikt nu de gewone melding: ruimte); F1 verbergt de sprites; iconen na sluiten intact; luchtvlak op rij 7 (onder de menu's) |
 | 5 | **Ophalen**: HTTP GET naar wttr.in, ontleden, meldingen | ✅ **klaar**: echt weer via de WiC64 (VICE) — na openen, REFRESH en elke 15 min; "NO NETWORK", "PLACE NOT FOUND" (HTTP 500), time-out en RUN/STOP; plaats tot de eerste komma. Windpijl gecontroleerd tegen Open-Meteo (pijl = waarheen). RR-Net nog niet apart getest. Eén keer (van 6) eindigde VICE bij READY; niet terug te krijgen |
-| 6 | **Locatie**: CHANGE, AUTO, `WEATHER.CFG`, `build_disk.bat` | plaats blijft bewaard na herstart en na een nieuwe build |
+| 6 | **Locatie**: CHANGE, AUTO, `WEATHER.CFG`, `build_disk.bat` | ✅ **klaar**: CHANGE → typen + RETURN (leeg = AUTO; alleen A-Z 0-9 spatie - ,), bewaard in `WEATHER.CFG` (in `USERFILES` van de build), na herstart weer ingelezen; onbekende plaats → PLACE NOT FOUND |
 | 7 | **Testserver**: `tools/weather_test_server.py` met elk weertype + foutgevallen | alle types en fouten getest zonder internet |
 | 8 | **Afwerken**: auto-refresh, help (F1), README, screenshots, D81/D71 | alles gecommit, D81 gebouwd |
 

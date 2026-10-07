@@ -65,7 +65,7 @@ if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 :: De disk waarmee het laatst gewerkt is (D81, D71 of D64) gaat voor.
 set "KEEP=%~dp0userfiles"
 set "PARKED=%~dp0parked"
-set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps"
+set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps weather.cfg"
 if not exist "%KEEP%" mkdir "%KEEP%"
 set "DISKS="
 for /f "delims=" %%D in ('python tools\disks_by_age.py build') do call set "DISKS=%%DISKS%% %%D"
