@@ -89,6 +89,15 @@
 .const GL_TRASHF   = 82          // volle prullenbak: bovenrij (2 tekens)
 .const GI_WEATHER  = 14          // STONE-icoonnummer van WEATHER (geen GEOSICON-plek)
 .const GI_WEATHER_CODE = 102
+// WEB: in de STONE-stijl 3x3 op 111-119 (achter WEATHER); in de Win95-stijl
+// 2x3 op de omgekeerde tekens [ PND ] ^ <- (155-159) en " (162): die staan
+// nooit omgekeerd in een knop ( " kan niet eens in een bestandsnaam).
+// De zesde cel van het icon_Build-blok (160 = omgekeerde spatie) gaat naar
+// 162 en 160 wordt weer massief. da_code6 kent die sprong.
+.const ICO_WEB     = 155
+.const ICO_WEB_5   = 162
+.const GI_WEB      = 15
+.const GI_WEB_CODE = 111
 .const GL_STRIPE   = 82
 .const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
@@ -319,11 +328,11 @@ tf:     lda thinFrame,x
         sta CHARSET_BASE+W_L*8,x
         dex
         bpl tf
-        ldx #71                  // STONE: WEATHER 3x3 op 102-110
-tw:     lda weatherBig,x
-        sta CHARSET_BASE+GI_WEATHER_CODE*8,x
+        ldx #144                 // STONE: WEATHER en WEB 3x3 op 102-119
+tw:     lda weatherBig-1,x
+        sta CHARSET_BASE+GI_WEATHER_CODE*8-1,x
         dex
-        bpl tw
+        bne tw
         rts
 w95:    ldx #15                  // Win95: bovenrij volle prullenbak -> 82-83
 tt:     lda CHARSET_BASE+[STRIP_BASE+18]*8,x
@@ -336,7 +345,22 @@ tt:     lda CHARSET_BASE+[STRIP_BASE+18]*8,x
         sta r5+1
         ldx #ICON3_N+4
         ldy #ICON3_N+5
-        jmp ib_Run
+        jsr ib_Run
+        lda #<[CHARSET_BASE + ICO_WEB*8]       // WEB op 155-160 ...
+        sta r5
+        lda #>[CHARSET_BASE + ICO_WEB*8]
+        sta r5+1
+        ldx #ICON3_N+5
+        ldy #ICON3_N+6
+        jsr ib_Run
+        ldx #7                   // ... cel 6 naar 162, 160 weer massief
+tb:     lda CHARSET_BASE+[ICO_WEB+5]*8,x
+        sta CHARSET_BASE+ICO_WEB_5*8,x
+        lda #$ff
+        sta CHARSET_BASE+[ICO_WEB+5]*8,x
+        dex
+        bpl tb
+        rts
 tr:     rts
 // 6 glyphs x 8 rijen: TL', TR', midden-L, midden-R, BL', BR'
 ibMap:  .byte $ff,$ff,$ff,$ff, 0, 1, 2, 3        // TL': 4 leeg + TL 0-3
@@ -350,12 +374,12 @@ ibSrcLo: .byte <[CHARSET_BASE+111*8], <[CHARSET_BASE+115*8], <[CHARSET_BASE+119*
          .byte <[CHARSET_BASE+107*8], <[CHARSET_BASE+102*8], <[CHARSET_BASE+80*8]
          .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs, <sidGlyphs
          .byte <stripGlyphs, <[stripGlyphs+32], <[stripGlyphs+64], <[stripGlyphs+96]
-         .byte <weatherGlyphs
+         .byte <weatherGlyphs, <webGlyphs
 ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*8]
          .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
          .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs, >sidGlyphs
          .byte >stripGlyphs, >[stripGlyphs+32], >[stripGlyphs+64], >[stripGlyphs+96]
-         .byte >weatherGlyphs
+         .byte >weatherGlyphs, >webGlyphs
 }
 
 // stone_Icons - in de STONE-stijl STONEICON laden: codes 128-253.

@@ -319,4 +319,4 @@ clkMin:   .byte 0
 clkShown: .byte $ff              // minuut die nu op het scherm staat
 clkTmp:   .byte 0
 clkCold:  .byte 0
-clkBuf:   .fill 18, 0
+.label clkBuf = $c3c7           // 18 bytes (vrij RAM, niet in de Core)

@@ -286,7 +286,13 @@ da_draw2x2:
 // da_code6 - charset-code van cel X (0-5) van het 2x3-icoon deIcon.
 da_code6:
         lda deIcon               // RADIO: 252-255, dan 80-81 (zie font.asm)
-        cmp #ICO_RADIO_D
+        cmp #ICO_WEB             // WEB: cel 5 op 162
+        bne !r+
+        cpx #5
+        bne !n+
+        lda #ICO_WEB_5
+        rts
+!r:     cmp #ICO_RADIO_D
         bne !n+
         txa
         cmp #4
@@ -599,9 +605,9 @@ da_drawStone:
         lda #>sgSid
         sta r0+1
 !sn:    lda daEnt                // ingebouwd programma i = STONE-icoon i
-        cmp #9                   // (behalve WEATHER: eigen icoon)
-        bne !d+
-        lda #GI_WEATHER
+        cmp #9                   // (WEATHER, WEB ...: 14, 15 ...)
+        bcc !d+
+        adc #GI_WEATHER-9-1      // (carry=1)
         jmp !d+
 !u:     sec
         sbc biCount
@@ -627,9 +633,12 @@ da_drawStone:
 
 // da_giCode - STONE-icoon A -> eerste charset-code (128 + 9*A).
 da_giCode:
-        cmp #GI_WEATHER          // WEATHER staat niet in GEOSICON
-        bne !g+
-        lda #GI_WEATHER_CODE
+        cmp #GI_WEATHER          // WEATHER en WEB staan niet in GEOSICON
+        bcc !g+
+        beq !w+
+        lda #GI_WEB_CODE
+        rts
+!w:     lda #GI_WEATHER_CODE
         rts
 !g:     sta daT
         asl
@@ -809,11 +818,12 @@ da_Ghost:
         beq !w+
         lda daGE                 // STONE: 9 codes op een rij
         cmp biCount
-        bcc !b+
-        lda #GI_APP
-!b:     cmp #9                   // WEATHER: eigen icoon
-        bne !c+
-        lda #GI_WEATHER
+        bcs !u+
+        cmp #9                   // WEATHER, WEB ...: eigen iconen
+        bcc !c+
+        adc #GI_WEATHER-9-1      // (carry=1)
+        bcc !c+
+!u:     lda #GI_APP
 !c:     jsr da_giCode
         ldx #0
 !g:     sta ghC,x

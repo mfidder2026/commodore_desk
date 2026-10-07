@@ -361,9 +361,9 @@ loadCharset:
         rts
 
 // index 0-5 = apps (5 = INET), 6 = DESKTOOL, 7 = BBS, 8 = EMAIL, 9 = SIDPLAY
-appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool, <anBbs, <anMail, <anSid, <anTime, <anRadio, <anWeather
-appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool, >anBbs, >anMail, >anSid, >anTime, >anRadio, >anWeather
-appLen:   .byte 5, 6, 5, 4, 5, 4, 8, 3, 5, 7, 4, 5, 7
+appPtrLo: .byte <anFiles, <anEdit, <anPaint, <anCalc, <anSetup, <anInet, <anTool, <anBbs, <anMail, <anSid, <anTime, <anRadio, <anWeather, <anWeb
+appPtrHi: .byte >anFiles, >anEdit, >anPaint, >anCalc, >anSetup, >anInet, >anTool, >anBbs, >anMail, >anSid, >anTime, >anRadio, >anWeather, >anWeb
+appLen:   .byte 5, 6, 5, 4, 5, 4, 8, 3, 5, 7, 4, 5, 7, 3
 // disk-fonts: 0-4 = Fremen..Heavy, 5 = Lower, 6 = Tiny
 fntPtrLo: .byte <anFremen, <anSerif, <anMono, <anCasual, <anHeavy, <anLower, <anTiny
 fntPtrHi: .byte >anFremen, >anSerif, >anMono, >anCasual, >anHeavy, >anLower, >anTiny
@@ -382,6 +382,7 @@ anSid:    .text "SIDPLAY"
 anTime:   .text "TIME"
 anRadio:  .text "RADIO"
 anWeather: .text "WEATHER"
+anWeb:    .text "WEB"
 anLower:  .text "LOWER"
 anTiny:   .text "TINY"
 anFremen: .text "FREMEN"

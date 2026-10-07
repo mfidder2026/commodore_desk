@@ -343,4 +343,4 @@ hCtx:     .byte 0
 hRow:     .byte 0
 hEnd:     .byte 0
 hP:       .word 0
-hTxt:     .fill 35, $ff
+.label hTxt = $c3a4             // 35 bytes (vrij RAM, niet in de Core)

@@ -47,8 +47,12 @@ python tools\make_weather_sprites.py
 if errorlevel 1 ( echo WEATHER-sprites mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" weather_main.asm -odir build
 if errorlevel 1 ( echo WEATHER build failed. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" web_main.asm -odir build
+if errorlevel 1 ( echo WEB build failed. & exit /b 1 )
 python tools\make_radio_seq.py
 if errorlevel 1 ( echo RADIO.LST mislukt. & exit /b 1 )
+python tools\make_radio_seq.py data\bookmarks.txt build\bookmarks.seq
+if errorlevel 1 ( echo BOOKMARKS mislukt. & exit /b 1 )
 python tools\make_stoneicons.py
 if errorlevel 1 ( echo STONEICON mislukt. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" boot_main.asm -o build\boot.prg -odir build
@@ -70,8 +74,10 @@ if not exist "%KEEP%" mkdir "%KEEP%"
 set "DISKS="
 for /f "delims=" %%D in ('python tools\disks_by_age.py build') do call set "DISKS=%%DISKS%% %%D"
 for %%U in (%USERFILES%) do call :keepfile %%U
-:: RADIO.LST (de afspeellijst, ook te bewerken) blijft ook bewaard
+:: RADIO.LST (de afspeellijst) en BOOKMARKS (WEB), ook te bewerken, blijven
+:: ook bewaard
 call :keepfile radio.lst
+call :keepfile bookmarks
 
 echo [3/3] D71 maken en PRG's erop schrijven (BOOT start eerst)...
 if exist build\CD64.d71 del build\CD64.d71
@@ -92,6 +98,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\time.prg time ^
   -write build\radio.prg radio ^
   -write build\weather.prg weather ^
+  -write build\web.prg web ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -158,7 +165,7 @@ if errorlevel 1 ( echo c1541 D64 kant B failed. & exit /b 1 )
 :: De rest op kant A zolang het past (20 blokken blijven vrij voor de
 :: instellingen en RADIO.LST), anders op kant B (10 blokken vrij).
 echo D64 kant A / B:
-python tools\disk_add.py "%C1541%" build\CD64.d64 20 --spill build\CD64_B.d64 build\weather.prg build\scrsaver.prg sid\*.sid "%GAME_C%" "%GAME_R%"
+python tools\disk_add.py "%C1541%" build\CD64.d64 20 --spill build\CD64_B.d64 build\weather.prg build\web.prg build\scrsaver.prg sid\*.sid "%GAME_C%" "%GAME_R%"
 
 :: SID-tunes: alle .sid-bestanden uit de map sid\ (niet in git: muziek
 :: van derden) op de D71; op de D64 via disk_add.py (als ze passen).
@@ -186,6 +193,13 @@ if exist "%KEEP%\radio.lst" set "RLST=%KEEP%\radio.lst"
 "%C1541%" -attach build\CD64.d71 -write "%RLST%" "radio.lst,s" >nul 2>&1
 "%C1541%" -attach build\CD64.d64 -write "%RLST%" "radio.lst,s" >nul 2>&1
 echo   radio.lst (%RLST%)
+:: BOOKMARKS als SEQ (op beide D64-kanten: WEB kan op elk van beide staan)
+set "BMK=build\bookmarks.seq"
+if exist "%KEEP%\bookmarks" set "BMK=%KEEP%\bookmarks"
+"%C1541%" -attach build\CD64.d71 -write "%BMK%" "bookmarks,s" >nul 2>&1
+"%C1541%" -attach build\CD64.d64 -write "%BMK%" "bookmarks,s" >nul 2>&1
+"%C1541%" -attach build\CD64_B.d64 -write "%BMK%" "bookmarks,s" >nul 2>&1
+echo   bookmarks (%BMK%)
 echo.
 echo [4/3] D81 maken: alles bij elkaar (1581, 3160 blokken)...
 if exist build\CD64.d81 del build\CD64.d81
@@ -206,6 +220,7 @@ if exist build\CD64.d81 del build\CD64.d81
   -write build\time.prg time ^
   -write build\radio.prg radio ^
   -write build\weather.prg weather ^
+  -write build\web.prg web ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -226,6 +241,7 @@ for %%U in (%USERFILES%) do (
   if exist "%KEEP%\%%U" "%C1541%" -attach build\CD64.d81 -write "%KEEP%\%%U" %%U >nul 2>&1
 )
 "%C1541%" -attach build\CD64.d81 -write "%RLST%" "radio.lst,s" >nul 2>&1
+"%C1541%" -attach build\CD64.d81 -write "%BMK%" "bookmarks,s" >nul 2>&1
 
 echo [5/3] release\CD64.d81: schone D81 voor git (om te testen)...
 :: Alleen eigen bestanden: GEEN instellingen uit userfiles\ (mailwachtwoord!),
@@ -249,6 +265,7 @@ if exist release\CD64.d81 del release\CD64.d81
   -write build\time.prg time ^
   -write build\radio.prg radio ^
   -write build\weather.prg weather ^
+  -write build\web.prg web ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -260,7 +277,8 @@ if exist release\CD64.d81 del release\CD64.d81
   -write build\scrsaver.prg scrsaver ^
   -write build\c64cdesk.prg c64cdesk ^
   -write build\c64rdesk.prg c64rdesk ^
-  -write build\radio.lst "radio.lst,s"
+  -write build\radio.lst "radio.lst,s" ^
+  -write build\bookmarks.seq "bookmarks,s"
 if errorlevel 1 ( echo c1541 release-D81 failed. & exit /b 1 )
 
 echo Klaar: build\CD64.d81, build\CD64.d71, build\CD64.d64 + CD64_B.d64 en release\CD64.d81

@@ -70,8 +70,10 @@ C64 RED are placeholders.
 | AI chat | Ping | Adding your own BBS |
 | ![SID Radio](docs/screenshots/radio.png) | ![SID Radio playing](docs/screenshots/radio_play.png) | ![Weather](docs/screenshots/weather.png) |
 | SID Radio | Playing a tune from the HVSC | Weather from wttr.in |
-| ![3-day forecast](docs/screenshots/weather_forecast.png) | | |
-| The forecast for 3 days | | |
+| ![3-day forecast](docs/screenshots/weather_forecast.png) | ![WEB](docs/screenshots/web.png) | ![68k.news in WEB](docs/screenshots/web_68k.png) |
+| The forecast for 3 days | WEB: the bookmarks (start page) | 68k.news |
+| ![Searching with wiby.me](docs/screenshots/web_search.png) | ![info.cern.ch](docs/screenshots/web_cern.png) | ![The LOWER font](docs/screenshots/web_lower.png) |
+| Searching with wiby.me | The first website, over the RR-Net | With the LOWER font |
 
 | Settings | | |
 |---|---|---|
@@ -100,7 +102,7 @@ C64 RED are placeholders.
   - **SYSTEM**: SETTINGS, NETWORK, EMAIL and TIME. These are the only way to
     reach settings, the same everywhere.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
-  BBS, EMAIL, SID PLAYER, RADIO, WEATHER) and your own programs, for example games. Click one to start it.
+  BBS, EMAIL, SID PLAYER, RADIO, WEATHER, WEB) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
 - **Starting a program from disk** (for example a game) shows a calm screen in the theme colours with
   `LOADING <name> please wait` while it loads. When the program ends (it
@@ -323,6 +325,61 @@ animated picture made of sprites, and a forecast for 3 days.
   cases (unknown place, server error, empty answer, a slow server, an
   answer that is too long), the forecast and the F/mph units.
 
+### Web browser (WEB)
+
+![WEB](docs/screenshots/web_68k.png)
+
+A simple text browser, like Lynx: text, headings, lists and links to click.
+No pictures, no JavaScript, no CSS.
+
+- **Only `http://`.** A C64 cannot do TLS, so HTTPS sites cannot be opened
+  (WEB says `HTTPS: NOT POSSIBLE ON A C64`), and most of today's web is
+  HTTPS only. Sites that still work over plain HTTP include
+  [68k.news](http://68k.news/) (news for old computers),
+  [wiby.me](http://wiby.me/) (a search engine for simple sites),
+  [info.cern.ch](http://info.cern.ch/) (the first website),
+  [textfiles.com](http://textfiles.com/), [csdb.dk](http://csdb.dk/) (the
+  C64 scene database) and [theoldnet.com](http://theoldnet.com/).
+- **The start page is your bookmarks**: the file `BOOKMARKS` on the disk, one
+  page per line (`http://68k.news/ 68K.NEWS - NEWS FOR OLD COMPUTERS`). It
+  comes with 68k.news and wiby.me; edit it in the TEXT EDITOR (the File
+  Manager opens it there). Your own `BOOKMARKS` is kept when the disks are
+  rebuilt.
+- **Click a link** (in the accent colour) to follow it. Headings are in the
+  colour of the selection.
+- **Click the address line** to type an address (`http://` may be left out),
+  RETURN goes there.
+- **BACK** (or B) goes to the page before (the last 6), **MARKS** (M) to the
+  bookmarks, **RELOAD** (R) fetches the page again. **SPACE** and **-**
+  page down and up, or use the scroll bar. **RUN/STOP** stops loading;
+  what has arrived stays.
+- **Searching**: the first GET form of a page with a text field works (the
+  search on wiby.me, for instance): click the field, type, RETURN.
+- Everything is in capitals, like the rest of the desktop; with the font
+  **LOWER** pages are shown in lower case.
+
+How it fits in a C64:
+
+- A page can be 100 KB of HTML. WEB turns it into lines of 35 characters
+  **while it comes in**; the HTML itself is never kept. The text has 10 KB
+  (`$4000-$67FF`, a few hundred lines): a longer page ends with
+  `PAGE TOO LONG - REST NOT SHOWN`.
+- Addresses can be up to 767 characters (the article links on 68k.news
+  are). Short link addresses are kept; for a long one WEB keeps only a check
+  number, and when you click it, it reads the page once more to find the
+  link with that number (`FINDING THE LINK`).
+- Redirects are followed (up to 5), `&amp;`-style characters, UTF-8 and
+  Latin-1 become plain letters, `<pre>` keeps its layout, scripts and
+  styles are skipped. Plain text files (`text/plain`) are shown as they are;
+  other files give `CANNOT SHOW THIS TYPE OF FILE`.
+- Works on the RR-Net, the Ultimate and the WiC64 (tested in VICE on the
+  RR-Net and the WiC64).
+- [`tools/web_test_server.py`](tools/web_test_server.py) has a page for
+  every case: tags, characters, a page that is too long, 300 links (some
+  with very long addresses), relative links, redirects, errors, plain text,
+  a file, a search form, a slow server.
+- Plan: [`docs/BROWSER_Plan.md`](docs/BROWSER_Plan.md).
+
 ### AI chat
 
 Talk to an **OpenAI-compatible** AI server on your own network, such as
@@ -496,6 +553,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 | `BBS.BOOK` | your own BBSes |
 | `DESK.APPS` | your own programs on the desktop |
 | `WEATHER.CFG` | the place and the units (C or F) for WEATHER |
+| `BOOKMARKS` | the bookmarks of WEB (a text file, also on the D64 side B) |
 
 `build_disk.bat` formats fresh disk images on every build. So that you never
 lose your settings, it first copies these files from the old disk image you
@@ -536,7 +594,7 @@ python tools/make_fremenfont.py
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
-DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO, WEATHER) and the fonts, and writes everything to
+DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO, WEATHER, WEB) and the fonts, and writes everything to
 `build\CD64.d81`, `build\CD64.d71`, `build\CD64.d64` and `build\CD64_B.d64`. It also makes
 `release\CD64.d81`, the clean test disk that is committed: without your
 settings, the real games or the SID files.
@@ -555,7 +613,7 @@ placeholders for the games.
 - **D64** (1541), two disks or the two sides of one floppy:
   - **Side A** (`CD64.d64`): the system and all programs, WEATHER included,
     and then whatever else still fits (now the SID files).
-  - **Side B** (`CD64_B.d64`): what does not fit on side A (now the
+  - **Side B** (`CD64_B.d64`): what does not fit on side A (now WEB, the
     screensaver and the two games), plus what CD64 needs to start from it
     and to come back after a game (BOOT, CD64, the help, the fonts,
     DESKTOOL and your settings). You can start CD64 from either side.
@@ -667,6 +725,7 @@ apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
 apps/time/   date and time: NTP client, time zones, summer time
 apps/radio/  SID Radio: playlist, HTTP download, plays with the SID player
 apps/weather/  WEATHER: wttr.in over HTTP, place, the sprite pictures
+apps/web/   WEB: HTTP, HTML -> text lines, links, addresses, bookmarks
 net/      network stack: CS8900, Ultimate UCI, WiC64, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
 include/  palette · layout · memory map · ABI · hardware
 ```
@@ -693,12 +752,13 @@ include/  palette · layout · memory map · ABI · hardware
 | `disk_main.asm` | the core for the disk version |
 | `main_cart.asm` | the EasyFlash cartridge version |
 | `boot_main.asm` | boot loader with the splash screen |
-| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm`, `weather_main.asm` | the BBS, EMAIL, TIME, RADIO and WEATHER overlays |
+| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm`, `weather_main.asm`, `web_main.asm` | the BBS, EMAIL, TIME, RADIO, WEATHER and WEB overlays |
 | `build_disk.bat`, `build_cart.bat` | build scripts |
 | `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
 | `tools/export_core_syms.py` | core addresses for the separately built overlays |
 | `tools/mailtest_server.py` | POP3/SMTP test server |
 | `tools/weather_test_server.py` | test server for WEATHER (answers like wttr.in) |
+| `tools/web_test_server.py` | test server for WEB (a page per case) |
 | `tools/make_weather_sprites.py` | the WEATHER sprite pictures |
 | `tools/disk_add.py` | writes optional files to a disk image only when they fit |
 | `tools/make_fonts.py`, `tools/make_fremenfont.py` | font generators |

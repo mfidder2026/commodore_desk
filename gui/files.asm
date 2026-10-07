@@ -234,12 +234,13 @@ fileReq:  .byte 0                // 1 = er staat een bestand klaar (fileDev/Name
 fileDev:  .byte 8
 fileSkip: .byte 0                // 1 = eerste 2 bytes overslaan (PRG als tekst)
 fileLen:  .byte 0
-fileName: .fill 16, 0            // PETSCII
+.label fileName = $c3d9         // 16 bytes, PETSCII (vrij RAM, niet in de Core)
 dsDev:    .byte 0
 dsCode:   .byte 0
 dsI:      .byte 0
 dsCmdLen: .byte 0
-dsCmd:    .fill 24, 0
+.label dsCmd = $c4b8            // 24 bytes (vrij RAM, niet in de Core)
+.assert "Core-buffers in vrij RAM", [$c3d9 + 16 <= $c3f8] && [$c4b8 + 24 <= $c4e0], true
 dsText:   .fill 39, $ff
 liMax:    .byte 0
 liCol:    .byte 0

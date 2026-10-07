@@ -506,7 +506,7 @@ lsWait: .text " please wait"
 .encoding "screencode_upper"
 }
 lsLen:  .byte 0
-lsBuf:  .fill 40, 0
+.label lsBuf = $c490            // 40 bytes (vrij RAM, niet in de Core)
 
 //--------------------------------------------------------
 // launchCommon - start het PRG waarvan de naam al op $03C0 (petscii) en
@@ -978,7 +978,7 @@ ovExit: .word 0
 
 tool_Run:
         stx toolFn
-        ldx #15
+        ldx #16
         jsr showLoading          // "LOADING TOOLS"
         ldx #6
         jsr loadApp              // DESKTOOL -> $8000
@@ -1169,12 +1169,12 @@ deIcoC:      .byte 0
 
 // ---- bureaublad-launcher: vaste ingebouwde apps (EDITOR/PAINT/CALC) ----
 // De gebruikersprogramma's staan als records in deskapps.asm.
-biCount:    .byte 10
-biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail, <nSid, <oRadio, <nWeather
-biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail, >nSid, >oRadio, >nWeather
-biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH, ICO_SID, ICO_RADIO_D, ICO_WEATHER  // 2x3
-biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE, LIGHT_BLUE, GREEN, YELLOW
-biApp:      .byte 1, 2, 3, 6, 7, 8, 9, 11, 13, 14  // app-id
+biCount:    .byte 11
+biNameLo:   .byte <dnEdit, <dnPaint, <dnCalc, <oPing, <oChat, <dnBbs, <oMail, <nSid, <oRadio, <nWeather, <nWeb
+biNameHi:   .byte >dnEdit, >dnPaint, >dnCalc, >oPing, >oChat, >dnBbs, >oMail, >nSid, >oRadio, >nWeather, >nWeb
+biIcon:     .byte ICO_EDIT, ICO_PAINT, ICO_CALC, ICO_PING, ICO_CHAT, ICO_BBS, MAIL_GLYPH, ICO_SID, ICO_RADIO_D, ICO_WEATHER, ICO_WEB  // 2x3
+biIcoCol:   .byte WHITE, LIGHT_RED, CYAN, LIGHT_GREEN, YELLOW, LIGHT_GREY, WHITE, LIGHT_BLUE, GREEN, YELLOW, LIGHT_BLUE
+biApp:      .byte 1, 2, 3, 6, 7, 8, 9, 11, 13, 14, 15  // app-id
 // 20 kies-iconen: eigen 8x8-iconen op charset-codes 64..83 (zie font.asm)
 userIconGlyphs:
         .byte 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
@@ -1189,15 +1189,15 @@ lvI:         .byte 0
 lvItem:      .byte 0
 lvRow:       .byte 0
 
-nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <nTime, <nRadio, <nWeather
-nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >nTime, >nRadio, >nWeather
+nameLo: .byte <nDesk, <nFiles, <nEdit, <nPaint, <nCalc, <nSet, <nInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <nTime, <nRadio, <nWeather, <nWeb
+nameHi: .byte >nDesk, >nFiles, >nEdit, >nPaint, >nCalc, >nSet, >nInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >nTime, >nRadio, >nWeather, >nWeb
 // overlay (loadApp-index) per app-id: PING zit in de INET-overlay
-appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9, 10, 11, 12
+appOvl: .byte 0, 1, 2, 3, 4, 5, 5, 5, 7, 8, 8, 9, 10, 11, 12, 13
 
 dbI:       .byte 0
-// laadvenster-namen per app-id (15 = launcher-beheer)
-labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <oTime, <nRadio, <nWeather, <lTool
-labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >oTime, >nRadio, >nWeather, >lTool
+// laadvenster-namen per app-id (16 = launcher-beheer)
+labelLo:   .byte <lFiles, <lEdit, <lPaint, <lCalc, <lSet, <lInet, <oPing, <oChat, <nBbs, <oMail, <nMailS, <nSid, <oTime, <nRadio, <nWeather, <nWeb, <lTool
+labelHi:   .byte >lFiles, >lEdit, >lPaint, >lCalc, >lSet, >lInet, >oPing, >oChat, >nBbs, >oMail, >nMailS, >nSid, >oTime, >nRadio, >nWeather, >nWeb, >lTool
 
 .encoding "screencode_upper"
 mbCd:   .text "CD64"
@@ -1283,6 +1283,8 @@ oTime:  .text "TIME"
 nTime:  .text "DATE AND TIME"
         .byte $ff
 nWeather: .text "WEATHER"
+        .byte $ff
+nWeb:   .text "WEB"
         .byte $ff
 oRadio: .text "RADIO"
         .byte $ff
