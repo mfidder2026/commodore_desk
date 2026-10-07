@@ -232,10 +232,12 @@ weFl:    .byte 0
 weTicks: .word 0
 weHl:    .fill 16, 0
 .encoding "screencode_upper"
-weHost:  .text "WTTR.IN"
-         .byte $ff
+weHost:  .text "WTTR.IN"        // (ruimte voor een andere server: de
+         .byte $ff               //  testserver, tools/weather_test_server.py)
+         .fill 24, $ff
 wePort:  .text "80"
          .byte $ff
+         .fill 3, $ff
 sWeNoPlace: .text "PLACE NOT FOUND"
          .byte $ff
 sWeSvc:  .text "WEATHER SERVICE ERROR"
