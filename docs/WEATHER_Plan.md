@@ -274,7 +274,7 @@ Een zonnetje half achter een wolkje, in alle thema's:
 | 5 | **Ophalen**: HTTP GET naar wttr.in, ontleden, meldingen | ✅ **klaar**: echt weer via de WiC64 (VICE) — na openen, REFRESH en elke 15 min; "NO NETWORK", "PLACE NOT FOUND" (HTTP 500), time-out en RUN/STOP; plaats tot de eerste komma. Windpijl gecontroleerd tegen Open-Meteo (pijl = waarheen). RR-Net nog niet apart getest. Eén keer (van 6) eindigde VICE bij READY; niet terug te krijgen |
 | 6 | **Locatie**: CHANGE, AUTO, `WEATHER.CFG`, `build_disk.bat` | ✅ **klaar**: CHANGE → typen + RETURN (leeg = AUTO; alleen A-Z 0-9 spatie - ,), bewaard in `WEATHER.CFG` (in `USERFILES` van de build), na herstart weer ingelezen; onbekende plaats → PLACE NOT FOUND |
 | 7 | **Testserver**: `tools/weather_test_server.py` met elk weertype + foutgevallen | ✅ **klaar**: 17 weertypes (alle 8 windrichtingen, dag/nacht) en 6 gevallen (NOTFOUND, ERROR, EMPTY, SLOW, LONG, AUTO) in VICE: allemaal het verwachte scherm; geen enkele keer READY |
-| 8 | **Afwerken**: auto-refresh, help (F1), README, screenshots, D81/D71 | alles gecommit, D81 gebouwd |
+| 8 | **Afwerken**: auto-refresh, help (F1), README, screenshots, D81/D71 | ✅ **klaar**: README-hoofdstuk *Weather* (plus `WEATHER.CFG`, mappen en tools), schermafdrukken (C64, DESK64 en STONE, een overzicht van alle 16 weerplaatjes, de thema's opnieuw met het WEATHER-icoon); D81, D71 en `release/CD64.d81` gebouwd (`WEATHER` 50 blokken; niet op de D64) |
 
 ---
 

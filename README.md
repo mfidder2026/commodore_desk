@@ -68,8 +68,8 @@ C64 RED are placeholders.
 | E-mail: mailbox | Reading a message | Writing a reply |
 | ![Chat](docs/screenshots/chat.png) | ![Ping](docs/screenshots/ping.png) | ![Add BBS](docs/screenshots/bbs_add.png) |
 | AI chat | Ping | Adding your own BBS |
-| ![SID Radio](docs/screenshots/radio.png) | ![SID Radio playing](docs/screenshots/radio_play.png) | |
-| SID Radio | Playing a tune from the HVSC | |
+| ![SID Radio](docs/screenshots/radio.png) | ![SID Radio playing](docs/screenshots/radio_play.png) | ![Weather](docs/screenshots/weather.png) |
+| SID Radio | Playing a tune from the HVSC | Weather from wttr.in |
 
 | Settings | | |
 |---|---|---|
@@ -98,7 +98,7 @@ C64 RED are placeholders.
   - **SYSTEM**: SETTINGS, NETWORK, EMAIL and TIME. These are the only way to
     reach settings, the same everywhere.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
-  BBS, EMAIL, SID PLAYER, RADIO) and your own programs, for example games. Click one to start it.
+  BBS, EMAIL, SID PLAYER, RADIO, WEATHER) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
 - **Starting a program from disk** (for example a game) shows a calm screen in the theme colours with
   `LOADING <name> please wait` while it loads. When the program ends (it
@@ -276,6 +276,39 @@ SID Player.
 - The WiC64 has its own "SID Radio" in its portal. Its source code is not
   public, so this is a separate implementation.
 
+### Weather
+
+![WEATHER in the DESK64 theme](docs/screenshots/weather_desk64.png)
+
+WEATHER shows the weather right now for a place you choose, with an
+animated picture made of sprites.
+
+- The weather comes from [wttr.in](https://wttr.in) over plain HTTP (a
+  C64 has no TLS): place, temperature, feels like, the description, wind
+  direction and speed, humidity, rain, air pressure, sunrise and sunset,
+  and the local time of the place. **UPDATED** is the time on the C64's own
+  clock when it was fetched.
+- **CHANGE** asks for a place (type it, RETURN). It is saved in
+  `WEATHER.CFG` and used again next time. An empty place means **AUTO**:
+  wttr.in then picks the place from your internet address. A place wttr.in
+  does not know gives `PLACE NOT FOUND`.
+- **REFRESH** fetches it again; while WEATHER is open it also refreshes by
+  itself every 15 minutes. **RUN/STOP** stops a fetch that takes too long.
+- The picture has 16 kinds of weather: sun, moon, partly cloudy (day and
+  night), cloudy, overcast, fog, light and heavy rain, showers (day and
+  night), light and heavy snow, sleet, thunder and thunder with snow. Sun
+  and moon follow the sunrise and sunset of the place. Rain and snow fall,
+  the sun shines, and the lightning flashes. Weather it does not know shows
+  a question mark.
+
+  ![All weather pictures](docs/screenshots/weather_types.png)
+- Works on the RR-Net, the Ultimate and the WiC64. WEATHER is on the D81 and
+  the D71; the D64 has no room for it.
+- [`tools/weather_test_server.py`](tools/weather_test_server.py) answers like
+  wttr.in without the internet, with every kind of weather and the error
+  cases (unknown place, server error, empty answer, a slow server, an
+  answer that is too long).
+
 ### AI chat
 
 Talk to an **OpenAI-compatible** AI server on your own network, such as
@@ -448,6 +481,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 | `BBS.CFG` | default BBS, local echo |
 | `BBS.BOOK` | your own BBSes |
 | `DESK.APPS` | your own programs on the desktop |
+| `WEATHER.CFG` | the place for WEATHER |
 
 `build_disk.bat` formats fresh disk images on every build. So that you never
 lose your settings, it first copies these files from the old disk image you
@@ -488,7 +522,7 @@ python tools/make_fremenfont.py
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
-DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO) and the fonts, and writes everything to
+DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO, WEATHER) and the fonts, and writes everything to
 `build\CD64.d81`, `build\CD64.d71` and `build\CD64.d64`. It also makes
 `release\CD64.d81`, the clean test disk that is committed: without your
 settings, the real games or the SID files.
@@ -504,7 +538,8 @@ placeholders for the games.
 - **D71** (1571, double-sided): the system with placeholder games. At start-up CD64 switches
   the 1571 to double-sided mode (`U0>M1`), because a 1571 on a C64 starts
   as a 1541 and cannot read the second side.
-- **D64** (1541): the system and all programs always go on it. The extras
+- **D64** (1541): the system and all programs except WEATHER always go on
+  it (a full D64 has no room for WEATHER's 50 blocks). The extras
   (games, SID files) are added by `tools/disk_add.py` only while they fit,
   keeping 10 blocks free for your settings. What does not fit is reported.
 
@@ -608,6 +643,7 @@ apps/bbs/ BBS client: directory, session, terminal, Telnet
 apps/email/  e-mail: settings, POP3, SMTP, MIME/text decoding, screens
 apps/time/   date and time: NTP client, time zones, summer time
 apps/radio/  SID Radio: playlist, HTTP download, plays with the SID player
+apps/weather/  WEATHER: wttr.in over HTTP, place, the sprite pictures
 net/      network stack: CS8900, Ultimate UCI, WiC64, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
 include/  palette · layout · memory map · ABI · hardware
 ```
@@ -634,11 +670,13 @@ include/  palette · layout · memory map · ABI · hardware
 | `disk_main.asm` | the core for the disk version |
 | `main_cart.asm` | the EasyFlash cartridge version |
 | `boot_main.asm` | boot loader with the splash screen |
-| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm` | the BBS, EMAIL, TIME and RADIO overlays |
+| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm`, `weather_main.asm` | the BBS, EMAIL, TIME, RADIO and WEATHER overlays |
 | `build_disk.bat`, `build_cart.bat` | build scripts |
 | `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
 | `tools/export_core_syms.py` | core addresses for the separately built overlays |
 | `tools/mailtest_server.py` | POP3/SMTP test server |
+| `tools/weather_test_server.py` | test server for WEATHER (answers like wttr.in) |
+| `tools/make_weather_sprites.py` | the WEATHER sprite pictures |
 | `tools/disk_add.py` | writes optional files to a disk image only when they fit |
 | `tools/make_fonts.py`, `tools/make_fremenfont.py` | font generators |
 | `tools/make_bootscreen.py` | boot screen bitmap |
