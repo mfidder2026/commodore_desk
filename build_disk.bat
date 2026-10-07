@@ -105,8 +105,14 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\c64rdesk.prg c64rdesk
 if errorlevel 1 ( echo c1541 failed. & exit /b 1 )
 
-echo [3b/3] Ook een D64 maken (1541-compatibel, zelfde bestanden)...
+echo [3b/3] D64 kant A (het systeem) en kant B (wat niet op A past)...
+:: de echte spellen uit %PARKED% als ze er zijn, anders de plaatsvervangers
+set "GAME_C=build\c64cdesk.prg"
+set "GAME_R=build\c64rdesk.prg"
+if exist "%PARKED%\c64cdesk.prg" set "GAME_C=%PARKED%\c64cdesk.prg"
+if exist "%PARKED%\c64rdesk.prg" set "GAME_R=%PARKED%\c64rdesk.prg"
 if exist build\CD64.d64 del build\CD64.d64
+if exist build\CD64_B.d64 del build\CD64_B.d64
 "%C1541%" -format "commodore desk,cd" d64 build\CD64.d64 ^
   -write build\boot.prg boot ^
   -write build\cd64.prg cd64 ^
@@ -132,10 +138,27 @@ if exist build\CD64.d64 del build\CD64.d64
   -write build\casual.prg casual ^
   -write build\heavy.prg heavy
 if errorlevel 1 ( echo c1541 D64 failed. & exit /b 1 )
-:: Extra's (programma's van derden, SID-tunes) alleen als ze passen; er
-:: blijven 10 blokken vrij voor de instellingen van de gebruiker.
-echo D64-extra's:
-python tools\disk_add.py "%C1541%" build\CD64.d64 10 build\scrsaver.prg sid\*.sid build\c64cdesk.prg build\c64rdesk.prg
+:: Kant B: zelf opstartbaar en genoeg om na een spel CD64 te herladen
+:: (CD64, HELPTEXT, lettertypes, STONEICON; DESKTOOL voor de screensaver en
+:: ADD PROGRAM). Een programma dat er niet op staat: NOT ON THIS DISK.
+"%C1541%" -format "commodore desk b,cd" d64 build\CD64_B.d64 ^
+  -write build\boot.prg boot ^
+  -write build\cd64.prg cd64 ^
+  -write build\helptext.prg helptext ^
+  -write build\desktool.prg desktool ^
+  -write build\stoneicon.prg stoneicon ^
+  -write build\lower.prg lower ^
+  -write build\tiny.prg tiny ^
+  -write build\fremen.prg fremen ^
+  -write build\serif.prg serif ^
+  -write build\mono.prg mono ^
+  -write build\casual.prg casual ^
+  -write build\heavy.prg heavy
+if errorlevel 1 ( echo c1541 D64 kant B failed. & exit /b 1 )
+:: De rest op kant A zolang het past (20 blokken blijven vrij voor de
+:: instellingen en RADIO.LST), anders op kant B (10 blokken vrij).
+echo D64 kant A / B:
+python tools\disk_add.py "%C1541%" build\CD64.d64 20 --spill build\CD64_B.d64 build\weather.prg build\scrsaver.prg sid\*.sid "%GAME_C%" "%GAME_R%"
 
 :: SID-tunes: alle .sid-bestanden uit de map sid\ (niet in git: muziek
 :: van derden) op de D71; op de D64 via disk_add.py (als ze passen).
@@ -152,6 +175,7 @@ for %%U in (%USERFILES%) do (
   if exist "%KEEP%\%%U" (
     "%C1541%" -attach build\CD64.d71 -write "%KEEP%\%%U" %%U >nul 2>&1
     "%C1541%" -attach build\CD64.d64 -write "%KEEP%\%%U" %%U >nul 2>&1
+    "%C1541%" -attach build\CD64_B.d64 -write "%KEEP%\%%U" %%U >nul 2>&1
     echo   %%U
   )
 )
@@ -164,11 +188,6 @@ if exist "%KEEP%\radio.lst" set "RLST=%KEEP%\radio.lst"
 echo   radio.lst (%RLST%)
 echo.
 echo [4/3] D81 maken: alles bij elkaar (1581, 3160 blokken)...
-:: de echte spellen uit %PARKED% als ze er zijn, anders de plaatsvervangers
-set "GAME_C=build\c64cdesk.prg"
-set "GAME_R=build\c64rdesk.prg"
-if exist "%PARKED%\c64cdesk.prg" set "GAME_C=%PARKED%\c64cdesk.prg"
-if exist "%PARKED%\c64rdesk.prg" set "GAME_R=%PARKED%\c64rdesk.prg"
 if exist build\CD64.d81 del build\CD64.d81
 "%C1541%" -format "commodore desk,cd" d81 build\CD64.d81 ^
   -write build\boot.prg boot ^
@@ -244,7 +263,7 @@ if exist release\CD64.d81 del release\CD64.d81
   -write build\radio.lst "radio.lst,s"
 if errorlevel 1 ( echo c1541 release-D81 failed. & exit /b 1 )
 
-echo Klaar: build\CD64.d81, build\CD64.d71, build\CD64.d64 en release\CD64.d81
+echo Klaar: build\CD64.d81, build\CD64.d71, build\CD64.d64 + CD64_B.d64 en release\CD64.d81
 echo Inhoud van de D81:
 "%C1541%" -attach build\CD64.d81 -dir
 echo.

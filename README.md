@@ -8,7 +8,7 @@ network programs: a **BBS terminal**, **e-mail**, an **AI chat** and **ping**,
 all running on the C64 itself over its own TCP/IP stack. A **SID player**
 plays the music files on the disk.
 
-It runs from a **D81, D71 or D64 disk** or an **EasyFlash cartridge** (instant boot),
+It runs from a **D81 or D71 disk**, **two D64 sides** (A and B) or an **EasyFlash cartridge** (instant boot),
 in VICE or on real hardware with an **RR-Net**, an **Ultimate 64 / 1541
 Ultimate-II+** or a **WiC64** (WiFi on the userport).
 
@@ -70,6 +70,8 @@ C64 RED are placeholders.
 | AI chat | Ping | Adding your own BBS |
 | ![SID Radio](docs/screenshots/radio.png) | ![SID Radio playing](docs/screenshots/radio_play.png) | ![Weather](docs/screenshots/weather.png) |
 | SID Radio | Playing a tune from the HVSC | Weather from wttr.in |
+| ![3-day forecast](docs/screenshots/weather_forecast.png) | | |
+| The forecast for 3 days | | |
 
 | Settings | | |
 |---|---|---|
@@ -281,7 +283,7 @@ SID Player.
 ![WEATHER in the DESK64 theme](docs/screenshots/weather_desk64.png)
 
 WEATHER shows the weather right now for a place you choose, with an
-animated picture made of sprites.
+animated picture made of sprites, and a forecast for 3 days.
 
 - The weather comes from [wttr.in](https://wttr.in) over plain HTTP (a
   C64 has no TLS): place, temperature, feels like, the description, wind
@@ -294,6 +296,18 @@ animated picture made of sprites.
   does not know gives `PLACE NOT FOUND`.
 - **REFRESH** fetches it again; while WEATHER is open it also refreshes by
   itself every 15 minutes. **RUN/STOP** stops a fetch that takes too long.
+- **C KM/H** (under CHANGE) switches to **F MPH**: degrees Fahrenheit,
+  miles per hour and inches of rain, also in the forecast. Click again for
+  Celsius. The choice is saved in `WEATHER.CFG` too.
+- **3 DAYS** shows the forecast for today and the next two days: the day,
+  a small picture, the weather at noon, the highest and lowest temperature
+  and the highest chance of rain. **NOW** goes back.
+
+  ![The 3-day forecast](docs/screenshots/weather_forecast.png)
+
+  The forecast comes from wttr.in as JSON (`format=j1`, about 40 KB). That
+  does not fit in the C64's memory, so WEATHER reads it byte by byte while
+  it comes in and keeps only what it shows (about 150 bytes).
 - The picture has 16 kinds of weather: sun, moon, partly cloudy (day and
   night), cloudy, overcast, fog, light and heavy rain, showers (day and
   night), light and heavy snow, sleet, thunder and thunder with snow. Sun
@@ -302,12 +316,12 @@ animated picture made of sprites.
   a question mark.
 
   ![All weather pictures](docs/screenshots/weather_types.png)
-- Works on the RR-Net, the Ultimate and the WiC64. WEATHER is on the D81 and
-  the D71; the D64 has no room for it.
+- Works on the RR-Net, the Ultimate and the WiC64 (tested in VICE on the
+  RR-Net and the WiC64).
 - [`tools/weather_test_server.py`](tools/weather_test_server.py) answers like
   wttr.in without the internet, with every kind of weather and the error
   cases (unknown place, server error, empty answer, a slow server, an
-  answer that is too long).
+  answer that is too long), the forecast and the F/mph units.
 
 ### AI chat
 
@@ -481,7 +495,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 | `BBS.CFG` | default BBS, local echo |
 | `BBS.BOOK` | your own BBSes |
 | `DESK.APPS` | your own programs on the desktop |
-| `WEATHER.CFG` | the place for WEATHER |
+| `WEATHER.CFG` | the place and the units (C or F) for WEATHER |
 
 `build_disk.bat` formats fresh disk images on every build. So that you never
 lose your settings, it first copies these files from the old disk image you
@@ -523,7 +537,7 @@ build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
 DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO, WEATHER) and the fonts, and writes everything to
-`build\CD64.d81`, `build\CD64.d71` and `build\CD64.d64`. It also makes
+`build\CD64.d81`, `build\CD64.d71`, `build\CD64.d64` and `build\CD64_B.d64`. It also makes
 `release\CD64.d81`, the clean test disk that is committed: without your
 settings, the real games or the SID files.
 
@@ -538,10 +552,19 @@ placeholders for the games.
 - **D71** (1571, double-sided): the system with placeholder games. At start-up CD64 switches
   the 1571 to double-sided mode (`U0>M1`), because a 1571 on a C64 starts
   as a 1541 and cannot read the second side.
-- **D64** (1541): the system and all programs except WEATHER always go on
-  it (a full D64 has no room for WEATHER's 50 blocks). The extras
-  (games, SID files) are added by `tools/disk_add.py` only while they fit,
-  keeping 10 blocks free for your settings. What does not fit is reported.
+- **D64** (1541), two disks or the two sides of one floppy:
+  - **Side A** (`CD64.d64`): the system and all programs, WEATHER included,
+    and then whatever else still fits (now the SID files).
+  - **Side B** (`CD64_B.d64`): what does not fit on side A (now the
+    screensaver and the two games), plus what CD64 needs to start from it
+    and to come back after a game (BOOT, CD64, the help, the fonts,
+    DESKTOOL and your settings). You can start CD64 from either side.
+  - A program that is on the other side shows **NOT ON THIS DISK**: turn
+    the disk over (or put in the other one) and click it again. The
+    screensaver only starts when it is on the disk in the drive.
+  - `tools/disk_add.py` decides: each extra goes on side A while there are
+    20 blocks left there (for your settings and `RADIO.LST`), otherwise on
+    side B.
 
 **Cartridge (EasyFlash .CRT):**
 ```bat

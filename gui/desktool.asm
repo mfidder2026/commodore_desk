@@ -1067,7 +1067,10 @@ da_ToolMore:
 !m:     jmp da_Msg
 
 // da_Saver - screensaver (ss_Poll): het eigen programma SCRSAVER starten
-//            als het op het bureaublad staat, anders niets doen.
+//            als het op het bureaublad staat EN op de disk, anders niets
+//            doen (D64: SCRSAVER staat op kant B; dan geen melding).
+//            Bestaat hij? "R0:SCRSAVER=SCRSAVER" geeft 63 (bestaat al) of
+//            62 (niet gevonden), zonder iets te veranderen.
 da_Saver: {
         lda #0
         sta svI
@@ -1089,6 +1092,19 @@ cp:     txa
         bne nx
         dex
         bpl cp
+        ldx #rnE-rn-1
+rc:     lda rn,x
+        sta dsCmd,x
+        dex
+        bpl rc
+        lda #rnE-rn
+        sta dsCmdLen
+        lda #8
+        jsr dsk_Cmd
+        bcs no
+        lda dsCode
+        cmp #62
+        beq no
         lda svI
         jmp da_Launch
 nx:     inc svI
@@ -1096,6 +1112,8 @@ nx:     inc svI
 no:     rts
 .encoding "petscii_upper"
 nm:     .text "SCRSAVER"
+rn:     .text "R0:SCRSAVER=SCRSAVER"
+rnE:
 .encoding "screencode_upper"
 }
 svI:    .byte 0

@@ -413,10 +413,19 @@ rpStub: jsr cfg_io_begin
         cli
         jmp sysRun               // SYS-adres parsen en starten ($C040)
 !fail:  jsr cfg_io_end           // OS-toestand herstellen
-        jsr spr_CursorInit       // cursor-sprite terug ($0340 overschreven)
-        jmp shell_NotFound
+        jmp rpFail               // (verder in de Core: zie daar)
 }
 .const rpStubLen = * - rpStubSrc
+
+// rpFail - laden mislukt: cursor-sprite terug ($0340 is overschreven), onze
+//          tekenset weer aan, het bureaublad (launch_Screen wiste het) en de
+//          melding. Niet in de stub zelf: die staat op $0334-, en
+//          spr_CursorInit schrijft over $0340- heen (dan liep de C64 vast).
+rpFail: jsr spr_CursorInit
+        lda #$1e                 // scherm $0400, charset $3800 (font_Init)
+        sta VIC_MEM
+        jsr shell_DrawAll
+        jmp shell_NotFound
 
 //--------------------------------------------------------
 // launch_Screen - leeg scherm in de achtergrondkleur van het thema met in
@@ -1096,9 +1105,9 @@ openApp:
         tax
         jsr loadApp
         bcc !loaded+
-        lda #$ff                 // laden mislukt -> terug naar desktop
+        lda #$ff                 // laden mislukt -> melding, terug naar desktop
         sta activeApp
-        jmp shell_DrawAll
+        jmp shell_NotFound
 !loaded:
         lda activeApp
         cmp #0                   // File Manager -> directory lezen
@@ -1219,7 +1228,7 @@ dnBbs:     .text "BBS"
            .byte $ff
 nBbs:      .text "BBS CLIENT"
            .byte $ff
-sNotFound: .text "PROGRAM NOT FOUND"
+sNotFound: .text "NOT ON THIS DISK"   // (D64: op de andere kant)
            .byte $ff
 sLoad:     .text "LOADING"
            .byte $ff
