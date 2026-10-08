@@ -98,6 +98,8 @@ $drive = if ($Disk -match '\.d81$') { "1581" } else { "1571" }
 $viceArgs = @("-drive8type", $drive, "+georam", "-reu", "-reusize", "512",
               "-ethernetcart", "-ethernetcartmode", "1", "-ethernetcartbase", "0xDE00",
               "-ethernetioif", "`"$iface`"", "-autostart", "`"$Disk`"")
-$vice = Start-Process $x64sc -ArgumentList $viceArgs -PassThru
-$vice.WaitForExit()
+# (not $vice: PowerShell names ignore case, and the [string] parameter $Vice
+#  would turn the process into text, so WaitForExit failed and WSL stopped)
+$viceProc = Start-Process $x64sc -ArgumentList $viceArgs -PassThru
+$viceProc.WaitForExit()
 Stop-Process -Id $keep.Id -ErrorAction SilentlyContinue
