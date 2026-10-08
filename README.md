@@ -3,10 +3,11 @@
 A graphical desktop for the **Commodore 64**, written in 6502/6510 assembly
 (Kick Assembler). It has a Windows-95-style menu bar, one large window, a status
 bar with date and time, and a desktop of programs you start with a click.
-There are built-in programs (editor, paint, calculator, file manager) and
-network programs: a **BBS terminal**, **e-mail**, an **AI chat** and **ping**,
-all running on the C64 itself over its own TCP/IP stack. A **SID player**
-plays the music files on the disk.
+There are built-in programs (editor, paint, calculator, file manager, a
+**calendar** with a diary) and network programs: a **BBS terminal**,
+**e-mail**, a **web browser**, the **weather**, **SID Radio**, an **AI chat**
+and **ping**, all running on the C64 itself over its own TCP/IP stack. A
+**SID player** plays the music files on the disk.
 
 It runs from a **D81 or D71 disk**, **two D64 sides** (A and B) or an **EasyFlash cartridge** (instant boot),
 in VICE or on real hardware with an **RR-Net**, an **Ultimate 64 / 1541
