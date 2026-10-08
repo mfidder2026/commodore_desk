@@ -821,7 +821,7 @@ pg_Reset:
 
 .encoding "ascii"
 sHttp:  .text "http://"
-hBmTop: .text "<title>Bookmarks</title><h1>Bookmarks</h1>"
+hBmTop: .text "<title>Bookmarks</title>"   // (de titelregel toont het al)
         .byte 0
 hA1:    .text "<a href="
         .byte $22, 0
