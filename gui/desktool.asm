@@ -222,8 +222,9 @@ da_IconPick:
         clc
         adc #6
         sta a0                   // kol
-        ldx daK
-        lda userIconGlyphs,x
+        lda daK                  // (kies-icoon K = code 64 + K)
+        clc
+        adc #64
         sta a2
         lda #WHITE
         sta a3

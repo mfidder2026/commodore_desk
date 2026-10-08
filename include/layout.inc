@@ -104,6 +104,8 @@
 // ---- Screensaver (SETTINGS -> SAVER, ook opgeslagen) ----
 .label CFG_saver    = $0238   // minuten zonder muis/toets, 0 = uit
 .const DEFAULT_SAVER = 10
+// ---- CALENDAR (SETTINGS -> REMIND, ook opgeslagen) ----
+.label CFG_calRem   = $0239   // 1 = bij het opstarten de afspraken van vandaag
 
 // ---- Venster-layout (Win95-stijl, vast) ----
 //   rij 0      menubalk          rij 1      titelbalk

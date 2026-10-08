@@ -98,6 +98,16 @@
 .const ICO_WEB_5   = 162
 .const GI_WEB      = 15
 .const GI_WEB_CODE = 111
+// CALENDAR: STONE-stijl 3x3 op 120-127 + de 9e cel op 254 (uit STONEICON,
+// net als WEATHER en WEB); Win95-stijl 2x3 op 126 (na icon_Build vrij; 127
+// is GL_SOLID) en de omgekeerde % * , ; ? (165, 170, 172, 187, 191: nooit
+// omgekeerd te zien; * , ? mogen niet eens in een bestandsnaam). Op het bureaublad staat
+// ICO_CAL; da_code6 / da_code9 kennen de sprongen.
+.const GI_CAL      = 16
+.const GI_CAL_CODE = 120
+.const GI_CAL_9TH  = 254
+.const ICO_CAL     = 126
+.var calCodes = List().add(ICO_CAL, 165, 170, 172, 187, 191)
 .const GL_STRIPE   = 82
 .const GL_DOTS     = 83
 .const OVL_GLYPHS = 32   // 20 iconen + 12 Win95-glyphs = codes 64..95 (256 bytes)
@@ -328,17 +338,42 @@ tf:     lda thinFrame,x
         sta CHARSET_BASE+W_L*8,x
         dex
         bpl tf
-        ldx #144                 // STONE: WEATHER en WEB 3x3 op 102-119
-tw:     lda weatherBig-1,x
-        sta CHARSET_BASE+GI_WEATHER_CODE*8-1,x
-        dex
-        bne tw
-        rts
+        rts                      // (de 3x3-iconen komen uit STONEICON)
 w95:    ldx #15                  // Win95: bovenrij volle prullenbak -> 82-83
 tt:     lda CHARSET_BASE+[STRIP_BASE+18]*8,x
         sta CHARSET_BASE+GL_TRASHF*8,x
         dex
         bpl tt
+        lda #<[CHARSET_BASE + ICO_WEATHER*8]   // CALENDAR eerst op 120-125 ...
+        sta r5
+        lda #>[CHARSET_BASE + ICO_WEATHER*8]
+        sta r5+1
+        ldx #ICON3_N+6
+        ldy #ICON3_N+7
+        jsr ib_Run
+        lda #<[CHARSET_BASE + ICO_WEATHER*8]   // ... en naar zijn zes codes
+        sta r5
+        lda #>[CHARSET_BASE + ICO_WEATHER*8]
+        sta r5+1
+        ldx #0
+tc:     lda calWLo,x
+        sta r6
+        lda calWHi,x
+        sta r6+1
+        ldy #7
+tcb:    lda (r5),y
+        sta (r6),y
+        dey
+        bpl tcb
+        lda r5
+        clc
+        adc #8
+        sta r5
+        bcc tcn
+        inc r5+1
+tcn:    inx
+        cpx #6
+        bne tc
         lda #<[CHARSET_BASE + ICO_WEATHER*8]   // en WEATHER op 120-125
         sta r5
         lda #>[CHARSET_BASE + ICO_WEATHER*8]
@@ -374,12 +409,16 @@ ibSrcLo: .byte <[CHARSET_BASE+111*8], <[CHARSET_BASE+115*8], <[CHARSET_BASE+119*
          .byte <[CHARSET_BASE+107*8], <[CHARSET_BASE+102*8], <[CHARSET_BASE+80*8]
          .byte <mailGlyphs, <[CHARSET_BASE+123*8], <pokeGlyphs, <sidGlyphs
          .byte <stripGlyphs, <[stripGlyphs+32], <[stripGlyphs+64], <[stripGlyphs+96]
-         .byte <weatherGlyphs, <webGlyphs
+         .byte <weatherGlyphs, <webGlyphs, <calGlyphs
 ibSrcHi: .byte >[CHARSET_BASE+111*8], >[CHARSET_BASE+115*8], >[CHARSET_BASE+119*8]
          .byte >[CHARSET_BASE+107*8], >[CHARSET_BASE+102*8], >[CHARSET_BASE+80*8]
          .byte >mailGlyphs, >[CHARSET_BASE+123*8], >pokeGlyphs, >sidGlyphs
          .byte >stripGlyphs, >[stripGlyphs+32], >[stripGlyphs+64], >[stripGlyphs+96]
-         .byte >weatherGlyphs, >webGlyphs
+         .byte >weatherGlyphs, >webGlyphs, >calGlyphs
+// CALENDAR (Win95-stijl): de zes codes en hun adressen (da_code6, icon_Build)
+calW95:  .byte ICO_CAL, 165, 170, 172, 187, 191
+calWLo:  .fill 6, <[CHARSET_BASE + calCodes.get(i)*8]
+calWHi:  .fill 6, >[CHARSET_BASE + calCodes.get(i)*8]
 }
 
 // stone_Icons - in de STONE-stijl STONEICON laden: codes 128-253.

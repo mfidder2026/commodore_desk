@@ -49,6 +49,8 @@ if errorlevel 1 ( echo WEATHER-sprites mislukt. & exit /b 1 )
 if errorlevel 1 ( echo WEATHER build failed. & exit /b 1 )
 "%JAVA_EXE%" -jar "%KICKASS_JAR%" web_main.asm -odir build
 if errorlevel 1 ( echo WEB build failed. & exit /b 1 )
+"%JAVA_EXE%" -jar "%KICKASS_JAR%" calendar_main.asm -odir build
+if errorlevel 1 ( echo CALENDAR build failed. & exit /b 1 )
 python tools\make_radio_seq.py
 if errorlevel 1 ( echo RADIO.LST mislukt. & exit /b 1 )
 python tools\make_radio_seq.py data\bookmarks.txt build\bookmarks.seq
@@ -70,14 +72,16 @@ if errorlevel 1 ( echo Dummy build failed. & exit /b 1 )
 set "KEEP=%~dp0userfiles"
 set "PARKED=%~dp0parked"
 set "USERFILES=mail.cfg net.cfg bbs.cfg bbs.book cd64.cfg desk.apps weather.cfg"
+:: (AGENDA, de afspraken van CALENDAR, is SEQ: apart, zie hieronder)
 if not exist "%KEEP%" mkdir "%KEEP%"
 set "DISKS="
 for /f "delims=" %%D in ('python tools\disks_by_age.py build') do call set "DISKS=%%DISKS%% %%D"
 for %%U in (%USERFILES%) do call :keepfile %%U
-:: RADIO.LST (de afspeellijst) en BOOKMARKS (WEB), ook te bewerken, blijven
-:: ook bewaard
+:: RADIO.LST (de afspeellijst), BOOKMARKS (WEB) en AGENDA (CALENDAR), ook
+:: te bewerken, blijven ook bewaard
 call :keepfile radio.lst
 call :keepfile bookmarks
+call :keepfile agenda
 
 echo [3/3] D71 maken en PRG's erop schrijven (BOOT start eerst)...
 if exist build\CD64.d71 del build\CD64.d71
@@ -99,6 +103,7 @@ if exist build\CD64.d71 del build\CD64.d71
   -write build\radio.prg radio ^
   -write build\weather.prg weather ^
   -write build\web.prg web ^
+  -write build\calendar.prg calendar ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -165,7 +170,7 @@ if errorlevel 1 ( echo c1541 D64 kant B failed. & exit /b 1 )
 :: De rest op kant A zolang het past (20 blokken blijven vrij voor de
 :: instellingen en RADIO.LST), anders op kant B (10 blokken vrij).
 echo D64 kant A / B:
-python tools\disk_add.py "%C1541%" build\CD64.d64 20 --spill build\CD64_B.d64 build\weather.prg build\web.prg build\scrsaver.prg sid\*.sid "%GAME_C%" "%GAME_R%"
+python tools\disk_add.py "%C1541%" build\CD64.d64 20 --spill build\CD64_B.d64 build\weather.prg build\web.prg build\calendar.prg build\scrsaver.prg sid\*.sid "%GAME_C%" "%GAME_R%"
 
 :: SID-tunes: alle .sid-bestanden uit de map sid\ (niet in git: muziek
 :: van derden) op de D71; op de D64 via disk_add.py (als ze passen).
@@ -200,6 +205,13 @@ if exist "%KEEP%\bookmarks" set "BMK=%KEEP%\bookmarks"
 "%C1541%" -attach build\CD64.d64 -write "%BMK%" "bookmarks,s" >nul 2>&1
 "%C1541%" -attach build\CD64_B.d64 -write "%BMK%" "bookmarks,s" >nul 2>&1
 echo   bookmarks (%BMK%)
+:: AGENDA (CALENDAR) alleen als er een eigen is: anders begint de agenda leeg
+if exist "%KEEP%\agenda" (
+  "%C1541%" -attach build\CD64.d71 -write "%KEEP%\agenda" "agenda,s" >nul 2>&1
+  "%C1541%" -attach build\CD64.d64 -write "%KEEP%\agenda" "agenda,s" >nul 2>&1
+  "%C1541%" -attach build\CD64_B.d64 -write "%KEEP%\agenda" "agenda,s" >nul 2>&1
+  echo   agenda
+)
 echo.
 echo [4/3] D81 maken: alles bij elkaar (1581, 3160 blokken)...
 if exist build\CD64.d81 del build\CD64.d81
@@ -221,6 +233,7 @@ if exist build\CD64.d81 del build\CD64.d81
   -write build\radio.prg radio ^
   -write build\weather.prg weather ^
   -write build\web.prg web ^
+  -write build\calendar.prg calendar ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^
@@ -242,6 +255,7 @@ for %%U in (%USERFILES%) do (
 )
 "%C1541%" -attach build\CD64.d81 -write "%RLST%" "radio.lst,s" >nul 2>&1
 "%C1541%" -attach build\CD64.d81 -write "%BMK%" "bookmarks,s" >nul 2>&1
+if exist "%KEEP%\agenda" "%C1541%" -attach build\CD64.d81 -write "%KEEP%\agenda" "agenda,s" >nul 2>&1
 
 echo [5/3] release\CD64.d81: schone D81 voor git (om te testen)...
 :: Alleen eigen bestanden: GEEN instellingen uit userfiles\ (mailwachtwoord!),
@@ -266,6 +280,7 @@ if exist release\CD64.d81 del release\CD64.d81
   -write build\radio.prg radio ^
   -write build\weather.prg weather ^
   -write build\web.prg web ^
+  -write build\calendar.prg calendar ^
   -write build\stoneicon.prg stoneicon ^
   -write build\lower.prg lower ^
   -write build\tiny.prg tiny ^

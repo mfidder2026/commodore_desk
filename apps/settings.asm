@@ -318,6 +318,28 @@ sd:     lda #<svTxt
         lda TH_accent
         sta a2
         jsr gfx_DrawText
+        // REMIND (rij 7, rechts): CALENDAR toont bij het opstarten vandaag
+        lda #<swRemind
+        sta r0
+        lda #>swRemind
+        sta r0+1
+        lda #23
+        sta a0
+        lda #7
+        sta a1
+        lda TH_text
+        sta a2
+        jsr gfx_DrawText
+        ldy CFG_calRem
+        lda soundNameLo,y
+        sta r0
+        lda soundNameHi,y
+        sta r0+1
+        lda #31
+        sta a0
+        lda TH_accent
+        sta a2
+        jsr gfx_DrawText
         jmp clk_Row
 }
 
@@ -334,14 +356,22 @@ set_Click: {
         lda evtB
         sec
         sbc #3
-        cmp #4
+        cmp #5
         bcs chkRole
+        cmp #4                   // rij 7: REMIND aan/uit
+        beq remind
         cmp #3                   // rij 6: SAVER -> volgende waarde
         beq saver
         tax
         lda swBit,x
         eor CFG_strip
         sta CFG_strip
+        jsr sid_Click
+        jmp set_Draw
+remind: lda CFG_calRem
+        eor #1
+        and #1
+        sta CFG_calRem
         jsr sid_Click
         jmp set_Draw
 saver:  ldx #0                   // huidige waarde in de lijst zoeken
@@ -849,6 +879,8 @@ swBit:   .byte 1, 2, 4
 svList:  .byte 0, 1, 2, 5, 10, 15, 30, 60   // minuten (0 = OFF)
 svTxt:   .fill 7, $ff
 swSaver: .text "SAVER:"
+         .byte $ff
+swRemind: .text "REMIND:"
          .byte $ff
 sSvOff:  .text "OFF   "
          .byte $ff

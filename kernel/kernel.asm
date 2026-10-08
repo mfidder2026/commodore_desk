@@ -39,6 +39,7 @@ kernel_Init:
         lda #$1b                 // bureaublad klaar -> scherm aan (DEN)
         sta VIC_CTRL1
         jsr time_Boot
+        jsr cal_Boot
         jmp shell_Run            // hoofdlus (keert niet terug)
 
 // theme_Apply - rand- en achtergrondkleur naar de VIC schrijven.
@@ -55,28 +56,13 @@ theme_Apply:
 // osvars_Init - runtime layout- en uiterlijk-variabelen vullen.
 //--------------------------------------------------------
 osvars_Init:
-        lda #DEFAULT_DOCK_MODE
-        sta LAY_dockMode
-        lda #L_MENUBAR_ROW
-        sta LAY_menubarRow
-        lda #L_CONTENT_TOP
-        sta LAY_contentTop
-        lda #L_CONTENT_BOTTOM
-        sta LAY_contentBottom
-        lda #L_STATUS_ROW
-        sta LAY_statusRow
-        lda #L_DOCK_ICON_ROW
-        sta LAY_dockIconRow
-        lda #L_DOCK_LABEL_ROW
-        sta LAY_dockLabelRow
-        lda #DEFAULT_FONT
-        sta CFG_fontId
-        lda #DEFAULT_MENUFILL
-        sta CFG_menuFill
-        lda #DEFAULT_PROFILE
-        sta CFG_profile
-        lda #DEFAULT_SOUND
-        sta CFG_sound
+        ldx #osvE-osvT-2         // vaste standaardwaarden: (adres $02xx, waarde)
+!o:     lda osvT+1,x
+        ldy osvT,x
+        sta $0200,y
+        dex
+        dex
+        bpl !o-
         // thema-kleuren defaults (die van DEFAULT_PROFILE)
         lda profBorder+DEFAULT_PROFILE
         sta TH_border
@@ -90,20 +76,24 @@ osvars_Init:
         sta TH_select
         lda profText+DEFAULT_PROFILE
         sta TH_text
-        lda #$ff                 // muiskleur: nog niet gezet (zie profile_Derive)
-        sta TH_mouse
-        sta CFG_ntp              // tijdserver: standaard (pool.ntp.org)
-        lda #TZ_DEFAULT
-        sta CFG_tz
-        lda #DEFAULT_STRIP       // (oudere CD64.CFG: blijft zo staan)
-        sta CFG_strip
-        lda #0                   // printer: EPSON op device 4
-        sta CFG_printer
-        lda #DEFAULT_SAVER       // screensaver na 10 minuten
-        sta CFG_saver
-        lda #0
-        sta CFG_timeAuto
         rts
+// (adres - $0200, waarde); een oudere CD64.CFG laat de rest zo staan
+osvT:   .byte <LAY_dockMode, DEFAULT_DOCK_MODE, <LAY_menubarRow, L_MENUBAR_ROW
+        .byte <LAY_contentTop, L_CONTENT_TOP, <LAY_contentBottom, L_CONTENT_BOTTOM
+        .byte <LAY_statusRow, L_STATUS_ROW, <LAY_dockIconRow, L_DOCK_ICON_ROW
+        .byte <LAY_dockLabelRow, L_DOCK_LABEL_ROW, <CFG_fontId, DEFAULT_FONT
+        .byte <CFG_menuFill, DEFAULT_MENUFILL, <CFG_profile, DEFAULT_PROFILE
+        .byte <CFG_sound, DEFAULT_SOUND
+        .byte <TH_mouse, $ff                // muiskleur: nog niet gezet (profile_Derive)
+        .byte <CFG_ntp, $ff                 // tijdserver: standaard (pool.ntp.org)
+        .byte <CFG_tz, TZ_DEFAULT
+        .byte <CFG_strip, DEFAULT_STRIP
+        .byte <CFG_printer, 0               // printer: EPSON op device 4
+        .byte <CFG_saver, DEFAULT_SAVER     // screensaver na 10 minuten
+        .byte <CFG_timeAuto, 0
+        .byte <CFG_calRem, 1                // CALENDAR: herinnering aan
+osvE:
+.assert "osvT: alles op pagina 2", >CFG_calRem, $02
 
 //--------------------------------------------------------
 // profile_Apply - pas kleurprofiel CFG_profile toe (6 TH_*-kleuren),

@@ -180,8 +180,8 @@ wc_NoRx:
         sta wcVec+1
 wcDrop: rts
 
-wcHdr:  .fill 4, 0
-wcRsp:  .fill 3, 0
+.label wcHdr = $c0e4             // (vrij RAM, niet in de Core)
+.label wcRsp = $c0e8
 wcPtr:  .word 0
 wcLen:  .word 0
 wcN:    .word 0
@@ -190,4 +190,4 @@ wcSize: .word 0
 wcVec:  .word wcDrop
 wcTmo:  .byte WC_TMO
 wcC1:   .byte 0                  // 0 = 256 (lang), kleiner bij het zoeken
-wcC:    .fill 3, 0
+.label wcC = $c0eb

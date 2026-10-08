@@ -79,9 +79,11 @@ evt_Poll:
 //--------------------------------------------------------
 evtHead:  .byte 0
 evtTail:  .byte 0
-evtType:  .fill EVT_QSIZE, 0
-evtColB:  .fill EVT_QSIZE, 0
-evtRowB:  .fill EVT_QSIZE, 0
+// de wachtrij in vrij RAM (niet in de Core): $C0B8-$C0CF
+.label evtType = $c0b8
+.label evtColB = $c0c0
+.label evtRowB = $c0c8
+.assert "wachtrij past", EVT_QSIZE <= 8, true
 pushCol:  .byte 0                // in-parameters voor evt_Push
 pushRow:  .byte 0
 evtA:     .byte 0                // uit-parameters van evt_Poll

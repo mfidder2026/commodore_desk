@@ -20,7 +20,8 @@ own_sources = sys.argv[1:] or ['net/*.asm', 'net/*.inc', 'apps/bbs/*.asm', 'apps
                                'apps/time/*.asm', 'time_main.asm', 'apps/sidplay.asm',
                                'apps/radio/*.asm', 'apps/radio/*.inc', 'radio_main.asm',
                                'apps/weather/*.asm', 'apps/weather/*.inc', 'weather_main.asm',
-                               'apps/web/*.asm', 'apps/web/*.inc', 'web_main.asm']
+                               'apps/web/*.asm', 'apps/web/*.inc', 'web_main.asm',
+                               'apps/calendar/*.asm', 'apps/calendar/*.inc', 'calendar_main.asm']
 
 defined = set()
 pat = re.compile(r'^\s*(?:\.label\s+|\.const\s+|\.var\s+)?([A-Za-z_]\w*)\s*(?::|=)', re.M)

@@ -59,6 +59,10 @@ C64 RED are placeholders.
 | Calculator | F1: context help | About |
 | ![SID Player](docs/screenshots/sidplayer.png) | ![Playing a tune](docs/screenshots/sidplayer_play.png) | ![Loading screen](docs/screenshots/loading.png) |
 | SID Player: the tunes on the disk | Playing a tune | Starting a game |
+| ![CALENDAR](docs/screenshots/calendar.png) | ![Changing an appointment](docs/screenshots/calendar_edit.png) | ![Holidays](docs/screenshots/calendar_holidays.png) |
+| CALENDAR: the month and the day | Changing an appointment | Dutch holidays (King's Day) |
+| ![Reminder at start-up](docs/screenshots/calendar_remind.png) | | |
+| Today's appointments at start-up | | |
 
 | Network programs | | |
 |---|---|---|
@@ -102,7 +106,7 @@ C64 RED are placeholders.
   - **SYSTEM**: SETTINGS, NETWORK, EMAIL and TIME. These are the only way to
     reach settings, the same everywhere.
 - **Desktop icons**: the built-in programs (EDITOR, PAINT, CALC, PING, CHAT,
-  BBS, EMAIL, SID PLAYER, RADIO, WEATHER, WEB) and your own programs, for example games. Click one to start it.
+  BBS, EMAIL, SID PLAYER, RADIO, WEATHER, WEB, CALENDAR) and your own programs, for example games. Click one to start it.
   The list scrolls when it gets longer than the window.
 - **Starting a program from disk** (for example a game) shows a calm screen in the theme colours with
   `LOADING <name> please wait` while it loads. When the program ends (it
@@ -168,6 +172,37 @@ C64 RED are placeholders.
     to the disks.
   - The player screen uses your chosen font. Only a tune that loads into
     the character set itself (`$3800-$3FFF`) gets the standard C64 letters.
+- **Calendar** (CALENDAR): a month with a diary, kept on the disk.
+  ![CALENDAR](docs/screenshots/calendar.png)
+  - The month with **week numbers** (ISO, the week starts on Monday). A `*`
+    marks a day with appointments, today is highlighted and **Dutch
+    holidays** are in another colour (New Year, Good Friday, Easter, King's
+    Day, Liberation Day, Ascension, Whitsun, Christmas).
+  - **<** / **>** (or **-** / **+**) go to the month before or after,
+    **TODAY** (T) back to today. Click a day to see its appointments below
+    the month: all-day ones first, then by time. **SPACE** shows more when
+    a day has more than six.
+  - **ADD** (A) adds an appointment on the chosen day: type the time
+    (`930`, `9:30`, `1930`; empty = all day), RETURN, then the text (up to
+    27 characters). Click **REPEAT** to choose NONE, WEEKLY, MONTHLY or
+    YEARLY (birthdays). **SAVE** or **CANCEL**.
+  - Click an appointment to select it; **EDIT** (E) changes it (click the
+    time, the text or REPEAT), **DELETE** removes it after a `Y`.
+  - **PRINT** (P) prints the day (D) or the whole month (M): the month
+    grid and then every day with its appointments and holidays.
+  - The appointments are in the text file `AGENDA` on the disk, one per
+    line: `20261008 0930 - DENTIST` (date, time or `----` for all day,
+    repeat `-` `W` `M` `Y`, text). You can edit it in the TEXT EDITOR too;
+    lines it cannot read are skipped (with a message). Up to 300
+    appointments. Your own `AGENDA` is kept when the disks are rebuilt.
+  - **At start-up** CALENDAR shows today's appointments and holiday in a
+    window (SYSTEM → SETTINGS → REMIND turns this off). This needs the
+    right date, so SYSTEM → TIME → SYNC AT START should be on (or a C64
+    with a real-time clock); on 01-01-2026 (the clock was never set) it
+    shows nothing and the calendar says `SET THE DATE: SYSTEM - TIME`.
+  - Dates from 1900 to 2099; the weekdays, week numbers, Easter and the
+    holidays were checked against Python for every day in that range.
+  - Plan: [`docs/CALENDAR_Plan.md`](docs/CALENDAR_Plan.md).
 
 ---
 
@@ -183,6 +218,7 @@ Click **PRINT** to the right of the desktop to choose the printer:
 **TEST** prints a test page, **OK** saves the choice in `CD64.CFG`.
 
 - **EDITOR → PRINT** prints the text as plain ASCII lines.
+- **CALENDAR → PRINT** prints a day or a month (D or M) as text lines.
 - **PAINT → menu → PRINT** prints the picture as graphics (everything that
   is not white prints black): Epson/Star as 8-dot bit-image bands
   (`ESC K`), HP LaserJet as a 75 dpi PCL raster.
@@ -411,6 +447,8 @@ waits, the C64 answers pings itself.
   1, 2, 5, 10 (default), 15, 30 or 60 minutes without mouse or key, or
   OFF. It only starts from the desktop itself, never inside a program, a
   menu or a dialog, so no unsaved work is lost.
+- **REMIND**: YES shows today's appointments from CALENDAR at start-up,
+  NO does not.
 - **CLOCK**: set the date and time.
 - **SAVE** writes `CD64.CFG`, which is loaded again at start-up.
 
@@ -546,7 +584,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 
 | File | What it holds |
 |---|---|
-| `CD64.CFG` | theme, colours, mouse pointer colour, font, menu style, sound, time zone, the DRIVE/PRINT/TRASH icons, printer |
+| `CD64.CFG` | theme, colours, mouse pointer colour, font, menu style, sound, time zone, the DRIVE/PRINT/TRASH icons, printer, screensaver, CALENDAR reminder |
 | `NET.CFG` | network and chat server settings |
 | `MAIL.CFG` | e-mail settings, **including your password** |
 | `BBS.CFG` | default BBS, local echo |
@@ -554,6 +592,7 @@ C64. The cursor keys move the text cursor there, not the pointer.
 | `DESK.APPS` | your own programs on the desktop |
 | `WEATHER.CFG` | the place and the units (C or F) for WEATHER |
 | `BOOKMARKS` | the bookmarks of WEB (a text file, also on the D64 side B) |
+| `AGENDA` | the appointments of CALENDAR (a text file, made when you save the first one) |
 
 `build_disk.bat` formats fresh disk images on every build. So that you never
 lose your settings, it first copies these files from the old disk image you
@@ -594,7 +633,7 @@ python tools/make_fremenfont.py
 build_disk.bat
 ```
 This builds the core, the program overlays (FILES, EDITOR, PAINT, CALC, SETUP,
-DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO, WEATHER, WEB) and the fonts, and writes everything to
+DESKTOOL, SIDPLAY, INET, BBS, EMAIL, TIME, RADIO, WEATHER, WEB, CALENDAR) and the fonts, and writes everything to
 `build\CD64.d81`, `build\CD64.d71`, `build\CD64.d64` and `build\CD64_B.d64`. It also makes
 `release\CD64.d81`, the clean test disk that is committed: without your
 settings, the real games or the SID files.
@@ -613,13 +652,14 @@ placeholders for the games.
 - **D64** (1541), two disks or the two sides of one floppy:
   - **Side A** (`CD64.d64`): the system and all programs, WEATHER included,
     and then whatever else still fits (now the SID files).
-  - **Side B** (`CD64_B.d64`): what does not fit on side A (now WEB, the
-    screensaver and the two games), plus what CD64 needs to start from it
+  - **Side B** (`CD64_B.d64`): what does not fit on side A (now WEB,
+    CALENDAR, the screensaver and the two games), plus what CD64 needs to start from it
     and to come back after a game (BOOT, CD64, the help, the fonts,
     DESKTOOL and your settings). You can start CD64 from either side.
   - A program that is on the other side shows **NOT ON THIS DISK**: turn
     the disk over (or put in the other one) and click it again. The
-    screensaver only starts when it is on the disk in the drive.
+    screensaver only starts when it is on the disk in the drive, and the
+    CALENDAR reminder at start-up only shows when CALENDAR is.
   - `tools/disk_add.py` decides: each extra goes on side A while there are
     20 blocks left there (for your settings and `RADIO.LST`), otherwise on
     side B.
@@ -726,6 +766,7 @@ apps/time/   date and time: NTP client, time zones, summer time
 apps/radio/  SID Radio: playlist, HTTP download, plays with the SID player
 apps/weather/  WEATHER: wttr.in over HTTP, place, the sprite pictures
 apps/web/   WEB: HTTP, HTML -> text lines, links, addresses, bookmarks
+apps/calendar/  CALENDAR: dates (week numbers, Easter, holidays), AGENDA, printing
 net/      network stack: CS8900, Ultimate UCI, WiC64, ARP/IP/ICMP, TCP, UDP, DNS, DHCP
 include/  palette · layout · memory map · ABI · hardware
 ```
@@ -752,7 +793,7 @@ include/  palette · layout · memory map · ABI · hardware
 | `disk_main.asm` | the core for the disk version |
 | `main_cart.asm` | the EasyFlash cartridge version |
 | `boot_main.asm` | boot loader with the splash screen |
-| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm`, `weather_main.asm`, `web_main.asm` | the BBS, EMAIL, TIME, RADIO, WEATHER and WEB overlays |
+| `bbs_main.asm`, `email_main.asm`, `time_main.asm`, `radio_main.asm`, `weather_main.asm`, `web_main.asm`, `calendar_main.asm` | the BBS, EMAIL, TIME, RADIO, WEATHER, WEB and CALENDAR overlays |
 | `build_disk.bat`, `build_cart.bat` | build scripts |
 | `start_cd64.bat`, `tools/start_cd64.ps1` | start VICE with working networking |
 | `tools/export_core_syms.py` | core addresses for the separately built overlays |

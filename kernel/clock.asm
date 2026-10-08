@@ -104,6 +104,24 @@ time_Boot:
 !r:     rts
 
 // -----------------------------------------------------
+// cal_Boot - na een koude start de afspraken van vandaag (SETTINGS ->
+//            REMIND): CALENDAR laden, zijn REMIND-ingang toont ze.
+// -----------------------------------------------------
+cal_Boot:
+        lda CFG_calRem
+        beq !r+
+        lda clkCold
+        beq !r+
+        ldx #14                  // CALENDAR
+        jsr loadApp
+        bcs !r+
+        jsr CAL_REMIND           // A = 1: er stond een venster
+        cmp #0
+        beq !r+
+        jsr shell_DrawAll
+!r:     rts
+
+// -----------------------------------------------------
 // clk_SetTime - A = uur (BCD 00-23), X = minuut (BCD). Seconden = 0.
 // -----------------------------------------------------
 clk_SetTime: {

@@ -211,8 +211,8 @@ da_drawOne:
 !small: cmp #NUM_USERICONS       // (vroegere iconen 16-19: diskette)
         bcc !sm+
         lda #0
-!sm:    tax
-        lda userIconGlyphs,x
+!sm:    clc                      // de 20 kies-iconen staan op 64-83
+        adc #64
         sta a2
         ldy #REC_COL
         lda ($fb),y
@@ -286,7 +286,11 @@ da_draw2x2:
 // da_code6 - charset-code van cel X (0-5) van het 2x3-icoon deIcon.
 da_code6:
         lda deIcon               // RADIO: 252-255, dan 80-81 (zie font.asm)
-        cmp #ICO_WEB             // WEB: cel 5 op 162
+        cmp #ICO_CAL             // CALENDAR: zes losse codes
+        bne !w+
+        lda icon_Build.calW95,x
+        rts
+!w:     cmp #ICO_WEB             // WEB: cel 5 op 162
         bne !r+
         cpx #5
         bne !n+
@@ -633,12 +637,11 @@ da_drawStone:
 
 // da_giCode - STONE-icoon A -> eerste charset-code (128 + 9*A).
 da_giCode:
-        cmp #GI_WEATHER          // WEATHER en WEB staan niet in GEOSICON
+        cmp #GI_WEATHER          // WEATHER, WEB, CALENDAR: 102, 111, 120
         bcc !g+
-        beq !w+
-        lda #GI_WEB_CODE
-        rts
-!w:     lda #GI_WEATHER_CODE
+        sbc #GI_WEATHER
+        tax
+        lda giBig,x
         rts
 !g:     sta daT
         asl
@@ -649,6 +652,21 @@ da_giCode:
         clc
         adc #GI_BASE
         rts
+
+// da_code9 - charset-code van cel X (0-8) van het 3x3-icoon deIcon
+//            (CALENDAR: de 9e cel op 254). X blijft niet altijd.
+da_code9:
+        txa
+        clc
+        adc deIcon
+        cpx #8
+        bne !r+
+        ldx deIcon
+        cpx #GI_CAL_CODE
+        bne !r+
+        lda #GI_CAL_9TH
+!r:     rts
+giBig:  .byte GI_WEATHER_CODE, GI_WEB_CODE, GI_CAL_CODE
 
 // da_draw3x3 - icoon deIcon (9 codes) op kolom deCol, rij deRow en verder.
 da_draw3x3:
@@ -665,9 +683,8 @@ da_draw3x3:
         sta a0
         lda daR
         sta a1
-        lda deIcon
-        clc
-        adc daIc
+        ldx daIc
+        jsr da_code9
         sta a2
         jsr gfx_PutChar
         inc daIc
@@ -825,10 +842,12 @@ da_Ghost:
         bcc !c+
 !u:     lda #GI_APP
 !c:     jsr da_giCode
+        sta deIcon
         ldx #0
-!g:     sta ghC,x
-        clc
-        adc #1
+!g:     stx daIc
+        jsr da_code9
+        ldx daIc
+        sta ghC,x
         inx
         cpx #9
         bne !g-
@@ -863,8 +882,8 @@ da_Ghost:
 !sm:    cmp #NUM_USERICONS
         bcc !s1+
         lda #0
-!s1:    tax
-        lda userIconGlyphs,x
+!s1:    clc
+        adc #64
         sta ghC+4
 !mk:    ldx #0
         stx daR
@@ -924,7 +943,7 @@ gsLo:   .byte <sgDrive, <sgPrint, <sgTrash
 gsHi:   .byte >sgDrive, >sgPrint, >sgTrash
 gh6:    .byte 0, 1, 3, 4, 6, 7   // 2x3-cel -> 3x3-cel
 gsWhich: .byte 0, 0, 0
-ghC:    .fill 9, $20
+.label ghC = $c0d0               // 9 bytes (vrij RAM, niet in de Core)
 daSN:   .byte 0
 daGE:   .byte 0
 daRr:   .byte 0
@@ -1146,7 +1165,7 @@ daR:     .byte 0
 daC:     .byte 0
 daT:     .byte 0
 daSI:    .byte 0
-daLbl:   .fill 11, $ff
+.label daLbl = $c0d9             // 11 bytes (vrij RAM, niet in de Core)
 daU:     .byte 0
 daOff:   .byte 0
 daLen:   .byte 0

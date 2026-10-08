@@ -1,8 +1,11 @@
 """Build build/stoneicon.prg: the 24x24 desktop icons of the STONE theme.
 
-Loaded at $3C00 = charset codes 128-253 while the STONE theme is active
-(there the "reverse" half of the charset is not needed). Icon i uses the
-nine codes 128+9*i .. 128+9*i+8, row by row (TL TC TR / ML MC MR / BL BC BR).
+Loaded at $3B30 = charset codes 102-254 while the STONE theme is active
+(there the "reverse" half of the charset and the 2x2 icon sources at
+102-127 are not needed). Icon i uses the nine codes 128+9*i .. 128+9*i+8,
+row by row (TL TC TR / ML MC MR / BL BC BR). In front of them (102-127) the
+icons of the app PRGs: WEATHER 102-110, WEB 111-119, CALENDAR 120-127 plus
+its ninth cell on 254 (gfx/font.asm: GI_*_CODE, gui/deskapps.asm da_code9).
 Own drawings in a classic 8-bit desktop style ('#' = pixel).
 Order = GI_* in gfx/font.asm.
 """
@@ -405,11 +408,45 @@ def glyphs(art):
     return out
 
 
+# icons of the app PRGs (codes 102-127 + 254), as 9 cells of 8 bytes
+WEATHER = bytes([0x00, 0x00, 0x01, 0x01, 0x30, 0x30, 0x03, 0x07, 0x00, 0x00, 0x80, 0x80, 0x0c, 0x0c, 0xc0, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0xcf, 0xcf, 0x0f, 0x07, 0x01, 0x30, 0x30, 0xe0, 0xf4, 0xf3, 0xec, 0xe8, 0x90, 0x60, 0x80, 0x00, 0x00, 0xc0, 0x20, 0x10, 0x08, 0x08, 0x04, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x7f, 0x00, 0x00, 0x02, 0x02, 0x01, 0x02, 0x02, 0xfc, 0x00, 0x00])
+WEB = bytes([0x00, 0x01, 0x06, 0x08, 0x10, 0x20, 0x7f, 0x41, 0x3c, 0xdb, 0x24, 0x42, 0x81, 0x81, 0xff, 0x00, 0x00, 0x80, 0x60, 0x10, 0x08, 0x04, 0xfe, 0x82, 0x81, 0x81, 0x81, 0xff, 0x81, 0x81, 0x81, 0x41, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x81, 0x81, 0x81, 0xff, 0x81, 0x81, 0x81, 0x82, 0x7f, 0x20, 0x10, 0x08, 0x06, 0x01, 0x00, 0x00, 0xff, 0x81, 0x81, 0x42, 0x24, 0xdb, 0x3c, 0x00, 0xfe, 0x04, 0x08, 0x10, 0x60, 0x80, 0x00, 0x00])
+ICONS['calendar'] = """
+........................
+.....##.........##......
+....####.......####.....
+..####################..
+..####################..
+..####################..
+..####################..
+..#..................#..
+..#..##..##..##..##..#..
+..#..##..##..##..##..#..
+..#..................#..
+..#..##..##..##..##..#..
+..#..##..##..##..##..#..
+..#..................#..
+..#..##..##..##..##..#..
+..#..##..##..##..##..#..
+..#..................#..
+..#..##..##..........#..
+..#..##..##..........#..
+..#..................#..
+..####################..
+........................
+........................
+........................
+"""
+
 data = bytearray()
 for name in ORDER:
     data += glyphs(ICONS[name])
 assert len(data) <= 126 * 8, len(data)
+cal = glyphs(ICONS['calendar'])
+front = WEATHER + WEB + cal[:64]          # codes 102-127
+assert len(front) == 26 * 8
+data = front + data + bytes(126 * 8 - len(data)) + cal[64:]   # ... 128-253, 254
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 out = os.path.join(root, 'build', 'stoneicon.prg')
-open(out, 'wb').write(bytes([0x00, 0x3c]) + data)
-print('stoneicon.prg: %d icons, %d bytes' % (len(ORDER), len(data)))
+open(out, 'wb').write(bytes([0x30, 0x3b]) + data)
+print('stoneicon.prg: %d icons + 3 app icons, %d bytes' % (len(ORDER), len(data)))
